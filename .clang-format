@@ -1,0 +1,26 @@
+BasedOnStyle: WebKit
+
+AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
+AlignTrailingComments: true
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+
+BreakStringLiterals: true
+
+IndentPPDirectives: BeforeHash
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           "^<.*>"
+    Priority:        2
+    CaseSensitive:   true
+  - Regex:           '.*'
+    Priority:        1
+    CaseSensitive:   true
+

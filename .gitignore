@@ -1,0 +1,9 @@
+*
+!*/
+
+!.gitignore
+!.clang-format
+!compile_flags.txt
+!include/**
+!src/**
+!tests/**

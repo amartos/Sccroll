@@ -1,0 +1,4 @@
+-Wall
+-xc
+-std=gnu99
+-Iinclude

@@ -291,17 +291,31 @@ void sccroll_assertGroup(SccrollGroupLogic logic, ...)
     while ((value = va_arg(tests, int)) >= 0) value ? ++success : ++failed;
     va_end(tests);
 
-    if (!(success || failed)) return;
-    switch(logic) {
-    case NONE: assert(!success); break;
-    case ONE: assert(success == 1); break;
-    case MULT: assert(success > 1);
-    case ALL: assert(failed); break;
-    case MANY: assert(success > 1); break;
-    case ANY: assert(success); break;
-    case SOME: assert(success && failed); break;
-    case XOR: assert(success ^ failed); break;
+    int total = success + failed;
+    if (!total) return;
+
+    const char* logicfmt = "%i/%i passed, expected %s";
+    switch (logic) {
+    case NONE: sccroll_assertMsg(!success, logicfmt, success, total, "none"); break;
+    case ONE: sccroll_assertMsg(success == 1, logicfmt, success, total, "only 1"); break;
+    case MULT: sccroll_assertMsg(success > 1 && failed, logicfmt, success, total, "1 < success < total"); break;
+    case ALL: sccroll_assertMsg(!failed, logicfmt, success, total, "all"); break;
+    case MANY: sccroll_assertMsg(success > 1, logicfmt, success, total, "more than 1"); break;
+    case ANY: sccroll_assertMsg(success, logicfmt, success, total, "more than 0"); break;
+    case SOME: sccroll_assertMsg(success && failed, logicfmt, success, total, "0 < success < total"); break;
+    case XOR: sccroll_assertMsg(success ^ failed, logicfmt, success, total, "all xor none"); break;
     default: break;
+    }
+}
+
+void sccroll_assertMsg(int test, const char* restrict format, ...)
+{
+    if (!test) {
+        va_list args;
+        va_start(args, format);
+        vfprintf(stderr, format, args);
+        va_end(args);
+        assert(test);
     }
 }
 
@@ -314,12 +328,15 @@ void sccroll_assertExe(const SccrollProcess* restrict proc)
     errno = 0;
     sccroll_fork(test, proc->output.fd ? proc->output.fd : STDERR_FILENO);
 
-    assert(errno == proc->errcode);
-    assert(test->status == proc->exitcode);
+    sccroll_assertMsg(errno == proc->errcode, "errno: expected %i, got %i", proc->errcode, errno);
+    sccroll_assertMsg(test->status == proc->exitcode, "status: expected %i, got %i", proc->exitcode, test->status);
     if (proc->output.str)
     {
         char* output = sccroll_read_pipe(test->pipefd, proc->name);
-        assert(!strcmp(proc->output.str, output));
+        sccroll_assertMsg(
+            !strcmp(proc->output.str, output),
+            "output on fd %i: expected '%s', got '%s'",
+            proc->output.fd, proc->output.str, output);
         free(output);
     }
 

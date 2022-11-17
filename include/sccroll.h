@@ -431,6 +431,9 @@ weak_alias(sccroll_assertGroup, assertGroup);
 #define assertFalse(test) assertTrue(!(bool)test)
 #define assertNull        assertFalse
 
+void sccroll_assertMsg(int test, const char* restrict format, ...);
+weak_alias(sccroll_assertMsg, assertMsg);
+
 // clang-format off
 
 /******************************************************************************

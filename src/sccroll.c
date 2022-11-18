@@ -148,6 +148,9 @@ static SccrollList tests = NULL;
  */
 static void sccroll_void(void);
 
+static void* sccroll_popcar(SccrollList* list);
+#define popcar(list, type) (type) sccroll_popcar(&list);
+
 /**
  * @brief Retire le premier noeud de la liste et le renvoie.
  * @param list La liste dont on veut le premier noeud.
@@ -216,12 +219,9 @@ int sccroll_run(void)
 {
     sccroll_init();
 
-    SccrollNode* current = NULL;
     SccrollTest* test    = NULL;
     while (tests) {
-        current = sccroll_pop(&tests);
-        test    = (SccrollTest*)sccroll_car(current);
-        free(current);
+        test = popcar(tests, SccrollTest*);
         ++report[REPORTTOTAL];
 
         sccroll_before();
@@ -236,6 +236,14 @@ int sccroll_run(void)
     return failed;
 }
 weak_alias(sccroll_run, main);
+
+static void* sccroll_popcar(SccrollList* list)
+{
+    SccrollNode* current = sccroll_pop(list);
+    void* data = sccroll_car(current);
+    free(current);
+    return data;
+}
 
 static SccrollNode* sccroll_pop(SccrollList* list)
 {

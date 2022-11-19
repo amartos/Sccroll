@@ -16,11 +16,28 @@
 // clang-format off
 
 /******************************************************************************
- * @addtogroup General
+ * @addtogroup General Macros et fonctions d'aides.
+ * @brief Commandes d'aides pour la définition des fonctions et autres
+ * macros de la librairie.
  *
  * @{
  ******************************************************************************/
 // clang-format on
+
+/**
+ * @def weak_alias
+ * @since 0.1.0
+ * @brief Créé un alias faible.
+ *
+ * Définit un alias faible de la fonction donnée. Cette macro est une
+ * quasi-copie de la macro @c weak_alias de la librairie C de GNU.
+ * @see https://gcc.gnu.org/onlinedocs/gcc-12.2.0/gcc/Common-Function-Attributes.html
+ *
+ * @param name La fonction modèle.
+ * @param aliasname Le nom de l'alias.
+ */
+#define weak_alias(name, aliasname) \
+    extern __typeof__(name) aliasname __attribute__((weak, alias(#name)))
 
 /**
  * @since 0.1.0
@@ -122,6 +139,16 @@ static SccrollList tests = NULL;
 // clang-format on
 
 /**
+ * @since 0.1.0
+ * @brief Ne faisant absolument rien.
+ *
+ * Cette fonction est utilisée dans cette librairie comme base d'alias
+ * faibles pour les fonctions dont la définition est laissée à
+ * l'utilisateur.
+ */
+static void sccroll_void(void);
+
+/**
  * @brief Retire le premier noeud de la liste et le renvoie.
  * @param list La liste dont on veut le premier noeud.
  * @return Le premier noeud de la liste.
@@ -160,7 +187,11 @@ static int report[2] = { 0 };
 int main() { return sccroll_run(); }
 #endif // SCCROLL_NOMAIN
 
-void sccroll_void(void) {}
+static void sccroll_void(void) {}
+weak_alias(sccroll_void, sccroll_init);
+weak_alias(sccroll_void, sccroll_clean);
+weak_alias(sccroll_void, sccroll_before);
+weak_alias(sccroll_void, sccroll_after);
 
 void sccroll_register(SccrollTestFunc func, const char* name)
 {

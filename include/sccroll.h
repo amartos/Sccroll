@@ -68,55 +68,6 @@
 // clang-format off
 
 /******************************************************************************
- * @addtogroup General Macros et fonctions d'aides.
- * @brief Commandes d'aides pour la définition des fonctions et autres
- * macros de la librairie.
- *
- * @{
- ******************************************************************************/
-// clang-format on
-
-/**
- * @def weak_alias
- * @since 0.1.0
- * @brief Créé un alias faible.
- *
- * Définit un alias faible de la fonction donnée. Cette macro est une
- * quasi-copie de la macro @c weak_alias de la librairie C de GNU.
- * @see https://gcc.gnu.org/onlinedocs/gcc-12.2.0/gcc/Common-Function-Attributes.html
- *
- * @param name La fonction modèle.
- * @param aliasname Le nom de l'alias.
- */
-#define weak_alias(name, aliasname) \
-    extern __typeof__(name) aliasname __attribute__((weak, alias(#name)))
-
-/**
- * @since 0.1.0
- * @brief Ne faisant absolument rien.
- *
- * Cette fonction est utilisée dans cette librairie comme base d'alias
- * faibles pour les fonctions dont la définition est laissée à
- * l'utilisateur.
- */
-void sccroll_void(void);
-
-/**
- * @def SCCROLL_SENTRY
- * @since 0.1.0
- * @brief Valeur sentinelle des fonctions à nombre d'arguments
- * variable.
- *
- * Donne une valeur sentinelle utilisable par les fonctions à nombre
- * d'arguments variable.
- */
-#define SCCROLL_SENTRY -1
-
-// clang-format off
-
-/******************************************************************************
- * @}
- *
  * @addtogroup Definition Les tests unitaires.
  * @brief Gestion de l'inscription, exécution et rapport de tests
  * unitaires.
@@ -151,12 +102,12 @@ typedef void (*SccrollTestFunc)(void);
  *
  * Les fonctions sccroll_before() et sccroll_after() sont appelées
  * respectivement avant et après @b chacune des fonctions de
- * test lors de leur exécution par sccroll_run().
- *
- * Toutes ces fonctions sont définies comme alias faibles,
- * l'utilisateur peut donc les redéfinir sans erreur. Elles ont pour
- * prototype celui des SccrollTestFunc.
+ * test.
  * @endparblock
+ *
+ * @attention Toutes ces fonctions sont à définir par
+ * l'utilisateur. Elles sont appelées automatiquement par la fonction
+ * sccroll_run().
  *
  * @{
  ******************************************************************************/
@@ -166,7 +117,7 @@ typedef void (*SccrollTestFunc)(void);
  * @since 0.1.0
  * @brief Première fonction exécutée par le main fournit.
  */
-weak_alias(sccroll_void, sccroll_init);
+void sccroll_init(void);
 
 /**
  * @since 0.1.0
@@ -174,7 +125,7 @@ weak_alias(sccroll_void, sccroll_init);
  * @note Cette fonction est inscrite pour exécution lors d'un exit
  * avec atexit.
  */
-weak_alias(sccroll_void, sccroll_clean);
+void sccroll_clean(void);
 
 /**
  * @since 0.1.0
@@ -183,7 +134,7 @@ weak_alias(sccroll_void, sccroll_clean);
  * Fonction appelée avant chaque test dont elle permet la
  * préparation (initialisation de variables, etc...).
  */
-weak_alias(sccroll_void, sccroll_before);
+void sccroll_before(void);
 
 /**
  * @since 0.1.0
@@ -192,7 +143,7 @@ weak_alias(sccroll_void, sccroll_before);
  * Fonction appelée après chaque test dont elle permet le
  * nettoyage (libération de mémoire, etc...).
  */
-weak_alias(sccroll_void, sccroll_after);
+void sccroll_after(void);
 
 // clang-format off
 
@@ -373,15 +324,26 @@ typedef enum SccrollGroupLogic {
 } SccrollGroupLogic;
 
 /**
+ * @def SCCROLL_SENTRY
+ * @since 0.1.0
+ * @brief Valeur sentinelle des fonctions à nombre d'arguments
+ * variable.
+ *
+ * Donne une valeur sentinelle utilisable par les fonctions à nombre
+ * d'arguments variable.
+ */
+#define SCCROLL_SENTRY -1
+
+/**
  * @{
  * @since 0.1.0
  * @brief Vérifie si le groupe de tests donnés répondent au critère
  * SccrollGroupLogic attendu.
  *
- * @attention Le dernier argument doit être la macro #SCCROLL_SENTRY.
- * La macro #assertLogic facilite l'assertion en fournissant
- * directement la valeur sentinelle #SCCROLL_SENTRY.
- * @note assertGroup() est un alias faible de sccroll_assertGroup().
+ * @attention Le dernier argument sentinelle doit être la macro
+ * #SCCROLL_SENTRY (qui peut être redéfinie au besoin). Les macros
+ * @c assert* de ce groupe fournissent directement la valeur à la
+ * fonction.
  *
  * @throw AssertionError si l'ensemble des tests ne correspondent pas
  * à la logique attendue.
@@ -391,29 +353,15 @@ typedef enum SccrollGroupLogic {
  * renvoyer 0 (échec) ou une valeur positive (réussite).
  */
 void sccroll_assertGroup(SccrollGroupLogic logic, ...);
-weak_alias(sccroll_assertGroup, assertGroup);
-#define assertLogic(logic, ...) sccroll_assertGroup(logic, __VA_ARGS__, SCCROLL_SENTRY)
-/** @} */
-
-/**
- * @{
- * @since 0.1.0
- * @brief Effectue une assertion sur le résultat du groupe de tests.
- *
- * Le résultat du groupe de test correspond à la logique décrite par
- * SccrollGroupLogic.
- *
- * @throw AssertionError si le résultat du groupe de tests est faux.
- * @param ... Une série de tests booléens.
- */
-#define assertNone(...) assertTrue(NONE, __VA_ARGS__)
-#define assertOne(...)  assertTrue(ONE, __VA_ARGS__)
-#define assertMult(...) assertTrue(MULT, __VA_ARGS__)
-#define assertAll(...)  assertTrue(ALL, __VA_ARGS__)
-#define assertMany(...) assertTrue(MANY, __VA_ARGS__)
-#define assertAny(...)  assertTrue(ANY, __VA_ARGS__)
-#define assertSome(...) assertTrue(SOME, __VA_ARGS__)
-#define assertXor(...)  assertTrue(XOR, __VA_ARGS__)
+#define assertGroup(logic, ...) sccroll_assertGroup(logic, __VA_ARGS__, SCCROLL_SENTRY)
+#define assertNone(...) assertGroup(NONE, __VA_ARGS__)
+#define assertOne(...)  assertGroup(ONE, __VA_ARGS__)
+#define assertMult(...) assertGroup(MULT, __VA_ARGS__)
+#define assertAll(...)  assertGroup(ALL, __VA_ARGS__)
+#define assertMany(...) assertGroup(MANY, __VA_ARGS__)
+#define assertAny(...)  assertGroup(ANY, __VA_ARGS__)
+#define assertSome(...) assertGroup(SOME, __VA_ARGS__)
+#define assertXor(...)  assertGroup(XOR, __VA_ARGS__)
 /** @} */
 
 // clang-format off
@@ -432,7 +380,7 @@ weak_alias(sccroll_assertGroup, assertGroup);
 #define assertNull        assertFalse
 
 void sccroll_assertMsg(int test, const char* restrict format, ...);
-weak_alias(sccroll_assertMsg, assertMsg);
+#define assertMsg sccroll_assertMsg
 
 // clang-format off
 

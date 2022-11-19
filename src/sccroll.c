@@ -214,6 +214,8 @@ static SccrollList sccroll_push(void* car, SccrollList list)
 
 int sccroll_run(void)
 {
+    sccroll_init();
+
     SccrollNode* current = NULL;
     SccrollTest* test    = NULL;
     while (tests) {
@@ -221,11 +223,17 @@ int sccroll_run(void)
         test    = (SccrollTest*)sccroll_car(current);
         free(current);
         ++report[REPORTTOTAL];
+
+        sccroll_before();
         sccroll_fork(test, STDERR_FILENO);
         sccroll_check(test);
         free(test);
+        sccroll_after();
     }
-    return sccroll_review();
+
+    int failed = sccroll_review();
+    sccroll_clean();
+    return failed;
 }
 weak_alias(sccroll_run, main);
 

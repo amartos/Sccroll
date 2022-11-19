@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+ERROR="error|fail"
+SUCCESS="ok|passed"
+INFO="infos|debug"
+KEYWORDS="$ERROR|$SUCCESS|$INFO"
+EXCODE=0
+
+# print a help message and exit
+# $1 exit code
+function usage {
+    echo -e "usage: pinfo status short [desc]\n\nOPTIONS:\n" \
+         "status\ta status keyword among [$KEYWORDS]\n" \
+         "short\ta short description of the status\n" \
+         "desc\tan optional long description of the status\n"
+    exit $1
+}
+
+# check the program arguments
+function check_args {
+    [ -z "$1" ] && >&2 echo "status cannot be emtpy" && return 1
+    echo "$KEYWORDS" | grep -q "$1" || return $(>&2 echo "unkown keyword: $1" && return 1)
+    [ -z "$2" ] && >&2 echo "short cannot be empty" && return 1
+    return 0
+}
+
+# pad left and right the given string
+# $1 the string to center
+# $2 total length of final string
+# $3 string for padding (spaces by default)
+# return the string padded left and right with $3 (left aligned)
+# exit 1 if the expected final length is smaller than $1
+# inspired from https://unix.stackexchange.com/a/267730
+function center {
+    local SIZE=${#1}
+    local NPAD=$(($2-$SIZE))
+    local LEFT=$(($NPAD / 2))
+    local RIGHT=$((($NPAD / 2) + ($NPAD % 2))) # align to left if odd
+    [ -z "$3" ] && local CPAD=" " || local CPAD="$3"
+    [ $LEFT -gt 0 ] && printf "%*s" $LEFT "$CPAD"
+    printf $1
+    [ $RIGHT -gt 0 ] && printf "%*s" $RIGHT "$CPAD"
+}
+
+# convert string to uppercase
+# $1 string to convert to uppercase
+function upper {
+    echo $(echo $1 | tr "[:lower:]" "[:upper:]")
+}
+
+# print a color status information
+# $1 the status keyword
+function status {
+    local STATUS="info"
+    local CODE=7
+    eval "case $1 in
+        $ERROR)
+            CODE=1
+            EXCODE=1;;
+        $SUCCESS) CODE=2;;
+        $INFO) CODE=6;;
+        *);;
+    esac"
+    STATUS="$(upper $1)"
+    printf "[ \e[0;1;3%im%.5s\e[0m ]" $CODE "$(center $STATUS 5)"
+}
+
+# print a status message
+# $1 a status word from $KEYWORDS
+# $2 short status
+# $3 short message
+# $4 error description
+function pstatus {
+    status $1
+    printf " %s" "$2"
+    [ ! -z "$3" ] && echo : ${@:3} || echo ""
+}
+
+case $1 in
+    -h|--help) usage 0;;
+    *) check_args "$@" || >&2 usage 1;;
+esac
+
+pstatus $@ && exit $EXCODE

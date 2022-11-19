@@ -4,6 +4,8 @@
 !.gitignore
 !.clang-format
 !compile_flags.txt
+!Makefile
 !include/**
 !src/**
 !tests/**
+!scripts/**

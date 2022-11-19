@@ -17,6 +17,9 @@ SRCS		:= src
 INCLUDES	:= include
 TESTS		:= tests
 SCRIPTS		:= scripts
+ERROR	 	:= $(SCRIPTS)/pinfo error
+INFO		:= $(SCRIPTS)/pinfo info
+PASS		:= $(SCRIPTS)/pinfo ok
 BUILD		:= build
 BIN		:= $(BUILD)/bin
 DEPS		:= $(BUILD)/deps
@@ -69,7 +72,16 @@ all: $(PROJECT)
 $(PROJECT): init lib$(PROJECT).so
 
 # @brief Exécute les tests unitaires
-tests:
+tests: TMP := $(shell mktemp -d -p /tmp $(PROJECT).XXX)
+tests: LOG = $(TMP)/$(PROJECT)_tests.log
+tests: EXE = $(BIN)/$(PROJECT)_tests
+tests: init $(PROJECT) $(BIN)/$(PROJECT)_tests
+	@LD_LIBRARY_PATH=$(SHARED) $(EXE) &> $(LOG)
+	@grep -q LAST. $(LOG) || $(ERROR) $@ last line not outputed last.
+	@! grep -q invisible $(LOG) || $(ERROR) $@ captured output visible in log.
+	@grep -q test_fail $(LOG) || $(ERROR) $@ failed test log not outputted.
+	@(grep -q custom $(LOG) && grep -q Another $(LOG)) || $(ERROR) $@ custom test name not outputted
+	@$(PASS) $@ all tests successful.
 
 # @brief Génère la documentation du projet
 doc:

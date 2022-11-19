@@ -365,22 +365,18 @@ void sccroll_assertExe(const SccrollProcess* restrict proc)
     SccrollTest* test = sccroll_gentest(proc->name);
     test->name = proc->name;
     test->test = proc->wrapper;
+    int fd = proc->output.fd > 0 ? proc->output.fd : STDERR_FILENO;
 
     errno = 0;
-    sccroll_fork(test, proc->output.fd ? proc->output.fd : STDERR_FILENO);
+    sccroll_fork(test, fd);
+    char* output = sccroll_read_pipe(test->pipefd, proc->name);
+    char* expected = proc->output.str ? proc->output.str : "";
 
     sccroll_assertMsg(errno == proc->errcode, "errno: expected %i, got %i", proc->errcode, errno);
     sccroll_assertMsg(test->status == proc->exitcode, "status: expected %i, got %i", proc->exitcode, test->status);
-    if (proc->output.str)
-    {
-        char* output = sccroll_read_pipe(test->pipefd, proc->name);
-        sccroll_assertMsg(
-            !strcmp(proc->output.str, output),
-            "output on fd %i: expected '%s', got '%s'",
-            proc->output.fd, proc->output.str, output);
-        free(output);
-    }
+    sccroll_assertMsg(!strcmp(expected, output), "output on fd %i: expected '%s', got '%s'", fd, expected, output);
 
+    free(output);
     free(test);
 }
 

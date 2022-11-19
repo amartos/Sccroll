@@ -52,7 +52,7 @@ enum SccrollConstants {
     MAXLINE     = 80,           /**< Longueur maximale des lignes d'un rapport. */
 };
 
-#define REPORTFMT "[ %-5s ] %s : %s"
+#define REPORTFMT "[ %-5s ] %s: %s"
 
 // clang-format off
 
@@ -280,7 +280,7 @@ static bool sccroll_check(SccrollTest* restrict test)
     if (test && test->status) {
         char* output = sccroll_read_pipe(test->pipefd, test->name);
         ++report[REPORTFAIL];
-        fprintf(stderr, REPORTFMT "\n", "FAIL", test->name, output);
+        fprintf(stderr, REPORTFMT, "FAIL", test->name, output);
         free(output);
         return false;
     }
@@ -352,11 +352,13 @@ void sccroll_assertGroup(SccrollGroupLogic logic, ...)
 void sccroll_assertMsg(int test, const char* restrict format, ...)
 {
     if (!test) {
+        fprintf(stderr, "Assertion failed, ");
         va_list args;
         va_start(args, format);
         vfprintf(stderr, format, args);
         va_end(args);
-        assert(test);
+        fprintf(stderr, "\n");
+        abort();
     }
 }
 

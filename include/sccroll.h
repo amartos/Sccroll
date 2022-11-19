@@ -215,7 +215,7 @@ void sccroll_register(SccrollTestFunc func, const char* name) __attribute__((non
  */
 #define SCCROLL_TEST(name)                                          \
     void name(void);                                                \
-    void sccroll_register_##name(void) __attribute__((constructor)) \
+    __attribute__((constructor)) void sccroll_register_##name(void) \
     {                                                               \
         sccroll_register(name, #name);                              \
     }                                                               \

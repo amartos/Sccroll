@@ -94,11 +94,9 @@ typedef void (*SccrollTestFunc)(void);
  * @brief Commandes exécutées avant ou après les tests unitaires.
  *
  * @parblock
- * Dans le cas où le @c main fournit est utilisé (et donc la macro @c
- * SCCROLL_NOEXE n'a pas été définie à la compilation), les fonctions
- * sccroll_init() et sccroll_clean() sont exécutées respectivement
- * avant @b l'ensemble des tests unitaires et juste avant la fin du
- * programme (cf. atexit()).
+ * Les fonctions sccroll_init() et sccroll_clean() sont exécutées
+ * respectivement avant @b l'ensemble des tests unitaires et juste
+ * avant la fin du programme (cf. atexit()).
  *
  * Les fonctions sccroll_before() et sccroll_after() sont appelées
  * respectivement avant et après @b chacune des fonctions de
@@ -115,7 +113,7 @@ typedef void (*SccrollTestFunc)(void);
 
 /**
  * @since 0.1.0
- * @brief Première fonction exécutée par le main fournit.
+ * @brief Première fonction exécutée par sccroll_run().
  */
 void sccroll_init(void);
 
@@ -235,8 +233,9 @@ void sccroll_register(SccrollTestFunc func, const char* name) __attribute__((non
  * @parblock
  * <b>L'ordre d'exécution des tests n'est pas garantit</b>; aucun test
  * ne peut donc dépendre de manière fiable de l'exécution d'un
- * autre. L'ordre d'exécution garantit par le main de la librairie et
- * la fonction sccroll_run() est le suivant:
+ * autre. L'ordre d'exécution garanti des fonctions de la librairie
+ * (fonction sccroll_run() ou la fonction main() fournie) est le
+ * suivant:
  *
  * 1. sccroll_init()
  * 2. sccroll_run()
@@ -261,9 +260,9 @@ void sccroll_register(SccrollTestFunc func, const char* name) __attribute__((non
  * enregistrés avec la fonction sccroll_register() ), et affiche un
  * rapport détaillé sur le résultat.
  *
- * @attention Cette fonction est appelée automatiquement par le main
- * fournit. Elle n'est à utilisé que dans le cas où la macro
- * @c SCCROLL_NOEXE est définie à la compilation.
+ * @attention Cette fonction est appelée automatiquement par la
+ * fonction main() fournie. Elle n'est à utiliser que lors d'une
+ * redéfinition de cette dernière.
  * @return le nombre de tests ayant échoué.
  */
 int sccroll_run(void);

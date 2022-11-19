@@ -180,13 +180,6 @@ static int report[2] = { 0 };
  ******************************************************************************/
 // clang-format on
 
-#ifndef SCCROLL_NOMAIN
-/**
- * @ingroup Execution
- */
-int main() { return sccroll_run(); }
-#endif // SCCROLL_NOMAIN
-
 static void sccroll_void(void) {}
 weak_alias(sccroll_void, sccroll_init);
 weak_alias(sccroll_void, sccroll_clean);
@@ -234,6 +227,7 @@ int sccroll_run(void)
     }
     return sccroll_review();
 }
+weak_alias(sccroll_run, main);
 
 static SccrollNode* sccroll_pop(SccrollList* list)
 {

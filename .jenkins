@@ -1,0 +1,43 @@
+pipeline {
+    agent { label "linux" }
+    options {
+        disableConcurrentBuilds()
+        skipStagesAfterUnstable()
+    }
+    stages {
+        stage("Unit tests") {
+            steps { sh "make unit-tests" }
+        }
+        stage("Coverage reports") {
+            steps {
+                sh "make code-coverage"
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: false,
+                    escapeUnderscores: false,
+                    includes: "**/*.html, **/*.css",
+                    keepAll: true,
+                    reportDir: "build/reports",
+                    reportFiles: "coverage.html",
+                    reportName: "HTML Report",
+                ])
+                cobertura coberturaReportFile: "build/reports/coverage.xml",
+                    onlyStable: false,
+                    methodCoverageTargets: "98, 0, 75",
+                    lineCoverageTargets: "98, 0, 75",
+                    conditionalCoverageTargets: "98, 0, 75",
+                    enableNewApi: true,
+                    maxNumberOfBuilds: 10,
+                    failNoReports: true,
+                    failUnhealthy: true,
+                    failUnstable: true
+            }
+        }
+        stage ("Build") {
+            when { buildingTag() }
+            steps {
+                sh "make"
+            }
+        }
+    }
+}

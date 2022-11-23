@@ -81,6 +81,7 @@ $(BIN)/%: %.o
 	@$(CC) $(OBJS)/$*.o $(LDLIBS) $(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c) -o $@
 
 %.log: $(BIN)/%
+	@mkdir -p $(TMP)
 	@LD_LIBRARY_PATH=$(SHARED) $< $(ARGS) &> $(TMP)/$@
 
 
@@ -138,7 +139,7 @@ doc:
 # @brief Initialise la structure du projet
 init:
 	@mkdir -p $(SRCS) $(INCLUDES) $(TESTS) $(SCRIPTS)
-	@mkdir -p $(BUILD) $(BIN) $(OBJS) $(DEPS) $(SHARED) $(REPORTS) $(TMP)
+	@mkdir -p $(BUILD) $(BIN) $(OBJS) $(DEPS) $(SHARED) $(REPORTS)
 	@mkdir -p $(DOCS)
 
 # @brief Nettoyage post-compilation

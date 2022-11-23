@@ -430,7 +430,7 @@ typedef struct SccrollProcess {
  * @throw AssertionError si les effets attendus ne sont pas ceux
  * obtenus.
  */
-void sccroll_assertExe(const SccrollProcess* restrict proc);
+void sccroll_assertExe(const SccrollProcess* restrict proc) __attribute__((nonnull));
 
 /**
  */

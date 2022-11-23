@@ -16,6 +16,10 @@ SHELL		:= /usr/bin/bash
 SRCS		:= src
 INCLUDES	:= include
 TESTS		:= tests
+TESTSPTRN	:= *_tests
+_UNITS		:= $(wildcard $(TESTS)/$(TESTSPTRN).c)
+UNITS		:= $(_UNITS:$(TESTS)/%.c=%)
+TMP			:= /tmp/$(PROJECT)
 SCRIPTS		:= scripts
 ERROR	 	:= $(SCRIPTS)/pinfo error
 INFO		:= $(SCRIPTS)/pinfo info
@@ -55,7 +59,7 @@ COVHIGH	:= 98
 COVLOW	:= 75
 
 COV		:= gcovr
-COVOPTS	:= -r $(SRCS) -u --no-marker -e ".*_tests.c"
+COVOPTS	:= -r $(SRCS) -u --no-marker -e ".$(TESTSPTRN).c"
 COVXML		:= --cobertura-pretty --cobertura $(REPORTS)/coverage.xml
 COVHTML :=	--html-details $(REPORTS)/coverage.html \
 			--html-medium-threshold $(COVLOW) --html-high-threshold $(COVHIGH) \
@@ -76,6 +80,9 @@ lib%.so: %.c
 $(BIN)/%: %.o
 	@$(CC) $(OBJS)/$*.o $(LDLIBS) -o $@
 
+%.log: $(BIN)/%
+	@LD_LIBRARY_PATH=$(SHARED) $< $(ARGS) &> $(TMP)/$@
+
 
 ###############################################################################
 # Autres cibles
@@ -90,17 +97,19 @@ all: $(PROJECT)
 $(PROJECT): init lib$(PROJECT).so
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
-unit-tests: TMP := $(shell mktemp -d -p /tmp $(PROJECT).XXX)
-unit-tests: LOG = $(TMP)/$(PROJECT)_tests.log
-unit-tests: EXE = $(BIN)/$(PROJECT)_tests
 unit-tests: CFLAGS += --coverage -g -O0
 unit-tests: LDLIBS += --coverage -lgcov
-unit-tests: init $(PROJECT) $(BIN)/$(PROJECT)_tests
-	@LD_LIBRARY_PATH=$(SHARED) $(EXE) &> $(LOG)
-	@grep -q LAST. $(LOG) || $(ERROR) $@ last line not outputed last.
-	@! grep -q invisible $(LOG) || $(ERROR) $@ captured output visible in log.
-	@grep -q test_fail $(LOG) || $(ERROR) $@ failed test log not outputted.
-	@(grep -q custom $(LOG) && grep -q Another $(LOG)) || $(ERROR) $@ custom test name not outputted
+unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
+unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
+	@head -n 1 $(TMP)/$(PROJECT)_basics_tests.log  | \
+		grep -q ">>>>>> First line of tests." || \
+		$(ERROR) $@ wrong first line of tests
+	@tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log | \
+		grep -q ">>>>>> Last line of tests." || \
+		$(ERROR) $@ wrong last line of tests
+	@grep -q "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]" \
+		$(TMP)/$(PROJECT)_main_tests.log
+	@rm -r $(TMP)
 	@$(PASS) $@
 
 # @brief Génère un rapport sur la couverture de code des tests.
@@ -114,7 +123,7 @@ doc:
 # @brief Initialise la structure du projet
 init:
 	@mkdir -p $(SRCS) $(INCLUDES) $(TESTS) $(SCRIPTS)
-	@mkdir -p $(BUILD) $(BIN) $(OBJS) $(DEPS) $(SHARED) $(REPORTS)
+	@mkdir -p $(BUILD) $(BIN) $(OBJS) $(DEPS) $(SHARED) $(REPORTS) $(TMP)
 	@mkdir -p $(DOCS)
 
 # @brief Nettoyage post-compilation

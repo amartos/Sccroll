@@ -79,7 +79,7 @@ typedef struct SccrollTest {
                            *   l'output du test. */
 } SccrollTest;
 
-static SccrollTest* sccroll_gentest(const char* restrict name);
+static SccrollTest* sccroll_gentest(const char* restrict name) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
@@ -148,7 +148,7 @@ static SccrollList tests = NULL;
  */
 static void sccroll_void(void);
 
-static void* sccroll_popcar(SccrollList* list);
+static void* sccroll_popcar(SccrollList* list) __attribute__((nonnull));
 #define popcar(list, type) (type) sccroll_popcar(&list);
 
 /**
@@ -156,7 +156,7 @@ static void* sccroll_popcar(SccrollList* list);
  * @param list La liste dont on veut le premier noeud.
  * @return Le premier noeud de la liste.
  */
-static SccrollNode* sccroll_pop(SccrollList* list);
+static SccrollNode* sccroll_pop(SccrollList* list) __attribute__((nonnull));
 
 /**
  * @brief Fork, exécute la fonction du test, enregistre l'output
@@ -165,10 +165,10 @@ static SccrollNode* sccroll_pop(SccrollList* list);
  * @param current Le test à exécuter.
  * @param fd le descripteur de fichier dont on veut l'output.
  */
-static void sccroll_fork(SccrollTest* restrict current, int fd);
+static void sccroll_fork(SccrollTest* restrict current, int fd) __attribute__((nonnull (1)));
 
-static bool sccroll_check(SccrollTest* restrict test);
-static char* sccroll_read_pipe(int pipefd[2], const char* name);
+static bool sccroll_check(SccrollTest* restrict test) __attribute__((nonnull));
+static char* sccroll_read_pipe(int pipefd[2], const char* name) __attribute__((nonnull (2)));
 
 static int sccroll_review(void);
 
@@ -247,7 +247,7 @@ static void* sccroll_popcar(SccrollList* list)
 
 static SccrollNode* sccroll_pop(SccrollList* list)
 {
-    if (!list) return NULL;
+    if (!*list) return NULL;
 
     SccrollNode* popped = *list;
     *list               = sccroll_cdr(*list);
@@ -257,8 +257,6 @@ static SccrollNode* sccroll_pop(SccrollList* list)
 
 static void sccroll_fork(SccrollTest* restrict current, int fd)
 {
-    if (!current) return;
-
     pid_t pid = fork();
     if (pid < 0)
         err(EXIT_FAILURE, "fork failed for %s", current->name);
@@ -266,7 +264,8 @@ static void sccroll_fork(SccrollTest* restrict current, int fd)
         if (dup2(current->pipefd[PIPEWRTE], fd) < 0)
             err(EXIT_FAILURE, "stderr dup failed for %s", current->name);
         current->test();
-        close(current->pipefd[PIPEWRTE]);
+        if (close(current->pipefd[PIPEWRTE]) < 0)
+            err(EXIT_FAILURE, "pipe close failed in fork for %s", current->name);
         exit(EXIT_SUCCESS);
     }
 
@@ -277,7 +276,7 @@ static void sccroll_fork(SccrollTest* restrict current, int fd)
 
 static bool sccroll_check(SccrollTest* restrict test)
 {
-    if (test && test->status) {
+    if (test->status) {
         char* output = sccroll_read_pipe(test->pipefd, test->name);
         ++report[REPORTFAIL];
         fprintf(stderr, REPORTFMT, "FAIL", test->name, output);
@@ -289,11 +288,13 @@ static bool sccroll_check(SccrollTest* restrict test)
 
 static char* sccroll_read_pipe(int pipefd[2], const char* name)
 {
-    close(pipefd[PIPEWRTE]);
     char buffer[BUFSIZ] = { 0 };
+    if (close(pipefd[PIPEWRTE]) < 0)
+        err(EXIT_FAILURE, "could not close pipe write for %s", name);
     if (read(pipefd[PIPEREAD], buffer, BUFSIZ) < 0)
         err(EXIT_FAILURE, "report read failed for %s", name);
-    close(pipefd[PIPEREAD]);
+    if (close(pipefd[PIPEREAD]) < 0)
+        err(EXIT_FAILURE, "could not close pipe read for %s", name);
     return strdup(buffer);
 }
 

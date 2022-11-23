@@ -109,7 +109,8 @@ unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 		grep -q ">>>>>> Last line of tests." || \
 		$(ERROR) $@ wrong last line of tests
 	@grep -q "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]" \
-		$(TMP)/$(PROJECT)_main_tests.log
+		$(TMP)/$(PROJECT)_main_tests.log || \
+		$(ERROR) $@ args passed to main do not correspond
 	@grep -q "calloc mocked." $(TMP)/$(PROJECT)_mocks_tests.log || \
 		$(ERROR) $@ calloc not mocked
 	@grep -q "free mocked" $(TMP)/$(PROJECT)_mocks_tests.log || \

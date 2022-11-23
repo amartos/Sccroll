@@ -2,7 +2,7 @@
 
 ERROR="error|fail"
 SUCCESS="ok|passed"
-INFO="infos|debug"
+INFO="info|debug"
 KEYWORDS="$ERROR|$SUCCESS|$INFO"
 EXCODE=0
 

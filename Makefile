@@ -78,7 +78,7 @@ lib%.so: %.c
 	@$(CC) $(CFLAGS) -fpic -shared $(DEPFLAGS) $(DEPS)/$*.d $< -o $(SHARED)/$@
 
 $(BIN)/%: %.o
-	@$(CC) $(OBJS)/$*.o $(LDLIBS) -o $@
+	@$(CC) $(OBJS)/$*.o $(LDLIBS) $(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c) -o $@
 
 %.log: $(BIN)/%
 	@LD_LIBRARY_PATH=$(SHARED) $< $(ARGS) &> $(TMP)/$@
@@ -109,6 +109,21 @@ unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 		$(ERROR) $@ wrong last line of tests
 	@grep -q "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]" \
 		$(TMP)/$(PROJECT)_main_tests.log
+	@grep -q "calloc mocked." $(TMP)/$(PROJECT)_mocks_tests.log || \
+		$(ERROR) $@ calloc not mocked
+	@grep -q "free mocked" $(TMP)/$(PROJECT)_mocks_tests.log || \
+		$(ERROR) $@ free not mocked
+	@grep -q "sccroll_run mocked: nothing executed" \
+		$(TMP)/$(PROJECT)_mocks_tests.log || \
+		$(ERROR) $@ sccroll_run not mocked
+	@grep -q "sccroll_run mocked: flag seen." \
+		$(TMP)/$(PROJECT)_mocks_tests.log || \
+		$(ERROR) $@ flag not seen in mocked
+	@grep -q "printf not mocked: OK" \
+		$(TMP)/$(PROJECT)_mocks_tests.log \
+		|| $(ERROR) $@ printf mocked
+	@! grep -q "Assertion" $(TMP)/$(PROJECT)_mocks_tests.log || \
+		$(ERROR) $@ assertion error in mocked
 	@rm -r $(TMP)
 	@$(PASS) $@
 

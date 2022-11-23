@@ -501,4 +501,68 @@ void sccroll_assertExe(const SccrollProcess* restrict proc) __attribute__((nonnu
  ******************************************************************************/
 // clang-format on
 
+// clang-format off
+
+/******************************************************************************
+ * @addtogroup LibMocks Génération de mocks.
+ *
+ * Afin de pouvoir générer des résultats prévisibles pour certaines
+ * assertions (par exemple, les captures d'erreurs conditionnelles),
+ * il est parfois nécessaire de générer des mocks des fonctions
+ * d'autres librairies. Les macros de cette section sont utilisées à
+ * ces fins.
+ *
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @def SCCROLL_MOCK
+ * @since 0.1.0
+ * @brief Génère un un mock d'une fonction.
+ *
+ * @parblock
+ * Cette macro est un simple alias pour la définition d'un @c wrapper
+ * par le linker de GCC (@c ld ). Elle génère une fonction appelée à
+ * la place de l'originale #name, cette dernière restant accessible
+ * via l'alias @c __real_name().
+ *
+ * La macro s'utilise comme pour la définition d'une fonction.
+ * Voici un exemple de mock, ici de la fonction calloc() de la
+ * librairie standard C:
+ *
+ * @code{.c}
+ * SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
+ * {
+ *     // ... mon code, exemple:
+ *     if (my_error_trigger) return NULL;
+ *     // On utilise ici la fonction calloc originale.
+ *     return __real_calloc(nmemb, size);
+ * }
+ * @endcode
+ * @endparblock
+ *
+ * @attention Nécessite l'option
+ * @verbatim -Wl,--wrap,name,--wrap,... @endverbatim
+ * (un @verbatim --wrap,name @enverbatim pour chaque fonction mockée)
+ * à la compilation. La syntaxe est celle indiquée dans le manuel de
+ * GCC (option @c -Wl ).
+ *
+ * @param rettype Le type des données renvoyées par la fonction.
+ * @param name Le nom de la fonction mockée.
+ * @param ... Les paramètres de la fonction mockée
+ * (syntaxe: @verbatim rettype, name, typea variablea,
+ * typeb variableb, ... @endverbatim) ou @c void si aucun paramètre.
+ */
+#define SCCROLL_MOCK(retval, name, ...)         \
+    extern __typeof__(name) __real_##name;      \
+    retval __wrap_##name(__VA_ARGS__)
+
+// clang-format off
+/******************************************************************************
+ * @}
+ * @}
+ ******************************************************************************/
+// clang-format on
+
 #endif // @} SCCROLL_H_

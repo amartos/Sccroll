@@ -68,6 +68,15 @@ COVHTML :=	--html-details $(REPORTS)/coverage.html \
 
 
 ###############################################################################
+# Fonctions d'aide
+###############################################################################
+
+define assertLogHas =
+$(3) grep -q $(1) $(2) || $(ERROR) "Not found in log:" $(1)
+endef
+
+
+###############################################################################
 # Cibles à patterns
 ###############################################################################
 
@@ -96,36 +105,22 @@ all: $(PROJECT)
 
 # @brief Compile la librairie (cible par défaut)
 $(PROJECT): init lib$(PROJECT).so
+	@$(INFO) $@ compilation ok
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 unit-tests: CFLAGS += --coverage -g -O0
 unit-tests: LDLIBS += --coverage -lgcov
 unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
 unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
-	@head -n 1 $(TMP)/$(PROJECT)_basics_tests.log  | \
-		grep -q ">>>>>> First line of tests." || \
-		$(ERROR) $@ wrong first line of tests
-	@tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log | \
-		grep -q ">>>>>> Last line of tests." || \
-		$(ERROR) $@ wrong last line of tests
-	@grep -q "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]" \
-		$(TMP)/$(PROJECT)_main_tests.log || \
-		$(ERROR) $@ args passed to main do not correspond
-	@grep -q "calloc mocked." $(TMP)/$(PROJECT)_mocks_tests.log || \
-		$(ERROR) $@ calloc not mocked
-	@grep -q "free mocked" $(TMP)/$(PROJECT)_mocks_tests.log || \
-		$(ERROR) $@ free not mocked
-	@grep -q "sccroll_run mocked: nothing executed" \
-		$(TMP)/$(PROJECT)_mocks_tests.log || \
-		$(ERROR) $@ sccroll_run not mocked
-	@grep -q "sccroll_run mocked: flag seen." \
-		$(TMP)/$(PROJECT)_mocks_tests.log || \
-		$(ERROR) $@ flag not seen in mocked
-	@grep -q "printf not mocked: OK" \
-		$(TMP)/$(PROJECT)_mocks_tests.log \
-		|| $(ERROR) $@ printf mocked
-	@! grep -q "Assertion" $(TMP)/$(PROJECT)_mocks_tests.log || \
-		$(ERROR) $@ assertion error in mocked
+	@$(call assertLogHas,">>>>>> First line of tests.",,head -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,">>>>>> Last line of tests.",,tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(TMP)/$(PROJECT)_main_tests.log)
+	@$(call assertLogHas,"calloc mocked.",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"free mocked",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"sccroll_run mocked: nothing executed",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"sccroll_run mocked: flag seen.",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"printf not mocked: OK",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"Assertion",$(TMP)/$(PROJECT)_mocks_tests.log,!)
 	@rm -r $(TMP)
 	@$(PASS) $@
 

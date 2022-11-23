@@ -45,7 +45,7 @@ vpath %.d  $(DEPS)
 
 CC		:= gcc
 STD		:= gnu99
-CFLAGS		:= -xc -Wall -std=$(STD) $(INCLUDES:%=-I%) -c
+CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) -c
 LDLIBS	 	:= -L $(SHARED) -l $(PROJECT)
 DEPFLAGS	:= -MMD -MP -MF
 

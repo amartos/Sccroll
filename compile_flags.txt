@@ -1,4 +1,7 @@
 -Wall
+-Wextra
 -xc
 -std=gnu99
 -Iinclude
+-fpic
+-shared

@@ -7,7 +7,7 @@
  * @copyright   MIT License
  * @compilation
  * @code{.sh}
- * gcc -xc -Wall -std=gnu99 \
+ * gcc -xc -Wall -Wextra -std=gnu99 \
  *     -fpic -shared sccroll.c \
  *     -o libsccroll.so
  * @endcode

@@ -113,12 +113,11 @@ typedef SccrollNode* SccrollList;
 
 /**
  * @since 0.1.0
- * @brief Créé un nouveau noeud de tête pour la liste.
+ * @brief Créé un nouveau noeud de tête pour la liste de tests.
  * @param car Le car du nouveau noeud de tête.
- * @param list Le cdr du nouveau noeud de tête.
  * @return Le pointeur de la tête de liste.
  */
-static SccrollList sccroll_push(void* car, SccrollList list);
+static void sccroll_push(void* test);
 
 /**
  * @since 0.1.0
@@ -148,15 +147,14 @@ static SccrollList tests = NULL;
  */
 static void sccroll_void(void);
 
-static void* sccroll_popcar(SccrollList* list) __attribute__((nonnull));
-#define popcar(list, type) (type) sccroll_popcar(&list);
+static void* sccroll_popcar(void);
+#define popcar(type) (type) sccroll_popcar();
 
 /**
- * @brief Retire le premier noeud de la liste et le renvoie.
- * @param list La liste dont on veut le premier noeud.
+ * @brief Retire le premier noeud de la liste de tests et le renvoie.
  * @return Le premier noeud de la liste.
  */
-static SccrollNode* sccroll_pop(SccrollList* list) __attribute__((nonnull));
+static SccrollNode* sccroll_pop(void);
 
 /**
  * @brief Fork, exécute la fonction du test, enregistre l'output
@@ -194,7 +192,7 @@ void sccroll_register(SccrollTestFunc func, const char* name)
     SccrollTest* test = sccroll_gentest(name);
     test->test = func;
     test->name = name;
-    tests = sccroll_push(test, tests);
+    sccroll_push(test);
 }
 
 static SccrollTest* sccroll_gentest(const char* restrict name)
@@ -205,14 +203,14 @@ static SccrollTest* sccroll_gentest(const char* restrict name)
     return test;
 }
 
-static SccrollList sccroll_push(void* car, SccrollList list)
+static void sccroll_push(void* test)
 {
     SccrollNode* node = calloc(1, sizeof(SccrollNode));
     if (!node) err(EXIT_FAILURE, "could not push to SccrollList");
 
-    node->car = car;
-    node->cdr = list;
-    return node;
+    node->car = test;
+    node->cdr = tests;
+    tests = node;
 }
 
 int sccroll_run(void)
@@ -221,7 +219,7 @@ int sccroll_run(void)
 
     SccrollTest* test    = NULL;
     while (tests) {
-        test = popcar(tests, SccrollTest*);
+        test = popcar(SccrollTest*);
         ++report[REPORTTOTAL];
 
         sccroll_before();
@@ -237,20 +235,18 @@ int sccroll_run(void)
 }
 weak_alias(sccroll_run, main);
 
-static void* sccroll_popcar(SccrollList* list)
+static void* sccroll_popcar(void)
 {
-    SccrollNode* current = sccroll_pop(list);
+    SccrollNode* current = sccroll_pop();
     void* data = sccroll_car(current);
     free(current);
     return data;
 }
 
-static SccrollNode* sccroll_pop(SccrollList* list)
+static SccrollNode* sccroll_pop(void)
 {
-    if (!*list) return NULL;
-
-    SccrollNode* popped = *list;
-    *list               = sccroll_cdr(*list);
+    SccrollNode* popped = tests;
+    tests = sccroll_cdr(tests);
     sccroll_cdr(popped) = NULL;
     return popped;
 }

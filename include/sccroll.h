@@ -214,12 +214,12 @@ void sccroll_register(SccrollTestFunc func, const char* name) __attribute__((non
  * le nom du test.
  */
 #define SCCROLL_TEST(name)                                          \
-    void name(void);                                                \
+    static void name(void);                                         \
     __attribute__((constructor)) void sccroll_register_##name(void) \
     {                                                               \
         sccroll_register(name, #name);                              \
     }                                                               \
-    void name(void)
+    static void name(void)
 
 // clang-format off
 

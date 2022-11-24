@@ -53,6 +53,8 @@ enum SccrollConstants {
 };
 
 #define REPORTFMT "[ %-5s ] %s: %s"
+#define LOGICFMT "%i/%i passed, expected %s"
+#define EXITFMT "%s: expected %i, got %i"
 
 // clang-format off
 
@@ -343,30 +345,16 @@ void sccroll_assertGroup(SccrollGroupLogic logic, ...)
     int total = success + failed;
     if (!total) return;
 
-    const char* logicfmt = "%i/%i passed, expected %s";
     switch (logic) {
-    case NONE: sccroll_assertMsg(!success, logicfmt, success, total, "none"); break;
-    case ONE: sccroll_assertMsg(success == 1, logicfmt, success, total, "only 1"); break;
-    case MULT: sccroll_assertMsg(success > 1 && failed, logicfmt, success, total, "1 < success < total"); break;
-    case ALL: sccroll_assertMsg(!failed, logicfmt, success, total, "all"); break;
-    case MANY: sccroll_assertMsg(success > 1, logicfmt, success, total, "more than 1"); break;
-    case ANY: sccroll_assertMsg(success, logicfmt, success, total, "more than 0"); break;
-    case SOME: sccroll_assertMsg(success && failed, logicfmt, success, total, "0 < success < total"); break;
-    case XOR: sccroll_assertMsg(success ^ failed, logicfmt, success, total, "all xor none"); break;
+    case NONE: assertMsg(!success, LOGICFMT, success, total, "none"); break;
+    case ONE: assertMsg(success == 1, LOGICFMT, success, total, "only 1"); break;
+    case MULT: assertMsg(success > 1 && failed, LOGICFMT, success, total, "1 < success < total"); break;
+    case ALL: assertMsg(!failed, LOGICFMT, success, total, "all"); break;
+    case MANY: assertMsg(success > 1, LOGICFMT, success, total, "more than 1"); break;
+    case ANY: assertMsg(success, LOGICFMT, success, total, "more than 0"); break;
+    case SOME: assertMsg(success && failed, LOGICFMT, success, total, "0 < success < total"); break;
+    case XOR: assertMsg(success ^ failed, LOGICFMT, success, total, "all xor none"); break;
     default: break;
-    }
-}
-
-void sccroll_assertMsg(int test, const char* restrict format, ...)
-{
-    if (!test) {
-        fprintf(stderr, "Assertion failed, ");
-        va_list args;
-        va_start(args, format);
-        vfprintf(stderr, format, args);
-        va_end(args);
-        fprintf(stderr, "\n");
-        abort();
     }
 }
 
@@ -382,9 +370,9 @@ void sccroll_assertExe(const SccrollProcess* restrict proc)
     char* output = sccroll_read_pipe(test->pipefd, proc->name);
     char* expected = proc->output.str ? proc->output.str : "";
 
-    sccroll_assertMsg(errno == proc->errcode, "errno: expected %i, got %i", proc->errcode, errno);
-    sccroll_assertMsg(test->status == proc->exitcode, "status: expected %i, got %i", proc->exitcode, test->status);
-    sccroll_assertMsg(!strcmp(expected, output), "output on fd %i: expected '%s', got '%s'", fd, expected, output);
+    assertMsg(errno == proc->errcode, EXITFMT, "errno", proc->errcode, errno);
+    assertMsg(test->status == proc->exitcode, EXITFMT, "status", proc->exitcode, test->status);
+    assertMsg(!strcmp(expected, output), "output on fd %i: expected '%s', got '%s'", fd, expected, output);
 
     free(output);
     free(test);

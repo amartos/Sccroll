@@ -387,12 +387,18 @@ void sccroll_assertGroup(SccrollGroupLogic logic, ...);
  ******************************************************************************/
 // clang-format on
 
-#define assertTrue(test)  assert((bool)test)
-#define assertFalse(test) assertTrue(!(bool)test)
+#define assertTrue(test)  assert(test)
+#define assertFalse(test) assertTrue(!(test))
 #define assertNull        assertFalse
 
-void sccroll_assertMsg(int test, const char* restrict format, ...);
-#define assertMsg sccroll_assertMsg
+#define assertMsg(expr, fmt, ...)                                       \
+    {                                                                   \
+        char message[BUFSIZ] = { 0 };                                   \
+        sprintf(message, #expr " (" fmt ")", ##__VA_ARGS__);             \
+        ((expr)                                                         \
+         ? __ASSERT_VOID_CAST(0)                                        \
+         : __assert_fail(message, __FILE__, __LINE__, __ASSERT_FUNCTION)); \
+    }
 
 // clang-format off
 

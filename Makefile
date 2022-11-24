@@ -121,6 +121,7 @@ unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(call assertLogHas,"sccroll_run mocked: flag seen.",$(TMP)/$(PROJECT)_mocks_tests.log)
 	@$(call assertLogHas,"printf not mocked: OK",$(TMP)/$(PROJECT)_mocks_tests.log)
 	@$(call assertLogHas,"Assertion",$(TMP)/$(PROJECT)_mocks_tests.log,!)
+	@$(call assertLogHas,"Assertion \`123 > 456 (foo 1 -36)' failed",$(TMP)/$(PROJECT)_asserts_single_tests.log);
 	@rm -r $(TMP)
 	@$(PASS) $@
 

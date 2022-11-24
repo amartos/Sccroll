@@ -27,6 +27,7 @@
  * Constantes numériques du test unitaire.
  */
 enum {
+    MAX_PREP = 100, /**< Nombre maximum de tests standard exécutés. */
     BLOB_SIZE = 256, /**< Taille de la donnée aléatoire. */
     BAGS_OF_PEANUTS = 5000, /**< Nombre d'itérations des tests de
                              * sccroll_monkey(). */
@@ -56,9 +57,8 @@ void sccroll_after(void) { ++after; }
  */
 void test_prepfuncs(void)
 {
-    assert(init == 1);
+    assert(init == 1 && clean == init-1);
     assert(before > 0 && after == before-1);
-    assert(clean == 0);
 }
 
 /**
@@ -141,14 +141,13 @@ void test_monkeys_zero_size(void)
 
 int main(void)
 {
-    // 10 to 100 tests at random
-    int repeats = 10 + random() % 90;
+    // 10 to MAX_PREP tests at random
+    int repeats = 10 + random() % MAX_PREP;
     for (int i=0; i<repeats; ++i)
         sccroll_register(test_prepfuncs, "test_prepfuncs");
 
     assert(!sccroll_run());
-    assert(init == 1);
-    assert(clean == 1);
+    assert(init == clean && init == 1);
     assert(before == after && before == repeats);
 
     // test de la randomness de sccroll_monkey.

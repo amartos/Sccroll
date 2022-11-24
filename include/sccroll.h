@@ -64,6 +64,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <time.h>
 
 // clang-format off
 
@@ -142,6 +143,18 @@ void sccroll_before(void);
  * nettoyage (libération de mémoire, etc...).
  */
 void sccroll_after(void);
+
+/**
+ * @since 0.1.0
+ * @brief Rempli un espace mémoire de données aléatoires.
+ *
+ * Remmplit l'espace mémoire pointé par #blob sur #size octets de
+ * données aléatoires.
+ *
+ * @param blob Un espace mémoire à remplir.
+ * @param size Le nombre d'octets à remplir.
+ */
+void sccroll_monkey(void* blob, size_t size) __attribute__((nonnull (1)));
 
 // clang-format off
 

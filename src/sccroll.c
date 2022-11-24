@@ -147,6 +147,8 @@ static SccrollList tests = NULL;
  */
 static void sccroll_void(void);
 
+__attribute__((constructor)) static void sccroll_peanuts(void);
+
 static void* sccroll_popcar(void);
 #define popcar(type) (type) sccroll_popcar();
 
@@ -186,6 +188,15 @@ weak_alias(sccroll_void, sccroll_init);
 weak_alias(sccroll_void, sccroll_clean);
 weak_alias(sccroll_void, sccroll_before);
 weak_alias(sccroll_void, sccroll_after);
+
+static void sccroll_peanuts(void) { srandom(time(NULL)); }
+
+void sccroll_monkey(void* blob, size_t size)
+{
+    unsigned char* dest = (unsigned char*) blob;
+    for (size_t i = 0; i < size; ++i)
+        *dest++ = (unsigned char) (random() & 0xFF);
+}
 
 void sccroll_register(SccrollTestFunc func, const char* name)
 {

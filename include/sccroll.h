@@ -53,7 +53,6 @@
 
 #define _GNU_SOURCE
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <search.h>
@@ -291,114 +290,210 @@ int sccroll_run(void);
  ******************************************************************************/
 // clang-format on
 
-// clang-format off
-
-/******************************************************************************
- * @}
- *
- * @addtogroup AssertGroup Assertion sur des groupes de tests.
- *
+/**
+ * @ingroup FormatStrings
+ * @def SCCASSERTFMT
+ * @since 0.1.0
+ * @brief Format des messages d'erreurs d'assertion.
+ * @param s Le nom du fichier.
+ * @param s Le numéro de ligne.
+ * @param s Le nom de la fonction.
+ * @param s L'expression testée.
+ */
+#define SCCASSERTFMT "(%s line %i) %s: Assertion `%s' failed."
+
+/**
+ * @name AssertMsg
+ * @brief Si #test vaut 0, lève une erreur d'assertion, affiche un
+ * message d'erreur et termine le programme.
+ * @param test Indique de lever une erreur d'assertion si sa valeur
+ * est nulle. N'importe quelle autre valeur évite l'erreur.
+ * @param fmt Chaîne de formatage du message d'erreur.
+ * @param ... Paramètres de la chaîne de formatage.
+ * @throw AssertionError si #test vaut 0.
  * @{
- ******************************************************************************/
-// clang-format on
+ */
 
 /**
- * @enum SccrollGroupLogic
  * @since 0.1.0
- * @brief Résultats de logique booléenne attendus sur un groupe de
- * tests.
- *
- * Les mots clés agissent comme des drapeaux définissant le résultat
- * attendu d'un groupe de tests, décrit dans le tableau suivant
- * (@c success pour succès, @c failure pour échec, les en-têtes
- * décrivent le nombre de tests réussis @c n):
- *
- * |         | 0          | 1          | 2 <= n < all | tous       |
- * |---------+------------+------------+--------------+------------|
- * | @c NONE | @c success | @c failure | @c failure   | @c failure |
- * | @c XOR  | ^          | ^          | ^            | @c success |
- * | @c ALL  | @c failure | ^          | ^            | ^          |
- * | @c MANY | ^          | ^          | @c success   | ^          |
- * | @c ANY  | ^          | @c success | ^            | ^          |
- * | @c SOME | ^          | ^          | ^            | @c failure |
- * | @c MULT | ^          | @c failure | ^            | ^          |
- * | @c ONE  | ^          | @c success | @c failure   | ^          |
  */
-typedef enum SccrollGroupLogic {
-    NONE = 1,          /**< Tous les tests sont faux. */
-    ONE  = 2,          /**< Un seul test est vrai. */
-    MULT = 4,          /**< Au moins deux tests sont vrais, mais pas tous. */
-    ALL  = 8,          /**< Tous les tests sont vrais. */
-    MANY = MULT | ALL, /**< Au moins deux tests sont vrais. */
-    ANY  = ONE | MANY, /**< Au moins un test est vrai. */
-    SOME = ONE | MULT, /**< Au moins un test est vrai, mais pas tous. */
-    XOR  = NONE | ALL, /**< Tous les tests sont soit vrais soit faux. */
-} SccrollGroupLogic;
+void sccroll_assert(int test, const char* restrict fmt, ...)
+    __attribute__((format(printf, 2, 3)));
 
 /**
- * @def SCCROLL_SENTRY
+ * @def assertMsg
  * @since 0.1.0
- * @brief Valeur sentinelle des fonctions à nombre d'arguments
- * variable.
- *
- * Donne une valeur sentinelle utilisable par les fonctions à nombre
- * d'arguments variable.
+ * Cette macro est un alias simplifié de sccroll_assert().
  */
-#define SCCROLL_SENTRY -1
-
-/**
- * @{
- * @since 0.1.0
- * @brief Vérifie si le groupe de tests donnés répondent au critère
- * SccrollGroupLogic attendu.
- *
- * @attention Le dernier argument sentinelle doit être la macro
- * #SCCROLL_SENTRY (qui peut être redéfinie au besoin). Les macros
- * @c assert* de ce groupe fournissent directement la valeur à la
- * fonction.
- *
- * @throw AssertionError si l'ensemble des tests ne correspondent pas
- * à la logique attendue.
- * @param logic Drapeau type SccrollGroupLogic donnant les critères
- * attendus pour l'ensemble des tests.
- * @param ... L'ensemble des tests à analyser, qui doivent tous
- * renvoyer 0 (échec) ou une valeur positive (réussite).
- */
-void sccroll_assertGroup(SccrollGroupLogic logic, ...);
-#define assertGroup(logic, ...) sccroll_assertGroup(logic, __VA_ARGS__, SCCROLL_SENTRY)
-#define assertNone(...) assertGroup(NONE, __VA_ARGS__)
-#define assertOne(...)  assertGroup(ONE, __VA_ARGS__)
-#define assertMult(...) assertGroup(MULT, __VA_ARGS__)
-#define assertAll(...)  assertGroup(ALL, __VA_ARGS__)
-#define assertMany(...) assertGroup(MANY, __VA_ARGS__)
-#define assertAny(...)  assertGroup(ANY, __VA_ARGS__)
-#define assertSome(...) assertGroup(SOME, __VA_ARGS__)
-#define assertXor(...)  assertGroup(XOR, __VA_ARGS__)
+#define assertMsg sccroll_assert
 /** @} */
 
-// clang-format off
-
-/******************************************************************************
- * @}
- *
- * @addtogroup AssertSingle Alias clarifiant les assertions simples.
- *
+/**
+ * @name Assertion
+ * @brief Si l'expression #expr est fausse, lève une erreur
+ * d'assertion, affiche un message d'erreur et termine le programme.
+ * @param expr Une expression à évaluer.
+ * @throw AssertionError si #expr est fausse.
+ */
+
+#ifndef _ASSERT_H
+    /**
+     * @def assert
+     * @since 0.1.0
+     *
+     * Cette macro est une alternative à la macro @c assert de la
+     * librairie standard.
+     *
+     * @attention Cette macro n'est pas chargée si le fichier header
+     * @c assert.h est inclus dans un fichier de tests. De plus, au
+     * contraire de celle de la librairie standard, cette macro-ci n'est
+     * pas sensible à la définition de la macro #NDEBUG.
+     */
+    #define assert(expr)             \
+        sccroll_assert((bool)(expr), \
+            SCCASSERTFMT, __FILE__, __LINE__, __FUNCTION__, #expr)
+#endif // _ASSERT_H
+
+/**
+ * @def assertTrue
+ * @since 0.1.0
+ * Alias de assert pour plus de clarté.
+ */
+#define assertTrue assert
+/** @} */
+
+/**
+ * @name AssertFalse
+ * @brief Assertion vérifiant que l'expression #expr est fausse.
+ * @param expr Une expression à évaluer.
+ * @throw AssertionError si l'expression #expr est vraie.
  * @{
- ******************************************************************************/
-// clang-format on
+ */
 
-#define assertTrue(test)  assert(test)
-#define assertFalse(test) assertTrue(!(test))
-#define assertNull        assertFalse
+/**
+ * @def assertFalse
+ * @since 0.1.0
+ */
+#define assertFalse(expr) assertTrue(!(expr))
 
-#define assertMsg(expr, fmt, ...)                                       \
-    {                                                                   \
-        char message[BUFSIZ] = { 0 };                                   \
-        sprintf(message, #expr " (" fmt ")", ##__VA_ARGS__);             \
-        ((expr)                                                         \
-         ? __ASSERT_VOID_CAST(0)                                        \
-         : __assert_fail(message, __FILE__, __LINE__, __ASSERT_FUNCTION)); \
-    }
+/**
+ * @def assertNot
+ * @since 0.1.0
+ * Alias de #assertFalse.
+ */
+#define assertNot assertFalse
+
+/**
+ * @def assertNull
+ * @since 0.1.0
+ * Alias de #assertFalse.
+ */
+#define assertNull assertFalse
+/** @} */
+
+/**
+ * @name AssertPointers
+ * @brief Lève une erreur d'assertion si la comparaison des pointeurs
+ * #a et #b est fausse.
+ * @param a,b Deux pointeurs à comparer.
+ * @throw AssertionError si la comparaison est fausse.
+ * @{
+ */
+
+/**
+ * @def assertEql
+ * @since 0.1.0
+ * Vérifie que @verbatim a == b @endverbatim.
+ */
+#define assertEql(a, b) assert(a == b)
+
+/**
+ * @brief assertNotEql
+ * @since 0.1.0
+ * Vérifie que @verbatim a != b @endverbatim.
+ */
+#define assertNotEql(a, b) assert(a != b)
+/** @} */
+
+/**
+ * @name AssertComp
+ * @brief Assertion vérifiant que la comparaison des données des deux
+ * variables indiquée est vraie.
+ * @attention Au contraire de #assertEql, ce sont les données de #a et
+ * #b qui sont comparées, et non les pointeurs.
+ * @param a,b Pointeurs des variables à comparer.
+ * @param cmp Fonction de comparaison prenant au moins les deux
+ * pointeurs en arguments et renvoyant un nombre négatif, nul ou
+ * positif selon que, respectivement, @verbatim a < b @endverbatim,
+ * @verbatim a == b @endverbatim ou @verbatim a > b @endverbatim. Le
+ * modèle est celui des fonction de type #comparison_fn_t (utilisé par
+ * qsort()).
+ * @param ... Arguments supplémentaires optionnels pour #cmp qui lui
+ * sont passés tels quels.
+ * @throw AssertionError si la comparaison est fausse.
+ */
+
+/**
+ * @def assertCmp
+ * @since 0.1.0
+ * @param sign Signe de comparaison des variables parmi
+ * @verbatim < <= == => > != @enverbatim; la comparaison est toujours
+ * dans le sens @verbatim a sign b @enverbatim.
+ */
+#define assertCmp(a, sign, b, cmp, ...) assert(cmp(a, b, ##__VA_ARGS__) sign 0)
+
+/**
+ * @def assertEqual
+ * @since 0.1.0
+ *
+ * Vérifie que les données de #a et #b sont identiques.
+ */
+#define assertEqual(a, b, cmp, ...) assertCmp(a, ==, b, cmp, ##__VA_ARGS__)
+
+/**
+ * @def assertNotEqual
+ * @since 0.1.0
+ *
+ * Vérifie que les données de #a et #b sont différentes.
+ */
+#define assertNotEqual(a, b, cmp, ...) assertCmp(a, !=, b, cmp, ##__VA_ARGS__)
+
+/**
+ * @def assertSmaller
+ * @since 0.1.0
+ *
+ * Vérifie que les données de #a sont toutes plus petites que delles
+ * de #b.
+ */
+#define assertSmaller(a, b, cmp, ...) assertCmp(a, <, b, cmp, ##__VA_ARGS__)
+
+/**
+ * @def assertGreater
+ * @since 0.1.0
+ *
+ * Vérifie que les données de #a sont toutes plus grandes que celles
+ * de #b.
+ */
+#define assertGreater(a, b, cmp, ...) assertCmp(a, >, b, cmp, ##__VA_ARGS__)
+
+/**
+ * @def assertSmallerOrEqual
+ * @since 0.1.0
+ *
+ * Vérifie que les données de #a sont toutes plus petites que ou
+ * égales à celles de #b.
+ */
+#define assertSmallerOrEqual(a, b, cmp, ...) assertCmp(a, <=, b, cmp, ##__VA_ARGS__)
+
+/**
+ * @def assertGreaterOrEqual
+ * @since 0.1.0
+ *
+ * Vérifie que les données de #a sont toutes plus grandes que ou
+ * égales à celles de #b.
+ */
+#define assertGreaterOrEqual(a, b, cmp, ...) assertCmp(a, >=, b, cmp, ##__VA_ARGS__)
+/** @} */
 
 // clang-format off
 

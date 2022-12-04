@@ -18,6 +18,10 @@
  * @{
  */
 
+// On s'assure d'utiliser l'assert original et non pas celui défini
+// par la librairie.
+#include <assert.h>
+
 #include "sccroll.h"
 
 /**

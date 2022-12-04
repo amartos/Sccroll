@@ -320,30 +320,15 @@ static int sccroll_review(void)
  ******************************************************************************/
 // clang-format on
 
-
-void sccroll_assertGroup(SccrollGroupLogic logic, ...)
+void sccroll_assert(int test, const char* restrict fmt, ...)
 {
-    int value = 0;
-    int success = 0;
-    int failed = 0;
-    va_list tests;
-    va_start(tests, logic);
-    while ((value = va_arg(tests, int)) >= 0) value ? ++success : ++failed;
-    va_end(tests);
-
-    int total = success + failed;
-    if (!total) return;
-
-    switch (logic) {
-    case NONE: assertMsg(!success, LOGICFMT, success, total, "none"); break;
-    case ONE: assertMsg(success == 1, LOGICFMT, success, total, "only 1"); break;
-    case MULT: assertMsg(success > 1 && failed, LOGICFMT, success, total, "1 < success < total"); break;
-    case ALL: assertMsg(!failed, LOGICFMT, success, total, "all"); break;
-    case MANY: assertMsg(success > 1, LOGICFMT, success, total, "more than 1"); break;
-    case ANY: assertMsg(success, LOGICFMT, success, total, "more than 0"); break;
-    case SOME: assertMsg(success && failed, LOGICFMT, success, total, "0 < success < total"); break;
-    case XOR: assertMsg(success ^ failed, LOGICFMT, success, total, "all xor none"); break;
-    default: break;
+    if (!test) {
+        va_list args;
+        va_start(args, fmt);
+        vfprintf(stderr, fmt, args);
+        fprintf(stderr, "\n");
+        va_end(args);
+        abort();
     }
 }
 

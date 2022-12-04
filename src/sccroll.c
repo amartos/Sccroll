@@ -57,16 +57,49 @@
 #define sccroll_err(expr, op, name) if ((expr)) err(EXIT_FAILURE, "%s failed for %s", op, name);
 
 /**
+ * @enum SccrollConstant
  * @since 0.1.0
- * @enum SccrollConstants
- * Constante numériques internes.
+ * @brief Constantes numériques internes.
  */
-enum SccrollConstants {
-    PIPEREAD    = 0,            /**< Index du côté lecture d'un pipefd. */
-    PIPEWRTE    = PIPEREAD + 1, /**< Index du côté écriture d'un pipefd. */
-    REPORTTOTAL = 0,            /**< Index du rapport pour le nombre total de tests exécutés. */
-    REPORTFAIL  = 1,            /**< Index du rapport pour le nombre de tests en échec. */
-    MAXLINE     = 80,           /**< Longueur maximale des lignes d'un rapport. */
+typedef enum SccrollConstant {
+    /**
+     * @ingroup Report
+     * @name ReportConstants
+     * @since 0.1.0
+     * @brief Constantes numériques utilisée pour la génération de
+     * rapports.
+     */
+    REPORTTOTAL = 0, /**< Index du nombre de tests totaux dans la
+                      * table des rapport. */
+    REPORTFAIL = 1,  /**< Index du nombre de tests échoués dans la
+                      * table des rapports. */
+    MAXLINE = 80,    /**< Longueur maximale des lignes d'un rapport. */
+    /** @} */
+    /**
+     * @ingroup Execution
+     * @name Pipes
+     * @since 0.1.0
+     * @brief Index et drapeaux de gestion des pipes.
+     */
+    PIPEREAD = 0, /**< Index du côté lecture d'un pipe. */
+    PIPEWRTE = 1, /**< Index du côté écriture d'un pipe. */
+    PIPEOPEN,     /**< Drapeau d'ouverture d'un pipe. */
+    PIPECLOSE,    /**< Drapeau de fermeture d'un côté d'un pipe. */
+    PIPEDUP,      /**< Drapeau de duplication d'un pipe. */
+    PIPEMAX,      /**< Index maximal des drapeaux d'opérations de pipe. */
+    /** @} */
+} SccrollConstant;
+
+/**
+ * @ingroup Report
+ * @var PIPEDESC
+ * @since 0.1.0
+ * @brief Description des drapeaux de pipes de SccrollConstant.
+ */
+const char* const PIPEDESC[PIPEMAX] = {
+    "read pipe", "write pipe",
+    "open pipe", "close pipe",
+    "duplicate pipe"
 };
 
 #define REPORTFMT "[ %-5s ] %s: %s"
@@ -185,7 +218,35 @@ static SccrollNode* sccroll_pop(void);
 static void sccroll_fork(SccrollTest* restrict current, int fd) __attribute__((nonnull (1)));
 
 static bool sccroll_check(SccrollTest* restrict test) __attribute__((nonnull));
-static char* sccroll_read_pipe(int pipefd[2], const char* name) __attribute__((nonnull (2)));
+
+/**
+ * @since 0.1.0
+ * @brief Gère l'ouverture, la duplication, l'écriture, la lecture et
+ * la fermeture de pipes.
+ *
+ * @attention Cette fonction ferme le pipe d'écriture après écriture,
+ * et les deux côtés du pipe à la lecture.
+ *
+ * @param type Une valeur SccrollConstant:
+ * - #PIPEOPEN  pour l'ouverture;
+ * - #PIPECLOSE pour la fermeture d'un côté du pipe;
+ * - #PIPEWRTE  pour l'écriture et fermeture du côté écriture;
+ * - #PIPEREAD  pour la lecture et fermeture complète du pipe;
+ * - #PIPEDUP   pour dupliquer le côté écriture du pipe sur un
+ *              descripteur de fichier.
+ * @param name Le nom du test courant.
+ * @param pipefd Le pipe du test courant à modifier.
+ * @param ... Arguments supplémentaires dépendant de la valeur de
+ * #type:
+ * - #PIPEOPEN:  arguments supplémentaires ignorés;
+ * - #PIPECLOSE: #PIPEREAD <b>ou</b> #PIPEWRTE selon le côté à fermer;
+ * - #PIPEWRTE:  la chaîne de #SCCMAX caractères à écrire dans le pipe;
+ * - #PIPEREAD:  une chaîne de #SCCMAX caractères comme destination de
+ *               la lecture du pipe;
+ * - #PIPEDUP:   le descripteur de fichier où dupliquer le pipe.
+ */
+static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
+
 
 static int sccroll_review(void);
 
@@ -218,7 +279,7 @@ static SccrollTest* sccroll_gentest(const char* restrict name)
 {
     SccrollTest* test = calloc(1, sizeof(SccrollTest));
     sccroll_err(!test, "SccrollTest alloc", name);
-    sccroll_err(pipe(test->pipefd) < 0, "pipe open", name);
+    sccroll_pipes(PIPEOPEN, name, test->pipefd);
     return test;
 }
 
@@ -275,9 +336,9 @@ static void sccroll_fork(SccrollTest* restrict current, int fd)
     pid_t pid = fork();
     sccroll_err(pid < 0, "fork", current->name);
     if (pid == 0) {
-        sccroll_err(dup2(current->pipefd[PIPEWRTE], fd) < 0, "stderr dup", current->name);
+        sccroll_pipes(PIPEDUP, current->name, current->pipefd, fd);
         current->test();
-        sccroll_err(close(current->pipefd[PIPEWRTE]) < 0, "pipe close in fork", current->name);
+        sccroll_pipes(PIPECLOSE, current->name, current->pipefd, PIPEWRTE);
         exit(EXIT_SUCCESS);
     }
 
@@ -289,22 +350,40 @@ static void sccroll_fork(SccrollTest* restrict current, int fd)
 static bool sccroll_check(SccrollTest* restrict test)
 {
     if (test->status) {
-        char* output = sccroll_read_pipe(test->pipefd, test->name);
+        char output[BUFSIZ] = { 0 };
+        sccroll_pipes(PIPEREAD, test->name, test->pipefd, output);
         ++report[REPORTFAIL];
         fprintf(stderr, REPORTFMT, "FAIL", test->name, output);
-        free(output);
         return false;
     }
     return true;
 }
 
-static char* sccroll_read_pipe(int pipefd[2], const char* name)
+static void sccroll_pipes(SccrollConstant type, const char* name, int pipefd[2], ...)
 {
-    char buffer[BUFSIZ] = { 0 };
-    sccroll_err(close(pipefd[PIPEWRTE]) < 0, "pipe (write) close", name);
-    sccroll_err(read(pipefd[PIPEREAD], buffer, BUFSIZ) < 0, "report read", name);
-    sccroll_err(close(pipefd[PIPEREAD]) < 0, "pipe (read) close", name);
-    return strdup(buffer);
+    int status = 0, index = -1;
+    va_list args;
+    va_start(args, pipefd);
+    switch (type) {
+    case PIPEOPEN: status = pipe(pipefd); break;
+    case PIPEDUP: status = dup2(pipefd[PIPEWRTE], va_arg(args, int)); break;
+    case PIPEREAD:
+        sccroll_pipes(PIPECLOSE, name, pipefd, PIPEWRTE);
+        status = read(pipefd[PIPEREAD], va_arg(args, char*), BUFSIZ);
+        if (status >= 0) sccroll_pipes(PIPECLOSE, name, pipefd, PIPEREAD);
+        break;
+    case PIPEWRTE:
+        status = write(pipefd[PIPEWRTE], va_arg(args, char*), BUFSIZ);
+        if (status >= 0) sccroll_pipes(PIPECLOSE, name, pipefd, PIPEWRTE);
+        break;
+    case PIPECLOSE:
+        index  = index < 0 ? va_arg(args, int) : index;
+        status = close(pipefd[index]);
+        break;
+    default: break;
+    }
+    va_end(args);
+    sccroll_err(status < 0, PIPEDESC[type], name);
 }
 
 static int sccroll_review(void)
@@ -352,14 +431,14 @@ void sccroll_assertExe(const SccrollProcess* restrict proc)
 
     errno = 0;
     sccroll_fork(test, fd);
-    char* output = sccroll_read_pipe(test->pipefd, proc->name);
+    char output[BUFSIZ] = { 0 };
+    sccroll_pipes(PIPEREAD, proc->name, test->pipefd, output);
     char* expected = proc->output.str ? proc->output.str : "";
 
     assertMsg(errno == proc->errcode, EXITFMT, "errno", proc->errcode, errno);
     assertMsg(test->status == proc->exitcode, EXITFMT, "status", proc->exitcode, test->status);
     assertMsg(!strcmp(expected, output), "output on fd %i: expected '%s', got '%s'", fd, expected, output);
 
-    free(output);
     free(test);
 }
 

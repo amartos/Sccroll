@@ -154,7 +154,7 @@ void sccroll_after(void);
  * @param blob Un espace mémoire à remplir.
  * @param size Le nombre d'octets à remplir.
  */
-void sccroll_monkey(void* blob, size_t size) __attribute__((nonnull (1)));
+#define sccroll_monkey arc4random_buf
 
 // clang-format off
 

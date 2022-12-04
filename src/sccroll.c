@@ -40,6 +40,23 @@
     extern __typeof__(name) aliasname __attribute__((weak, alias(#name)))
 
 /**
+ * @def sccroll_err
+ * @since 0.1.0
+ * @brief Si #expr est vrai, affiche un message d'erreur et termine le
+ * programme.
+ *
+ * Cette macro est utilisée pour les vérification de fonctions
+ * modifiant #errno en cas d'erreur.
+ * @param expr Une expression booléenne valant @c true pour une
+ * erreur, sinon valant @c false.
+ * @param op L'opération effectuée ayant échoué.
+ * @param name Un nom d'étape pour une description plus fine de
+ * l'erreur.
+ * @exit EXIT_FAILURE si #expr est vrai.
+ */
+#define sccroll_err(expr, op, name) if ((expr)) err(EXIT_FAILURE, "%s failed for %s", op, name);
+
+/**
  * @since 0.1.0
  * @enum SccrollConstants
  * Constante numériques internes.
@@ -200,15 +217,15 @@ void sccroll_register(SccrollTestFunc func, const char* name)
 static SccrollTest* sccroll_gentest(const char* restrict name)
 {
     SccrollTest* test = calloc(1, sizeof(SccrollTest));
-    if (!test) err(EXIT_FAILURE, "could not generate SccrollTest for %s", name);
-    if (pipe(test->pipefd) < 0) err(EXIT_FAILURE, "could not generate pipe for %s", name);
+    sccroll_err(!test, "SccrollTest alloc", name);
+    sccroll_err(pipe(test->pipefd) < 0, "pipe open", name);
     return test;
 }
 
 static void sccroll_push(void* test)
 {
     SccrollNode* node = calloc(1, sizeof(SccrollNode));
-    if (!node) err(EXIT_FAILURE, "could not push to SccrollList");
+    sccroll_err(!node, "test registration", ((SccrollTest*)test)->name);
 
     node->car = test;
     node->cdr = tests;
@@ -256,14 +273,11 @@ static SccrollNode* sccroll_pop(void)
 static void sccroll_fork(SccrollTest* restrict current, int fd)
 {
     pid_t pid = fork();
-    if (pid < 0)
-        err(EXIT_FAILURE, "fork failed for %s", current->name);
-    else if (pid == 0) {
-        if (dup2(current->pipefd[PIPEWRTE], fd) < 0)
-            err(EXIT_FAILURE, "stderr dup failed for %s", current->name);
+    sccroll_err(pid < 0, "fork", current->name);
+    if (pid == 0) {
+        sccroll_err(dup2(current->pipefd[PIPEWRTE], fd) < 0, "stderr dup", current->name);
         current->test();
-        if (close(current->pipefd[PIPEWRTE]) < 0)
-            err(EXIT_FAILURE, "pipe close failed in fork for %s", current->name);
+        sccroll_err(close(current->pipefd[PIPEWRTE]) < 0, "pipe close in fork", current->name);
         exit(EXIT_SUCCESS);
     }
 
@@ -287,12 +301,9 @@ static bool sccroll_check(SccrollTest* restrict test)
 static char* sccroll_read_pipe(int pipefd[2], const char* name)
 {
     char buffer[BUFSIZ] = { 0 };
-    if (close(pipefd[PIPEWRTE]) < 0)
-        err(EXIT_FAILURE, "could not close pipe write for %s", name);
-    if (read(pipefd[PIPEREAD], buffer, BUFSIZ) < 0)
-        err(EXIT_FAILURE, "report read failed for %s", name);
-    if (close(pipefd[PIPEREAD]) < 0)
-        err(EXIT_FAILURE, "could not close pipe read for %s", name);
+    sccroll_err(close(pipefd[PIPEWRTE]) < 0, "pipe (write) close", name);
+    sccroll_err(read(pipefd[PIPEREAD], buffer, BUFSIZ) < 0, "report read", name);
+    sccroll_err(close(pipefd[PIPEREAD]) < 0, "pipe (read) close", name);
     return strdup(buffer);
 }
 

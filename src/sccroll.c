@@ -25,19 +25,42 @@
 // clang-format on
 
 /**
+ * @name Alias
+ * @brief Macros générant des alias de fonctions.
+ * @param name Nom de la fonction d'origine.
+ * @param aliasname Nom de l'alias.
+ * @{
+ */
+
+/**
+ * @def attr_alias
+ * @since 0.1.0
+ *
+ * Macro créant un alias, et qui permet de fournir à l'alias d'autres
+ * attributs. C'est une quasi-copie de la macro @c weak_alias de la
+ * librairie C de GNU.
+ *
+ * @param ... Attributs supplémentaires pour l'alias.
+ */
+#define attr_alias(name, aliasname, ...) \
+    extern __typeof__(name) aliasname __attribute__((alias(#name), ##__VA_ARGS__))
+
+/**
+ * @def strong_alias
+ * @since 0.1.0
+ *
+ * Définit un alias fort #aliasname de la fonction #name.
+ */
+#define strong_alias(name, aliasname) attr_alias(name, aliasname)
+
+/**
  * @def weak_alias
  * @since 0.1.0
- * @brief Créé un alias faible.
  *
- * Définit un alias faible de la fonction donnée. Cette macro est une
- * quasi-copie de la macro @c weak_alias de la librairie C de GNU.
- * @see https://gcc.gnu.org/onlinedocs/gcc-12.2.0/gcc/Common-Function-Attributes.html
- *
- * @param name La fonction modèle.
- * @param aliasname Le nom de l'alias.
+ * Définit un alias faible #aliasname de la fonction #name.
  */
-#define weak_alias(name, aliasname) \
-    extern __typeof__(name) aliasname __attribute__((weak, alias(#name)))
+#define weak_alias(name, aliasname) attr_alias(name, aliasname, weak)
+/** @} */
 
 /**
  * @def sccroll_err
@@ -165,11 +188,11 @@ typedef SccrollNode* SccrollList;
 
 /**
  * @since 0.1.0
- * @brief Créé un nouveau noeud de tête pour la liste de tests.
- * @param car Le car du nouveau noeud de tête.
- * @return Le pointeur de la tête de liste.
+ * @brief Enregistre le #test dans la liste de tests.
+ * @param test Un test à exécuter.
+ * @param name le nom du test.
  */
-static void sccroll_push(void* test);
+static void sccroll_push(SccrollTestFunc test, const char* name) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
@@ -267,12 +290,19 @@ weak_alias(sccroll_void, sccroll_clean);
 weak_alias(sccroll_void, sccroll_before);
 weak_alias(sccroll_void, sccroll_after);
 
-void sccroll_register(SccrollTestFunc func, const char* name)
+strong_alias(sccroll_push, sccroll_register);
+static void sccroll_push(SccrollTestFunc test, const char* name)
 {
-    SccrollTest* test = sccroll_gentest(name);
-    test->test = func;
-    test->name = name;
-    sccroll_push(test);
+    SccrollNode* node = calloc(1, sizeof(SccrollNode));
+    sccroll_err(!node, "test registration", name);
+
+    SccrollTest* nexttest = sccroll_gentest(name);
+    nexttest->test = test;
+    nexttest->name = name;
+
+    node->car = nexttest;
+    node->cdr = tests;
+    tests = node;
 }
 
 static SccrollTest* sccroll_gentest(const char* restrict name)
@@ -281,16 +311,6 @@ static SccrollTest* sccroll_gentest(const char* restrict name)
     sccroll_err(!test, "SccrollTest alloc", name);
     sccroll_pipes(PIPEOPEN, name, test->pipefd);
     return test;
-}
-
-static void sccroll_push(void* test)
-{
-    SccrollNode* node = calloc(1, sizeof(SccrollNode));
-    sccroll_err(!node, "test registration", ((SccrollTest*)test)->name);
-
-    node->car = test;
-    node->cdr = tests;
-    tests = node;
 }
 
 int sccroll_run(void)

@@ -3,7 +3,7 @@
 
 !.gitignore
 !.clang-format
-!.jenkins
+!Jenkinsfile
 !compile_flags.txt
 !Makefile
 !include/**

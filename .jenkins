@@ -21,16 +21,9 @@ pipeline {
                     reportFiles: "coverage.html",
                     reportName: "HTML Report",
                 ])
-                cobertura coberturaReportFile: "build/reports/coverage.xml",
-                    onlyStable: false,
-                    methodCoverageTargets: "98, 0, 75",
-                    lineCoverageTargets: "98, 0, 75",
-                    conditionalCoverageTargets: "98, 0, 75",
-                    enableNewApi: true,
-                    maxNumberOfBuilds: 10,
-                    failNoReports: true,
-                    failUnhealthy: true,
-                    failUnstable: true
+                publishCoverage adapters: [
+                    cobertura("build/reports/coverage.xml")
+                ]
             }
         }
         stage ("Build") {

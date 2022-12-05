@@ -130,9 +130,9 @@ unit-tests: init $(PROJECT) common.o $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(TMP)/$(PROJECT)_mocks_tests.log)
 	@$(call assertLogHas,"mocks","printf not mocked: OK",$(TMP)/$(PROJECT)_mocks_tests.log)
 	@$(call assertLogHas,"mocks","Assertion",$(TMP)/$(PROJECT)_mocks_tests.log,!)
-	@$(call assertLogHas,"asserts","this test must fail successfully",$(TMP)/$(PROJECT)_asserts_single_tests.log);
-	@$(call assertLogHas,"asserts","l.",$(TMP)/$(PROJECT)_asserts_single_tests.log);
-	@$(call assertLogHas,"asserts","invisible line",$(TMP)/$(PROJECT)_asserts_single_tests.log, !);
+	@$(call assertLogHas,"asserts","this test must fail successfully",$(TMP)/$(PROJECT)_asserts_tests.log);
+	@$(call assertLogHas,"asserts","l.",$(TMP)/$(PROJECT)_asserts_tests.log);
+	@$(call assertLogHas,"asserts","invisible line",$(TMP)/$(PROJECT)_asserts_tests.log, !);
 	@rm -r $(TMP)
 	@$(PASS) $@
 

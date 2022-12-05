@@ -224,15 +224,26 @@ int main(void)
 
     /** Enregistrement manuel **/
 
-    sccroll_register(test_register_manually_fail, failers[1]);
-    sccroll_register(test_register_manually_empty, "My name of test (empty)");
+    SccrollEffects manual = {
+        .wrapper = test_register_manually_fail,
+        .name = failers[1],
+    };
+    sccroll_register(&manual);
+
+    manual.wrapper = test_register_manually_empty;
+    manual.name = "My name of test (empty)";
+    sccroll_register(&manual);
 
     // Test pour vérifier qu'un test définit avec SCCROLL_TEST peut
     // être enregistré plusieurs fois avec le même nom ou des noms
     // différents.
-    sccroll_register(test_register_fail, failers[0]); // même nom que l'original
-    sccroll_register(test_register_fail, failers[2]);
-    sccroll_register(test_register_fail, failers[3]);
+    manual.wrapper = test_register_fail;
+    manual.name = failers[0]; // même nom que l'original
+    sccroll_register(&manual);
+    manual.name = failers[2];
+    sccroll_register(&manual);
+    manual.name = failers[3];
+    sccroll_register(&manual);
 
     /** Exécution des tests **/
 
@@ -299,26 +310,36 @@ int main(void)
     // noms de tests prédictibles ou des mots clés.
 
     // On vérifie que tous les tests en échec ont bien émis un message d'erreur.
-    assert(strcount(output, "[ FAIL") == FAILERS);
+    assert(strcount(output, "FAIL") == FAILERS+1);
 
     // On vérifie quels tests apparaissent dans les rapports.
-    assert(strcount(output, "] test_register_fail") == 2);
-    for (i = 0; i < BUFSIZ && failers[i]; ++i) assert(strstr(output, failers[i]));
+    // Multiplication *3 pour tenir compte des messages de [diff].
+    memset(buffer, 0, strlen(buffer));
+    sprintf(buffer, "] %s", failers[0]);
+    assert(strcount(output, buffer) == 3*2);
+    for (i = 1; i < BUFSIZ && failers[i]; ++i) {
+        memset(buffer, 0, strlen(buffer));
+        sprintf(buffer, "] %s", failers[i]);
+        assert(strcount(output, buffer) == 3);
+    }
 
      // on vérifie que le rapport final est bien émis et contient les
      // infos attendues.
-    strptr = strstr(output, "STATUS");
+    char sep[90] = { 0 };
+    memset(sep, '-', 80);
+    strptr = strstr(output, sep);
     assert(strptr);
     memset(buffer, 0, sizeof(buffer));
     sprintf(buffer,
-            "FAIL: %.2f%% [%i/%i] tests passed",
+            "%s\n\n[ \e[0;1;31mFAIL\e[0m ] success rate: %.2f%% [%i/%i]\n",
+            sep,
             100.0*((TOTAL-FAILERS)/(float) TOTAL),
             TOTAL-FAILERS, TOTAL);
     assert(strstr(strptr, buffer));
 
     // Pour vérifier que le rapport est bien sur la dernière ligne, on
     // vérifie le nombre de saut de lignes restant.
-    assert(strcount(strptr, "\n") == 1); // dernière ligne
+    assert(strlen(strptr+strlen(buffer)) == 0);
 
     /** Vérification des effets secondaires sur le parent **/
 

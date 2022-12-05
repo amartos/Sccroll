@@ -71,8 +71,14 @@ COVHTML :=	--html-details $(REPORTS)/coverage.html \
 # Fonctions d'aide
 ###############################################################################
 
+# Cherche une chaîne dans un fichier et lève une erreur si elle n'est
+# pas trouvée.
+# $(1) Le nom du test.
+# $(2) La chaîne recherchée.
+# $(3) Le nom du fichier.
+# $(4) Des commandes à effectuer avant la recherche.
 define assertLogHas =
-$(3) grep -q $(1) $(2) || $(ERROR) "Not found in log:" $(1)
+$(4) grep -q $(2) $(3) || $(ERROR) $(1) "Not found in log:" $(2)
 endef
 
 
@@ -111,17 +117,19 @@ $(PROJECT): init lib$(PROJECT).so
 unit-tests: CFLAGS += --coverage -g -O0
 unit-tests: LDLIBS += --coverage -lgcov
 unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
-unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
-	@$(call assertLogHas,">>>>>> First line of tests.",,head -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,">>>>>> Last line of tests.",,tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(TMP)/$(PROJECT)_main_tests.log)
-	@$(call assertLogHas,"calloc mocked.",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"free mocked",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"sccroll_run mocked: nothing executed",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"sccroll_run mocked: flag seen.",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"printf not mocked: OK",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"Assertion",$(TMP)/$(PROJECT)_mocks_tests.log,!)
-	@$(call assertLogHas,"Assertion \`123 > 456 (foo 1 -36)' failed",$(TMP)/$(PROJECT)_asserts_single_tests.log);
+unit-tests: init $(PROJECT) common.o $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
+	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(TMP)/$(PROJECT)_main_tests.log)
+	@$(call assertLogHas,"mocks", "calloc mocked.",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks", "free mocked",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","sccroll_run mocked: nothing executed",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","printf not mocked: OK",$(TMP)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","Assertion",$(TMP)/$(PROJECT)_mocks_tests.log,!)
+	@$(call assertLogHas,"asserts","this test must fail successfully",$(TMP)/$(PROJECT)_asserts_single_tests.log);
+	@$(call assertLogHas,"asserts","l.",$(TMP)/$(PROJECT)_asserts_single_tests.log);
+	@$(call assertLogHas,"asserts","invisible line",$(TMP)/$(PROJECT)_asserts_single_tests.log, !);
 	@rm -r $(TMP)
 	@$(PASS) $@
 

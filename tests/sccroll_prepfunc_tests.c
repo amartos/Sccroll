@@ -63,10 +63,14 @@ void test_prepfuncs(void)
 
 int main(void)
 {
+    SccrollEffects test = {
+        .name = "test_prepfuncs",
+        .wrapper = test_prepfuncs,
+    };
+
     // 10 to MAX_PREP tests at random
     int repeats = 10 + random() % MAX_PREP;
-    for (int i=0; i<repeats; ++i)
-        sccroll_register(test_prepfuncs, "test_prepfuncs");
+    for (int i=0; i<repeats; ++i) sccroll_register(&test);
 
     assert(!sccroll_run());
     assert(init == clean && init == 1);

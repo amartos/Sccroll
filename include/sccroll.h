@@ -55,6 +55,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <ctype.h>
 #include <search.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -81,11 +82,83 @@
 // clang-format on
 
 /**
- * @typedef SccrollTestFunc
+ * @typedef SccrollFunc
  * @since 0.1.0
  * @brief Prototype des fonctions de test unitaires.
  */
-typedef void (*SccrollTestFunc)(void);
+typedef void (*SccrollFunc)(void);
+
+/**
+ * @enum SccrollIndexes
+ * @since 0.1.0
+ * @brief Index des tables de SccrollEffects.
+ * @note #SCCMAX est généralement utilisé comme valeur d'index maximal
+ * dans la librairie.
+ * @attention Les index utilisables de SccrollEffects::std sont
+ * #STDOUT_FILENO et #STDERR_FILENO.
+ */
+typedef enum SccrollIndexes {
+    /**
+     * @name Codes
+     * @brief codes d'erreur de la fonction de test.
+     * @{ */
+    SCCERRNUM = 0, /**< Code errno. */
+    SCCSIGNAL = 1, /**< Code de signal. */
+    SCCSTATUS = 2, /**< Code de status/exit. */
+    SCCMAXSIG = 3, /**< Index maximal de SccrollEffects::codes. */
+    /** @} */
+    SCCMAXSTD = STDERR_FILENO + 1, /**< Index maximal de SccrollEffects::std. */
+    SCCMAX    = BUFSIZ,            /**< Index maximal de SccrollEffects::files. */
+} SccrollIndexes;
+
+/**
+ * @enum SccrollFlags
+ * @since 0.1.0
+ * @brief Drapeaux d'options pour un test.
+ */
+typedef enum SccrollFlags {
+    NOSTRP = 1, /**< Ne pas réduire les espaces autour des sorties standard.*/
+    NOFORK = 2, /**< Ne pas @c fork avant d'exécuter le test. */
+    NODIFF = 4, /**< Ne pas afficher les différences attendu/obtenu. */
+} SccrollFlags;
+
+/**
+ * @struct SccrollEffects
+ * @since 0.1.0
+ * @brief Gère les informations sur les effets secondaires de
+ * l'exécution d'une fonction.
+ *
+ * @parblock
+ * Cette structure est la structure principale de la librairie. Elle
+ * sert à passer au programme les informations sur les effets que l'on
+ * attend d'un test, qui échouera si l'un d'eux diffère en réalité.
+ *
+ * La structure est également versatile. Elle permet de tester une
+ * fonction "généraliste", contenant par exemple de multiples
+ * assertions, ou encore de tester les effets attendu d'une unique
+ * fonction appelée seule (et sans assertions) dans la fonction
+ * SccrollEffects::wrapper.
+ *
+ * À l'exception de SccrollEffects::files, toutes les valeurs de
+ * #expected sont vérifiées, même si elles sont nulles. Les chaînes de
+ * caractères NULL équivalent à une chaîne vide. De plus, la valeur de
+ * #errno est remise à 0 juste avant l'exécution du test.
+ *
+ * Pour SccrollEffects::files, seuls les fichiers ayant un
+ * SccrollEffects::files::path défini (non @c NULL ) sont testés.
+ * @endparblock
+ */
+typedef struct SccrollEffects {
+    struct {
+        const char* path; /**< Le chemin du fichier. */
+        char* content;    /**< Le contenu du fichier. */
+    } files[SCCMAX];      /**< Vérification du  contenu de fichiers. */
+    char* std[SCCMAXSTD]; /**< Vérification des outputs sur les sorties standard. */
+    int codes[SCCMAXSIG]; /**< Vérification des codes d'erreur, signal et status. */
+    int flags;            /**< Drapeaux d'options SccrollFlags. */
+    SccrollFunc wrapper;  /**< La fonction de test unitaire. */
+    const char* name;     /**< Nom descriptif du test. */
+} SccrollEffects;
 
 // clang-format off
 
@@ -169,69 +242,58 @@ void sccroll_after(void);
 
 /**
  * @since 0.1.0
- * @brief Inscrit une fonction de test unitaire pour exécution.
- *
- * Inscrit la fonction #func correspondant au test #name pour
- * exécution lors de l'appel de sccroll_run(). Les deux arguments ne
- * peuvent être @c NULL.
- *
+ * @brief Inscrit le test décrit par #expected pour exécution.
  * @attention Cette fonction n'a pas besoin d'être appelée par
  * l'utilisateur s'il définit les tests à l'aide de la macro
- * #SCCROLL_TEST.
- *
- * @param func Le pointeur de la fonction de test unitaire.
- * @param name Le nom du test à associer à la fonction.
+ * #SCCROLL_TEST. Un test défini par cette dernière et inscrit avec
+ * sccroll_register() sera exécuté deux fois.
+ * @param expected Les informations nécessaires pour l'exécution d'un
+ * test et comparaison des résultats.
  */
-void sccroll_register(SccrollTestFunc func, const char* name) __attribute__((nonnull));
+void sccroll_register(const SccrollEffects* restrict expected)
+    __attribute__((nonnull));
 
 /**
+ * @ingroup Definition
  * @def SCCROLL_TEST
  * @since 0.1.0
  * @brief Définit et enregistre un test pour exécution.
  *
  * @parblock
- * Créé et inscrit une fonction de test unitaire #name ayant
+ * Créé et inscrit une fonction de test unitaire #testname ayant
  * pour code la suite d'instructions située dans les accolades suivant
- * directement la macro, et l'inscrit pour exécution. Le nom du test
- * est identique à celui de la fonction.
+ * directement la macro (comme pour la définition d'une fonction), et
+ * l'inscrit pour exécution. Le nom du test est identique à celui de
+ * la fonction.
  *
- * L'exemple ci-dessous créé la fonction @c my_test_name() et l'appelle
- * lors de l'exécution sous le nom @c "my_test_name".
+ * Il est possible de fournir les valeurs attendues pour les
+ * différents membres de SccrollEffects (à l'exception de
+ * SccrollEffects::wrapper et SccrollEffects::name), comme lors d'une
+ * initialisation de la structure.
  *
- * @code{.c}
- * SCCROLL_TEST(my_test_name)
- * {
- *     assert(a() && b() && c());
- *     assert(d());
- *     assert(e());
- * }
- * @endcode
+ * Toute donnée attendue non fournie équivaut à une donnée attendue
+ * valant 0 (ou vide pour les chaînes de caractères).
  *
- * Si besoin, des attributs peuvent être ajoutés à la fonction. Ils
- * doivent toutefois être placés juste avant la macro et doivent
- * prendre en compte le fait que la fonction sera appelée quel que
- * soit l'attribut défini. Exemple:
- *
- * @code{.c}
- * __attribute__((warn ("message")))
- * SCCROLL_TEST(dummy)
- * {
- *     assert(true);
- * }
- * @endcode
+ * Exemples de définition de tests:
+ * @include tests/sccroll_template_tests.c
  * @enparblock
- * @see https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html
  *
- * @param name Le nom de la fonction du test unitaire, qui est aussi
- * le nom du test.
+ * @param testname Le nom du test unitaire.
+ * @param ... Les données SccrollEffects attendues (syntaxe d'une
+ * initialisation de la structure).
  */
-#define SCCROLL_TEST(name)                                          \
-    static void name(void);                                         \
-    __attribute__((constructor)) void sccroll_register_##name(void) \
-    {                                                               \
-        sccroll_register(name, #name);                              \
-    }                                                               \
-    static void name(void)
+#define SCCROLL_TEST(testname, ...)                                            \
+    static void testname(void);                                                \
+    __attribute__((constructor)) static void sccroll_register_##testname(void) \
+    {                                                                          \
+        const SccrollEffects expected = {                                      \
+            .wrapper = testname,                                               \
+            .name    = #testname,                                              \
+            ##__VA_ARGS__                                                      \
+        };                                                                     \
+        sccroll_register(&expected);                                           \
+    }                                                                          \
+    static void testname(void)
 
 // clang-format off
 
@@ -300,7 +362,7 @@ int sccroll_run(void);
  * @param s Le nom de la fonction.
  * @param s L'expression testée.
  */
-#define SCCASSERTFMT "(%s line %i) %s: Assertion `%s' failed."
+#define SCCASSERTFMT "%s (l. %i): Assertion `%s' failed."
 
 /**
  * @name AssertMsg
@@ -351,7 +413,7 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
      */
     #define assert(expr)             \
         sccroll_assert((bool)(expr), \
-            SCCASSERTFMT, __FILE__, __LINE__, __FUNCTION__, #expr)
+            SCCASSERTFMT, __FILE__, __LINE__, #expr)
 #endif // _ASSERT_H
 
 /**
@@ -500,124 +562,6 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
 /******************************************************************************
  * @}
  *
- * @addtogroup AssertProcess Assertions sur les effets secondaires de
- * l'exécution de fonctions.
- *
- * Cette section est surtout conçue pour tester les fonctions qui
- * peuvent quitter le programme, qui modifient la valeur de errno, ou
- * qui inscrivent des messages dans un fichier ou une sortie standard.
- *
- * @{
- ******************************************************************************/
-// clang-format on
-
-/**
- * @struct SccrollProcess
- * @since 0.1.0
- * @brief Gère les informations sur les effets secondaires de
- * l'exécution d'une fonction.
- */
-typedef struct SccrollProcess {
-    struct {
-        int fd;              /**< Descripteur de fichier altéré par la fonction. */
-        char* str;           /**< Texte inscrit par la fonction dans file. */
-    } output;                /**< Vérification des outputs générés. */
-    int errcode;             /**< Code d'erreur attendu. */
-    int exitcode;            /**< Code de status attendu. */
-    SccrollTestFunc wrapper; /**< Wrapper de la fonction à tester. */
-    const char* name;        /**< Nom descriptif de l'assertion. */
-} SccrollProcess;
-
-/**
- * @since 0.1.0
- * @brief Vérifie les effets de la fonction à tester.
- *
- * @parblock
- * Exécute la fonction à tester et détermine si les effets secondaires
- * sont ceux attendus, décrits dans la structure SccrollProcess.
- *
- * La valeur de #errno est remise à 0 avant exécution de la fonction.
- * @endparblock
- *
- * @param proc La structure SccrollProcess contenant les informations
- * sur les effets attendus.
- * @throw AssertionError si les effets attendus ne sont pas ceux
- * obtenus.
- */
-void sccroll_assertExe(const SccrollProcess* restrict proc) __attribute__((nonnull));
-
-/**
- */
-#define assertExe(w, ...)                                                  \
-    {                                                                      \
-        SccrollProcess proc = { .name = #w, .wrapper = w, ##__VA_ARGS__ }; \
-        sccroll_assertExe(proc);                                           \
-    }
-
-/**
- * @{
- * @since 0.1.0
- * @brief Teste la valeur du code d'erreur obtenu après éxécution de
- * la fonction.
- *
- * Effectue une assertion sur le code d'erreur (ou de status pour une
- * fonction qui termine le programme) obtenu après exécution de la
- * fonction testée. #errno est toujours remise à 0 lors de ce test.
- *
- * @throw AssertionError si le code ne correspond pas à celui attendu.
- * @param wrapper La fonction wrapper de la fonction à tester.
- * @param code Le code d'erreur attendu.
- */
-#define assertErrno(wrapper, code) assertExe(wrapper, .errcode = code)
-#define assertExit(wrapper, code)  assertExe(wrapper, .exitcode = code)
-/** @} */
-
-/**
- * @since 0.1.0
- * @brief Teste la modification d'un fichier par la fonction.
- *
- * Détermine si le fichier décrit par le descripteur #fd aurait été
- * modifié par la fonction testée (exécutée via le wrapper #w) avec la
- * chaîne #string. La sortie est capturée par la fonction, et donc la
- * modification n'est pas réellement effectuée au cours du test.
- *
- * @throw AssertionError si la chaîne donnée ne correspond pas à celle
- * attendue pour le descripteur de fichier donné.
- * chaîne donnée.
- * @param wrapper La fonction wrapper de la fonction à tester.
- * @param fd Le descripteur de fichier modifié par la fonction.
- * @param string La chaîne attendue pour inscription dans le fichier.
- */
-#define assertOutput(wrapper, fd, string) \
-    assertExe(wrapper, .output = { .fd = fd, .str = string })
-
-/**
- * @{
- * @since 0.1.0
- * @brief Vérifie si la fonctions affiche un message sur la sortie
- * standard.
- *
- * Détermine quels messages sont affichés par la fonction testée sur
- * la sortie standard, et vérifie qu'ils correspondent à #string.
- *
- * @param wrapper La fonction wrapper de la fonction à tester.
- * @param string Les messages affichés attendus.
- */
-#define assertStdout(wrapper, string) assertOutput(wrapper, STDOUT_FILENO, string)
-#define assertStderr(wrapper, string) assertOutput(wrapper, STDERR_FILENO, string)
-/** @} */
-
-// clang-format off
-
-/******************************************************************************
- * @}
- * @}
- ******************************************************************************/
-// clang-format on
-
-// clang-format off
-
-/******************************************************************************
  * @addtogroup LibMocks Génération de mocks.
  *
  * Afin de pouvoir générer des résultats prévisibles pour certaines
@@ -629,6 +573,16 @@ void sccroll_assertExe(const SccrollProcess* restrict proc) __attribute__((nonnu
  * @{
  ******************************************************************************/
 // clang-format on
+
+/**
+ * @def unused
+ * @since 0.1.0
+ * @brief Indique à la fonction qu'un paramètre n'est pas utilisé.
+ *
+ * Cette macro est utile pour les mocks pour éviter les erreurs de
+ * compilation si un des paramètres n'est pas utilisé.
+ */
+#define unused(var) (void) var
 
 /**
  * @def SCCROLL_MOCK

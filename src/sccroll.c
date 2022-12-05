@@ -96,6 +96,7 @@ typedef enum SccrollConstant {
                       * table des rapport. */
     REPORTFAIL = 1,  /**< Index du nombre de tests échoués dans la
                       * table des rapports. */
+    REPORTMAX  = 2,  /**< Index maximal de la table des rapports. */
     MAXLINE = 80,    /**< Longueur maximale des lignes d'un rapport. */
     /** @} */
     /**
@@ -125,10 +126,6 @@ const char* const PIPEDESC[PIPEMAX] = {
     "duplicate pipe"
 };
 
-#define REPORTFMT "[ %-5s ] %s: %s"
-#define LOGICFMT "%i/%i passed, expected %s"
-#define EXITFMT "%s: expected %i, got %i"
-
 // clang-format off
 
 /******************************************************************************
@@ -141,58 +138,84 @@ const char* const PIPEDESC[PIPEMAX] = {
 // clang-format on
 
 /**
- * @since 0.1.0
- * @struct SccrollTest
- * Structure contenant les données pour un test unitaire.
- */
-typedef struct SccrollTest {
-    SccrollTestFunc test; /**< La fonction de test unitaire. */
-    const char* name;     /**< Le nom du test. */
-    int status;           /**< Le code de status renvoyé par
-                           *   l'exécution du test. */
-    int pipefd[2];        /**< Un pipe permettant de récupérer
-                           *   l'output du test. */
-} SccrollTest;
-
-static SccrollTest* sccroll_gentest(const char* restrict name) __attribute__((nonnull));
-
-/**
- * @since 0.1.0
  * @struct SccrollNode
- * Structure d'un noeud de liste.
+ * @since 0.1.0
+ * @brief Structure d'un noeud de la liste de tests.
+ *
+ * SccrollNode::nth est utilisable pour déterminer le nombre total de
+ * tests: le dernier test inscrit étant en tête de liste, son numéro
+ * correspond au nombre total de tests.
  */
 typedef struct SccrollNode {
-    void* car;               /**< Le car de la liste. */
-    struct SccrollNode* cdr; /**< Le cdr de la liste. */
+    int nth;                   /**< Numéro du noeud dans la liste. */
+    const SccrollEffects* car; /**< Le test et ses effets attendus. */
+    struct SccrollNode* cdr;   /**< Le prochain noeud de la liste. */
 } SccrollNode;
 
 /**
- * @since 0.1.0
  * @typedef SccrollList
- * Structure de liste chaînée simple.
+ * @since 0.1.0
+ * @brief Structure de la liste de tests.
  */
 typedef SccrollNode* SccrollList;
 
 /**
- * @since 0.1.0
- * @name Group SccrollList_data_access
- * Pseudo-fonctions d'accès au données d'une SccrollList.
+ * @name SccrollListAccess
+ * @brief Pseudo-fonctions d'accès au données d'une SccrollList.
  * @param list la SccrollList dont on veut accéder aux données.
  * @{
  */
-#define sccroll_car(list) (list)->car /**< Description */
-#define sccroll_cdr(list) (list)->cdr /**< Description */
+
 /**
- * @}
+ * @def sccroll_car
+ * @since 0.1.0
+ *
+ * Accède au test du noeud.
  */
+#define sccroll_car(list) (list)->car
+
+/**
+ * @def sccroll_nth
+ * @since 0.1.0
+ *
+ * Accède au numéro du noeud.
+ */
+#define sccroll_nth(list) (list)->nth
+
+/**
+ * @def sccroll_cdr
+ * @since 0.1.0
+ *
+ * Accède au reste de la liste.
+ */
+#define sccroll_cdr(list) (list)->cdr
+/** @} */
 
 /**
  * @since 0.1.0
- * @brief Enregistre le #test dans la liste de tests.
- * @param test Un test à exécuter.
- * @param name le nom du test.
+ * @brief Ajoute le test en tête de la liste #tests.
+ * @param expected Le SccrollEffects attendu pour le test.
+ * @{
  */
-static void sccroll_push(SccrollTestFunc test, const char* name) __attribute__((nonnull));
+static void sccroll_push(const SccrollEffects* restrict expected) __attribute__((nonnull));
+/** @} */
+
+/**
+ * @since 0.1.0
+ * @brief Génère une copie de #effects.
+ * @attention Utilise calloc.
+ * @param effects Le SccrollEffects à copier.
+ * @return Le pointeur d'une copie de #effects.
+ */
+static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Génère un SccrollEffects initialisé à 0.
+ * @attention utilise calloc.
+ * @return Le pointeur d'un SccrollEffects initialisé à 0.
+ */
+static SccrollEffects* sccroll_gen(void);
 
 /**
  * @since 0.1.0
@@ -222,25 +245,46 @@ static SccrollList tests = NULL;
  */
 static void sccroll_void(void);
 
-static void* sccroll_popcar(void);
-#define popcar(type) (type) sccroll_popcar();
-
 /**
- * @brief Retire le premier noeud de la liste de tests et le renvoie.
- * @return Le premier noeud de la liste.
+ * @since 0.1.0
+ * @brief Exécute le prochain test de la liste et détermine son
+ * résultat.
+ * @return 0 si le test réussit, 1 s'il échoue.
  */
-static SccrollNode* sccroll_pop(void);
+static int sccroll_test(void);
 
 /**
- * @brief Fork, exécute la fonction du test, enregistre l'output
- * obtenu sur le descripteur #fd, et stocke le code de status du test.
+ * @since 0.1.0
+ * @brief Indique si #flag a été donné pour le test.
+ * @param testflags Les drapeaux donnés pour le test.
+ * @param flag Le drapeau à tester.
+ * @return true si #flags est donné dans #testflags, sinon false.
+ */
+static bool sccroll_flag(int testflags, SccrollFlags flag);
+
+/**
+ * @since 0.1.0
+ * @brief Retire le premier noeud de la liste de tests et renvoie le
+ * pointeur du test qui y est stocké.
+ * @return Le test du premier noeud de la liste.
+ */
+static const SccrollEffects* sccroll_pop(void);
+
+/**
+ * @since 0.1.0
+ * @brief exécute la fonction du test dans un fork et enregistre les
+ * effets dans la structure SccrollEffects donnée.
  *
- * @param current Le test à exécuter.
- * @param fd le descripteur de fichier dont on veut l'output.
+ * Les données enregistrées comprennent la valeur de errno après le
+ * test (elle est remise à 0 avant le test), les valeurs de signal et
+ * status émises par le fork, les affichages des sorties standard
+ * stderr et stdout, ainsi que le contenu des fichiers
+ * SccrollEffects::files après exécution du test.
+ *
+ * @param result Le test à exécuter avec ses effets attendus.
+ * @return Toujours result, mais modifié avec les effets obtenus.
  */
-static void sccroll_fork(SccrollTest* restrict current, int fd) __attribute__((nonnull (1)));
-
-static bool sccroll_check(SccrollTest* restrict test) __attribute__((nonnull));
+static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
@@ -270,10 +314,265 @@ static bool sccroll_check(SccrollTest* restrict test) __attribute__((nonnull));
  */
 static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
 
+/**
+ * @since 0.1.0
+ * @brief Lis les différents codes de status obtenus au cours de
+ * l'exécution d'un test et les stocke dans SccrollEffects::codes.
+ * @param result La structure SccrollEffects de destination.
+ * @param pipefd Le pipe contenant la valeur de errno obtenu dans le
+ * fork du test.
+ * @param status Le wstatus obtenu avec la fonction wait().
+ */
+static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status) __attribute__((nonnull(2)));
 
-static int sccroll_review(void);
+/**
+ * @since 0.1.0
+ * @brief Lis les outputs sur les sorties standard obtenus lors de
+ * l'exécution d'un test et les stockes dans SccrollEffects::std.
+ * @param result La structure SccrollEffects de destination.
+ * @param pipestd Une table de pipes utilisés pour capter les sorties;
+ * l'index des pipes correspond au descripteur de fichier des sorties
+ * standard.
+ */
+static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][2]) __attribute__((nonnull));
 
-static int report[2] = { 0 };
+/**
+ * @since 0.1.0
+ * @brief Lis le contenu des fichiers de SccollEffects::files::path et
+ * stocke les #SCCMAX premiers caractères dans
+ * SccrollEffects::files::content.
+ * @param result La structure SccrollEffects de destination.
+ */
+static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief exécute la fonction du test et enregistre les
+ * effets dans la structure SccrollEffects donnée.
+ *
+ * Les données enregistrées comprennent la valeur de errno après le
+ * test (elle est remise à 0 avant le test), les affichages des
+ * sorties standard stderr et stdout, ainsi que le contenu des
+ * fichiers SccrollEffects::files après exécution du test.
+ * @attention Toute erreur qui terminerait le programme levée dans le test
+ * @param result Le test à exécuter avec ses effets attendus.
+ * @return Toujours result, mais modifié avec les effets obtenus.
+ */
+static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result) __attribute__((nonnull));
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @addtogroup Report
+ *
+ * description
+ *
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @enum SccrollColors
+ * @since 0.1.0
+ * @brief Couleur pour les codes ANSI.
+ */
+typedef enum SccrollColors{
+    RED   = 1, /**< Rouge. */
+    GREEN = 2, /**< Vert. */
+    CYAN  = 6, /**< Cyan. */
+} SccrollColors;
+
+/**
+ * @name FormatStrings
+ * @brief Chaînes de formatage pour les messages des tests.
+ * @{
+ */
+
+/**
+ * @def BASEFMT
+ * @since 0.1.0
+ *
+ * Formatage de l'indicateur de status.
+ *
+ * @param i Un chiffre de code de couleur ANSI (SccrollColors est
+ * adapté pour ce paramètre).
+ * @param s Status
+ * @param s Nom du test.
+ */
+#define BASEFMT "[ \e[0;1;3%im%-4s\e[0m ] %s"
+
+/**
+ * @def REPORTFMT
+ * @since 0.1.0
+ *
+ * Formatage du rapport final.
+ *
+ * @param s Ligne de séparation
+ * @param s Status.
+ * @param s Nom du test.
+ * @param f Pourcentage de réussite des tests.
+ * @param i Nombre de tests réussis.
+ * @param i Nombre total de tests.
+ */
+#define REPORTFMT "\n%s\n\n" BASEFMT ": %.2f%% [%i/%i]\n"
+
+/**
+ * @def DIFFFMT
+ *
+ * Formatage de l'affichage des différences attendu/obtenu.
+ *
+ * @param
+ * @param i Un chiffre de code de couleur ANSI (SccrollColors est
+ * adapté pour ce paramètre).
+ * @param s Status
+ * @param s Nom du test.
+ * @param s Description de la différence.
+ */
+#define DIFFFMT BASEFMT " (%s): "
+
+/**
+ * @def OUTPUTFMT
+ * @since 0.1.0
+ *
+ * Formatage d'affichage des différences des sorties standard.
+ *
+ * @param s Status.
+ * @param s Nom du test.
+ * @param s Description de la différence.
+ * @param s Chaîne obtenue.
+ */
+#define OUTPUTFMT DIFFFMT "%s\n"
+
+/**
+ * @def FILESFMT
+ * @since 0.1.0
+ *
+ * Formatage d'affichage de différences entre fichiers.
+ * @param s Status.
+ * @param s Nom du test.
+ * @param s Description de la différence.
+ * @param s Chaîne attendue.
+ * @param s Chaîne obtenue.
+ */
+#define FILESFMT DIFFFMT "expected '%s', read '%s'\n"
+
+/**
+ * @def EXITFMT
+ * @since 0.1.0
+ *
+ * Formatage d'affichage d'erreurs concernant les codes d'erreur et
+ * sortie attendus.
+ *
+ * @param s1 Status.
+ * @param s2 Nom du test.
+ * @param s3 Description du test.
+ * @param s4 code attendu.
+ * @param s5 code obtenu.
+ */
+#define EXITFMT DIFFFMT "expected %i, got %i\n"
+/** @} */
+
+/**
+ * @since 0.1.0
+ * @brief Compare deux SccrollEffects et indique si les valeurs des
+ * données du test qu'elles contiennent sont différentes.
+ *
+ * @parblock
+ * Si la macro #SCCROLL_NODIFF est définie, la fonction ne fait que
+ * renvoyer le résultat. Si elle ne l'est pas, la fonction affiche
+ * égalemnt un message pour chaque élément différent entre les effets
+ * attendus et obtenus.
+ *
+ * Les données comparées sont:
+ * - Les valeur de SccrollEffects::codes;
+ * - Les chaînes de caractères de SccrollEffects::std des index
+ * #STDOUT_FILENO et #STDERR_FILENO;
+ * - Les chaînes de caractères SccrollEffects::files::content jusqu'au
+ * premier SccrollEffects::files::path valant @c NULL .
+ * @endparblock
+ *
+ * @param expected,result Les structures à comparer.
+ * @return true si au moins une des données comparées diffère entre
+ * les effets attendu et ceux obtenus, sinon false.
+ */
+static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+    __attribute__((nonnull));
+
+/**
+ * @def sccroll_pdiff
+ * @since 0.1.0
+ * @brief Affiche un message d'erreur sur stderr sauf si le drapeau
+ * #NODIFF est donné pour le test.
+ * @param flags Les drapeaux donnés pour le test.
+ * @param fmt La chaîne de formatage du message.
+ * @param ... Les arguments de la chaîne de formatage.
+ */
+#define sccroll_pdiff(flags, fmt, ...)                                  \
+    if (!sccroll_flag(flags, NODIFF)) fprintf(stderr, fmt, ##__VA_ARGS__)
+
+/**
+ * @def sccroll_strcmp
+ * @since 0.1.0
+ * @brief Compare deux chaînes et affiche un message si elles sont
+ * différences.
+ * @attention Cette macro est spécifique à la fonction sccroll_diff().
+ * @param exp La chaîne attendue.
+ * @param res La chaîne obtenue.
+ * @param fmt La chaîne de formatage du message.
+ * @param ... Les arguments de la chaîne de formatage.
+ */
+#define sccroll_strcmp(exp, res, fmt, ...)                              \
+    if (strcmp(exp, res)) {                                             \
+        sccroll_pdiff(flags, fmt, CYAN, "DIFF",                         \
+                      expected->name, ##__VA_ARGS__);                   \
+        diff = true;                                                    \
+    }
+
+/**
+ * @since 0.1.0
+ * @brief Si #NOSTRIP n'a pas été donné pour le test, renvoie une
+ * copie de la chaîne où les espaces en amont et aval ont été retirés.
+ * @attention Utilise malloc.
+ * @param flags Les drapeaux du test.
+ * @param string La chaîne à traiter.
+ * @return Une copie de la chaîne, avec les espaces amonts et avals
+ * retirés si le drapeau #NOSTRIP n'est pas donné; si #string est
+ * @c NULL , renvoie une chaîne vide.
+ */
+static const char* sccroll_strip(int flags, const char* restrict string);
+
+/**
+ * @since 0.1.0
+ * @brief Affiche un rapport final.
+ * @param report Une table contenant le nombre total de tests (index
+ * #REPORTTOTAL) et le nombre de tests en échec (index #REPORTFAIL).
+ */
+static void sccroll_review(int report[REPORTMAX]) __attribute__((nonnull));
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @addtogroup Clean Fonctions internes de nettoyage.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief Libère une structure SccrollEffects allouée.
+ *
+ * Les éléments libérés sont:
+ * - Tous les SccrollEffects::files::content jusqu'au premier
+ * SccrollEffects::files::path valant NULL;
+ * - Tous les SccrollEffects::std;
+ * - #effects.
+ * @param effects La structure à libérer.
+ */
+static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((nonnull));
 
 // clang-format off
 
@@ -291,92 +590,104 @@ weak_alias(sccroll_void, sccroll_before);
 weak_alias(sccroll_void, sccroll_after);
 
 strong_alias(sccroll_push, sccroll_register);
-static void sccroll_push(SccrollTestFunc test, const char* name)
+static void sccroll_push(const SccrollEffects* restrict expected)
 {
     SccrollNode* node = calloc(1, sizeof(SccrollNode));
-    sccroll_err(!node, "test registration", name);
+    sccroll_err(!node, "test registration", expected->name);
 
-    SccrollTest* nexttest = sccroll_gentest(name);
-    nexttest->test = test;
-    nexttest->name = name;
-
-    node->car = nexttest;
+    node->car = sccroll_dup(expected);
+    node->nth = !tests ? 1 : sccroll_nth(tests) + 1;
     node->cdr = tests;
     tests = node;
 }
 
-static SccrollTest* sccroll_gentest(const char* restrict name)
+static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects)
 {
-    SccrollTest* test = calloc(1, sizeof(SccrollTest));
-    sccroll_err(!test, "SccrollTest alloc", name);
-    sccroll_pipes(PIPEOPEN, name, test->pipefd);
-    return test;
+    SccrollEffects* copy = sccroll_gen();
+    memcpy(copy, effects, sizeof(SccrollEffects));
+    return copy;
+}
+
+static SccrollEffects* sccroll_gen(void)
+{
+    SccrollEffects* effects = calloc(1, sizeof(SccrollEffects));
+    sccroll_err(!effects, "alloc", "SccrollEffects");
+    return effects;
 }
 
 int sccroll_run(void)
 {
+    if (!tests) return 0;
+
+    int report[REPORTMAX] = { 0 };
+    report[REPORTTOTAL]   = sccroll_nth(tests);
+
     sccroll_init();
-
-    SccrollTest* test    = NULL;
     while (tests) {
-        test = popcar(SccrollTest*);
-        ++report[REPORTTOTAL];
-
         sccroll_before();
-        sccroll_fork(test, STDERR_FILENO);
-        sccroll_check(test);
-        free(test);
+        report[REPORTFAIL] += sccroll_test();
         sccroll_after();
     }
-
-    int failed = sccroll_review();
+    sccroll_review(report);
     sccroll_clean();
-    return failed;
+
+    return report[REPORTFAIL];
 }
 weak_alias(sccroll_run, main);
 
-static void* sccroll_popcar(void)
+static int sccroll_test(void)
 {
-    SccrollNode* current = sccroll_pop();
-    void* data = sccroll_car(current);
-    free(current);
-    return data;
+    const SccrollEffects* expected = sccroll_pop();
+    const SccrollEffects* result   =
+        sccroll_flag(expected->flags, NOFORK)
+        ? sccroll_nofork(sccroll_dup(expected))
+        : sccroll_fork(sccroll_dup(expected));
+    int failed = sccroll_diff(expected, result);
+    if (failed) fprintf(stderr, BASEFMT "\n", RED, "FAIL", expected->name);
+    free((void*)expected);
+    sccroll_free(result);
+    return failed;
 }
 
-static SccrollNode* sccroll_pop(void)
+static bool sccroll_flag(int testflags, SccrollFlags flag)
 {
+    return (bool)(testflags & flag);
+}
+
+static const SccrollEffects* sccroll_pop(void)
+{
+    const SccrollEffects* expected = sccroll_car(tests);
     SccrollNode* popped = tests;
-    tests = sccroll_cdr(tests);
-    sccroll_cdr(popped) = NULL;
-    return popped;
+    tests = sccroll_cdr(popped);
+    free(popped);
+    return expected;
 }
 
-static void sccroll_fork(SccrollTest* restrict current, int fd)
+static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result)
 {
+    int status               = 0;
+    char buffer[SCCMAX]      = { 0 };
+    int pipefd[SCCMAXSTD][2] = { 0 };
+    for (int i = 0; i < SCCMAXSTD; ++i)
+        sccroll_pipes(PIPEOPEN, result->name, pipefd[i]);
+
     pid_t pid = fork();
-    sccroll_err(pid < 0, "fork", current->name);
+    sccroll_err(pid < 0, "fork", result->name);
     if (pid == 0) {
-        sccroll_pipes(PIPEDUP, current->name, current->pipefd, fd);
-        current->test();
-        sccroll_pipes(PIPECLOSE, current->name, current->pipefd, PIPEWRTE);
+        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+            sccroll_pipes(PIPEDUP, result->name, pipefd[i], i);
+        errno = 0;
+        result->wrapper();
+        sprintf(buffer, "%i", errno);
+        sccroll_pipes(PIPEWRTE, result->name, pipefd[0], buffer);
         exit(EXIT_SUCCESS);
     }
 
-    int status;
     wait(&status);
-    if (WIFSIGNALED(status)) current->status = WTERMSIG(status);
-}
-
-static bool sccroll_check(SccrollTest* restrict test)
-{
-    if (test->status) {
-        char output[BUFSIZ] = { 0 };
-        sccroll_pipes(PIPEREAD, test->name, test->pipefd, output);
-        ++report[REPORTFAIL];
-        fprintf(stderr, REPORTFMT, "FAIL", test->name, output);
-        return false;
-    }
-    return true;
+    sccroll_codes(result, pipefd[SCCERRNUM], status);
+    sccroll_std(result, pipefd);
+    sccroll_files(result);
+    return result;
 }
 
 static void sccroll_pipes(SccrollConstant type, const char* name, int pipefd[2], ...)
@@ -406,21 +717,145 @@ static void sccroll_pipes(SccrollConstant type, const char* name, int pipefd[2],
     sccroll_err(status < 0, PIPEDESC[type], name);
 }
 
-static int sccroll_review(void)
+static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status)
 {
-    int total     = report[REPORTTOTAL];
-    int failed    = report[REPORTFAIL];
-    int passed    = total - failed;
-    float percent = 100.0 * passed / total;
+    char buffer[SCCMAX] = { 0 };
+    sccroll_pipes(PIPEREAD, result->name, pipefd, buffer);
+    result->codes[SCCERRNUM] = strtol(buffer, NULL, 10);
+    result->codes[SCCSTATUS] = WEXITSTATUS(status);
+    result->codes[SCCSIGNAL] = WIFSIGNALED(status) ? WTERMSIG(status) : 0;
+}
+
+static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2])
+{
+    char buffer[SCCMAX] = { 0 };
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+        sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer);
+        result->std[i] = strdup(buffer);
+        memset(buffer, 0, strlen(buffer));
+    }
+}
+
+static void sccroll_files(SccrollEffects* restrict result)
+{
+    int i;
+    char buffer[SCCMAX] = { 0 };
+    char error[SCCMAX]  = { 0 };
+    FILE* file;
+
+    for (i = 0; i < SCCMAX && result->files[i].path && !error[0]; ++i, memset(buffer, 0, strlen(buffer))) {
+        file  = fopen(result->files[i].path, "w+b");
+        if (!file)
+            sprintf(error, "%s: %s", result->name, "open");
+        else if (!fread(buffer, sizeof(char), SCCMAX, file) && ferror(file))
+            sprintf(error, "%s: %s", result->name, "read");
+        result->files[i].content = strdup(buffer);
+        fclose(file);
+    }
+    sccroll_err(error[0], error, result->files[i - 1].path);
+}
+
+static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result)
+{
+    int origfd[SCCMAXSTD] = { 0 };
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+        sccroll_err((origfd[i] = dup(i)) < 0, "dup save of standard", result->name);
+
+    int pipefd[SCCMAXSTD][2] = { 0 };
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+        sccroll_pipes(PIPEOPEN, result->name, pipefd[i]);
+        sccroll_pipes(PIPEDUP, result->name, pipefd[i], i);
+    }
+
+    errno = 0;
+    result->wrapper();
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+        if (dup2(origfd[i], i) < 0) {
+            printf("dup2 standard back to original failed for %s", result->name);
+            exit(EXIT_FAILURE);
+        }
+
+    result->codes[SCCERRNUM] = errno;
+    sccroll_std(result, pipefd);
+    sccroll_files(result);
+    return result;
+}
+
+static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+{
+    bool diff                    = false;
+    int flags                    = expected->flags;
+    const char* name             = expected->name;
+    const char* expectedstr      = NULL;
+    const char* resultstr        = NULL;
+    const char* const descs[][3] = {
+        {"errno", "signal", "status"},
+        {   NULL, "stdout", "stderr"}
+    };
+
+    for (int i = SCCERRNUM; i < SCCMAXSIG; ++i)
+        if (i < SCCMAXSIG && expected->codes[i] != result->codes[i]) {
+            diff = true;
+            sccroll_pdiff(
+                flags, EXITFMT, CYAN, "DIFF", name,
+                descs[0][i], expected->codes[i], result->codes[i]);
+        }
+
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+    {
+        expectedstr = sccroll_strip(flags, expected->std[i]);
+        resultstr   = sccroll_strip(flags, result->std[i]);
+        sccroll_strcmp(expectedstr, resultstr, OUTPUTFMT, descs[1][i], resultstr);
+        free((void*)expectedstr);
+        free((void*)resultstr);
+    }
+
+    for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i)
+        sccroll_strcmp(
+            expected->files[i].content ? expected->files[i].content : "",
+            result->files[i].content,
+            FILESFMT,
+            expected->files[i].path,
+            expected->files[i].content,
+            result->files[i].content);
+
+    return diff;
+}
+
+static const char* sccroll_strip(int flags, const char* restrict string)
+{
+    char* stripped = strdup(string ? string : "");
+    if (!sccroll_flag(flags, NOSTRP)) {
+        while(isspace(*stripped)) ++stripped;
+        char* end = stripped+strlen(stripped)-1;
+        while(end > stripped && isspace(*end)) {
+            *end = 0;
+            --end;
+        }
+    }
+
+    return stripped;
+}
+
+static void sccroll_review(int report[REPORTMAX])
+{
+    int passed    = report[REPORTTOTAL] - report[REPORTFAIL];
+    float percent = 100.0 * passed / report[REPORTTOTAL];
 
     char separator[MAXLINE + 1] = { 0 };
     memset(separator, '-', MAXLINE);
+    fprintf(stderr, REPORTFMT,
+        separator,
+        report[REPORTFAIL] ? RED : GREEN,
+        report[REPORTFAIL] ? "FAIL" : "PASS",
+        "success rate", percent, passed, report[REPORTTOTAL]);
+}
 
-    fprintf(stderr, "\n%s\n\n", separator);
-    fprintf(stderr, REPORTFMT, "STATUS", failed ? "FAIL" : "PASS", "");
-    fprintf(stderr, "%.2f%% [%i/%i] tests passed\n", percent, passed, total);
-
-    return failed;
+static void sccroll_free(const SccrollEffects* restrict effects)
+{
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i]);
+    for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
+    free((void*)effects);
 }
 
 // clang-format off
@@ -440,26 +875,6 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
         va_end(args);
         abort();
     }
-}
-
-void sccroll_assertExe(const SccrollProcess* restrict proc)
-{
-    SccrollTest* test = sccroll_gentest(proc->name);
-    test->name = proc->name;
-    test->test = proc->wrapper;
-    int fd = proc->output.fd > 0 ? proc->output.fd : STDERR_FILENO;
-
-    errno = 0;
-    sccroll_fork(test, fd);
-    char output[BUFSIZ] = { 0 };
-    sccroll_pipes(PIPEREAD, proc->name, test->pipefd, output);
-    char* expected = proc->output.str ? proc->output.str : "";
-
-    assertMsg(errno == proc->errcode, EXITFMT, "errno", proc->errcode, errno);
-    assertMsg(test->status == proc->exitcode, EXITFMT, "status", proc->exitcode, test->status);
-    assertMsg(!strcmp(expected, output), "output on fd %i: expected '%s', got '%s'", fd, expected, output);
-
-    free(test);
 }
 
 /** @} */

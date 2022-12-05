@@ -29,13 +29,14 @@ static int delay = 0;
 
 enum {
     NOERR = 0,
-    NOFORK = 1,
+    DOFORK = 1,
     CALLOC = 2,
     PIPE = 4,
     FORK = 8,
     DUP2 = 16,
     CLOSE = 32,
     READ = 64,
+    WRITE = 128,
 };
 
 static bool trigger(int value)
@@ -47,6 +48,14 @@ static bool trigger(int value)
     }
     return errnum & value;
 }
+
+void ftest(void) { assert(!trigger(FORK)); }
+
+static SccrollEffects test = {
+    .wrapper = ftest,
+    .name = "test_success",
+    .flags = NOSTRP,
+};
 
 SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
 {
@@ -60,12 +69,18 @@ SCCROLL_MOCK(int, pipe, int pipefd[2])
 
 SCCROLL_MOCK(pid_t, fork, void)
 {
-    return trigger(NOFORK) ? 0 : trigger(FORK) ? -1 : __real_fork();
+    // On indique un fork réussi, mais on ne fork pas vraiment pour ne
+    // pas fausser les résultats attendus.
+    return trigger(FORK) ? -1 : 0;
 }
 
 SCCROLL_MOCK(int, dup2, int oldfd, int newfd)
 {
-    return trigger(DUP2) ? -1 : __real_dup2(oldfd, newfd);
+    unused(oldfd);
+    unused(newfd);
+
+    // On ne dup2 pas vraiment pour ne pas masquer les sorties.
+    return trigger(DUP2) ? -1 : 0;
 }
 
 SCCROLL_MOCK(int, close, int fd)
@@ -78,33 +93,32 @@ SCCROLL_MOCK(ssize_t, read, int fd, void* buf, size_t count)
     return trigger(READ) ? -1 : __real_read(fd, buf, count);
 }
 
-void test_fail_unless_nofork(void) { if (!trigger(NOFORK)) assert(false); }
-
-static void _assertMock(int mocktrigger, const char* restrict fmt, ...)
+SCCROLL_MOCK(ssize_t, write, int fd, const void* buf, size_t count)
 {
-    char name[BUFSIZ] = { 0 };
-    va_list args;
-    va_start(args, fmt);
-    vsprintf(name, fmt, args);
-    va_end(args);
+    return trigger(WRITE) ? -1 : __real_write(fd, buf, count);
+}
 
+static void _assertMock(int mocktrigger, const char* restrict name)
+{
     pid_t pid = __real_fork();
     if (pid < 0)
         err(EXIT_FAILURE, "__real_fork failed for %s.", name);
     else if (pid == 0) {
         errnum = mocktrigger;
-        sccroll_register(test_fail_unless_nofork, name);
+        test.flags |= !trigger(DOFORK) ? NOFORK : test.flags;
+        sccroll_register(&test);
         sccroll_run();
         exit(EXIT_SUCCESS);
     }
 
     int status = 0;
     wait(&status);
-    fprintf(stderr, ">>>>>> %s: %i == %i\n", name, mocktrigger, WEXITSTATUS(status));
+    fprintf(stderr, ">>>>>> %s (delay: %i): ", name, delay);
     assert((bool) mocktrigger == (bool) WEXITSTATUS(status));
+    fprintf(stderr, "ok\n");
 }
 
-#define assertMock(errval) _assertMock(errval, "%s (delay: %i)", #errval, delay)
+#define assertMock(errval) _assertMock(errval, #errval)
 
 int main(void)
 {
@@ -112,11 +126,12 @@ int main(void)
     assertMock(NOERR);
     assertMock(CALLOC);
     assertMock(PIPE);
-    assertMock(FORK);
-    assertMock(DUP2 | NOFORK);
-    assertMock(CLOSE | NOFORK);
+    assertMock(FORK | DOFORK);
+    assertMock(DUP2);
+    assertMock(CLOSE | DOFORK);
     assertMock(CLOSE);
     assertMock(READ);
+    assertMock(WRITE | DOFORK);
 
     delay = 1;
     assertMock(CALLOC);

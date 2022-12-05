@@ -93,7 +93,10 @@ lib%.so: %.c
 	@$(CC) $(CFLAGS) -fpic -shared $(DEPFLAGS) $(DEPS)/$*.d $< -o $(SHARED)/$@
 
 $(BIN)/%: %.o
-	@$(CC) $(OBJS)/$*.o $(LDLIBS) $(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c) -o $@
+	@$(CC) $(OBJS)/$*.o $(OBJS)/common.o $(LDLIBS) \
+		$(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c) \
+		$(shell $(SCRIPTS)/mocks.awk $(TESTS)/common.c) \
+		-o $@
 
 %.log: $(BIN)/%
 	@mkdir -p $(TMP)

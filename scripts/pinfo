@@ -125,9 +125,16 @@ function pstatus {
     [ ! -z "$3" ] && echo : ${@:3} || echo ""
 }
 
-case $1 in
-    -h|--help) usage 0;;
-    *) check_args "$@" || >&2 usage 1;;
-esac
+# @brief main du script
+# @since 0.1.0
+# @param $@ arguments de la ligne de commande.
+# @exit 1 en cas d'erreur, sinon 0.
+function main {
+    case $1 in
+        -h|--help) usage 0;;
+        *) check_args "$@" || >&2 usage 1;;
+    esac
+    pstatus $@ && exit $EXCODE
+}
 
-pstatus $@ && exit $EXCODE
+main $@

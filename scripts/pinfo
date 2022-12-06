@@ -49,10 +49,12 @@ MAX=6
 # @since 0.1.0
 # @param $1 Le code de status.
 function usage {
-    echo -e "usage: pinfo status short [desc]\n\nOPTIONS:\n" \
+    echo -e "usage: pinfo [-h,--help] status short [desc]\n\n"\
          "status\ta status keyword among [$KEYWORDS]\n" \
          "short\ta short description of the status\n" \
-         "desc\tan optional long description of the status\n"
+         "desc\tan optional long description of the status\n" \
+         "\nOPTIONS:\n" \
+         "-h,--help\tprint this help and exit\n"
     exit $1
 }
 

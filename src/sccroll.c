@@ -243,7 +243,7 @@ static SccrollList tests = NULL;
  * faibles pour les fonctions dont la définition est laissée à
  * l'utilisateur.
  */
-static void sccroll_void(void);
+static void sccroll_void(void) __attribute__((unused));
 
 /**
  * @since 0.1.0

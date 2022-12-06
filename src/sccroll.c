@@ -700,11 +700,11 @@ static void sccroll_pipes(SccrollConstant type, const char* name, int pipefd[2],
     case PIPEDUP: status = dup2(pipefd[PIPEWRTE], va_arg(args, int)); break;
     case PIPEREAD:
         sccroll_pipes(PIPECLOSE, name, pipefd, PIPEWRTE);
-        status = read(pipefd[PIPEREAD], va_arg(args, char*), BUFSIZ);
+        status = read(pipefd[PIPEREAD], va_arg(args, char*), SCCMAX);
         if (status >= 0) sccroll_pipes(PIPECLOSE, name, pipefd, PIPEREAD);
         break;
     case PIPEWRTE:
-        status = write(pipefd[PIPEWRTE], va_arg(args, char*), BUFSIZ);
+        status = write(pipefd[PIPEWRTE], va_arg(args, char*), SCCMAX);
         if (status >= 0) sccroll_pipes(PIPECLOSE, name, pipefd, PIPEWRTE);
         break;
     case PIPECLOSE:

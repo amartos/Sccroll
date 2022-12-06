@@ -1,14 +1,53 @@
 #!/usr/bin/env bash
+# @file        pinfo
+# @version     0.1.0
+# @brief       Script d'affichage de messages de status.
+# @date        2022
+# @author      Alexandre Martos
+# @copyright   MIT License
+#
+# @parblock
+# Ce script affiche un message de status qui lui a été confié et
+# renvoie un code dépendant du status (1 pour une erreur, 0 sinon).
+#
+# Le script utilise des couleurs avec les codes ANSI.
+#
+# L'aide du script est disponible avec l'option -h/--help
+# @endparblock
 
+# @var ERROR
+# @since 0.1.0
+# @brief Liste des mots-clés d'erreurs.
 ERROR="error|fail"
+
+# @var SUCCESS
+# @since 0.1.0
+# @brief Liste des mots-clés de succès.
 SUCCESS="ok|pass"
+
+# @var INFO
+# @since 0.1.0
+# @brief Liste des mots-clés d'information.
 INFO="info|debug"
+
+# @var KEYWORDS
+# @since 0.1.0
+# @brief Liste des mots-clés du script.
 KEYWORDS="$ERROR|$SUCCESS|$INFO"
+
+# @var EXCODE
+# @since 0.1.0
+# @brief Code de status du script par défaut.
 EXCODE=0
+
+# @var MAX
+# @since 0.1.0
+# @brief Taille maximale de l'indicateur de status.
 MAX=6
 
-# print a help message and exit
-# $1 exit code
+# @brief Affiche le message d'aide du script puis quitte.
+# @since 0.1.0
+# @param $1 Le code de status.
 function usage {
     echo -e "usage: pinfo status short [desc]\n\nOPTIONS:\n" \
          "status\ta status keyword among [$KEYWORDS]\n" \
@@ -17,7 +56,9 @@ function usage {
     exit $1
 }
 
-# check the program arguments
+# @brief Vérifie les arguments donnés au script.
+# @since 0.1.0
+# @param $@ Les arguments donnés au script.
 function check_args {
     [ -z "$1" ] && >&2 echo "status cannot be emtpy" && return 1
     echo "$KEYWORDS" | grep -q "$1" || return $(>&2 echo "unkown keyword: $1" && return 1)
@@ -25,13 +66,16 @@ function check_args {
     return 0
 }
 
-# pad left and right the given string
-# $1 the string to center
-# $2 total length of final string
-# $3 string for padding (spaces by default)
-# return the string padded left and right with $3 (left aligned)
-# exit 1 if the expected final length is smaller than $1
-# inspired from https://unix.stackexchange.com/a/267730
+# @brief Centre une chaîne de caractère en ajoutant un caractère autour
+# de la chaîne.
+# @since 0.1.0
+# @param $1 La chaîne à centrer.
+# @param $2 La longueur totale maximale de la chaîne finale.
+# @param $3 Caractère utilisé pour centrer (espace par défaut).
+# @print La chaîne centrée avec #$3 jusqu'à atteindre #$2 caractères.
+# @exit Si la longueur totale demandée est inférieure à celle de la
+# chaîne de départ.
+# @see https://unix.stackexchange.com/a/267730
 function center {
     local SIZE=${#1}
     local NPAD=$(($2-$SIZE))
@@ -41,14 +85,18 @@ function center {
     printf "%*s%s%*s" $LEFT "$CPAD" $1 $RIGHT "$CPAD"
 }
 
-# convert string to uppercase
-# $1 string to convert to uppercase
+# @brief Convertit la chaîne en majuscules.
+# @since 0.1.0
+# @param $1 Chaîne à convertir.
+# @print La chaîne en majuscules.
 function upper {
     echo $(echo $1 | tr "[:lower:]" "[:upper:]")
 }
 
-# print a color status information
-# $1 the status keyword
+# @brief Affiche un indicateur coloré de status.
+# @since 0.1.0
+# @param $1 Le mot-clé de status parmi $KEYWORDS.
+# @print L'indicateur de status coloré correspondant au mot-clé.
 function status {
     local STATUS="info"
     local CODE=7
@@ -64,11 +112,11 @@ function status {
     printf "[ \e[0;1;3%im%-*s\e[0m]" $CODE $MAX $STATUS
 }
 
-# print a status message
-# $1 a status word from $KEYWORDS
-# $2 short status
-# $3 short message
-# $4 error description
+# @brief Affiche un message de status.
+# @since 0.1.0
+# @param $1 Un mot-clé de status parmi $KEYWORDS.
+# @param $2 Une description courte du message.
+# @param $3 Une description longue du message.
 function pstatus {
     status $1
     printf " %s" "$2"

@@ -76,8 +76,8 @@ SCCROLL_MOCK(pid_t, fork, void)
 
 SCCROLL_MOCK(int, dup2, int oldfd, int newfd)
 {
-    unused(oldfd);
-    unused(newfd);
+    sccroll_unused(oldfd);
+    sccroll_unused(newfd);
 
     // On ne dup2 pas vraiment pour ne pas masquer les sorties.
     return trigger(DUP2) ? -1 : 0;

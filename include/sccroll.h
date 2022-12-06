@@ -575,14 +575,14 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
 // clang-format on
 
 /**
- * @def unused
+ * @def sccroll_unused
  * @since 0.1.0
  * @brief Indique à la fonction qu'un paramètre n'est pas utilisé.
  *
  * Cette macro est utile pour les mocks pour éviter les erreurs de
  * compilation si un des paramètres n'est pas utilisé.
  */
-#define unused(var) (void) var
+#define sccroll_unused(var) (void) var
 
 /**
  * @def SCCROLL_MOCK

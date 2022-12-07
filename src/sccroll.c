@@ -249,6 +249,14 @@ static void sccroll_void(void) __attribute__((unused));
 
 /**
  * @since 0.1.0
+ * @brief Fonction main par défaut de la librairie.
+ * @return EXIT_FAILURE si au moins un test a échoué, sinon
+ * EXIT_SUCCESS.
+ */
+static int sccroll_main(void);
+
+/**
+ * @since 0.1.0
  * @brief Exécute le prochain test de la liste et détermine son
  * résultat.
  * @return 0 si le test réussit, 1 s'il échoue.
@@ -619,6 +627,12 @@ static SccrollEffects* sccroll_gen(void)
     return effects;
 }
 
+weak_alias(sccroll_main, main);
+static int sccroll_main(void)
+{
+    return sccroll_run() ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
 int sccroll_run(void)
 {
     assert(!in_test);
@@ -640,7 +654,6 @@ int sccroll_run(void)
     in_test = false;
     return report[REPORTFAIL];
 }
-weak_alias(sccroll_run, main);
 
 static int sccroll_test(void)
 {

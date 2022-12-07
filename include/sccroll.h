@@ -398,7 +398,9 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
  * @throw AssertionError si #expr est fausse.
  */
 
-#ifndef _ASSERT_H
+#if !defined(_ASSERT_H) || (defined(_ASSERT_H) && defined(NDEBUG))
+#undef assert
+
     /**
      * @def assert
      * @since 0.1.0

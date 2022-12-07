@@ -107,7 +107,7 @@ $(BIN)/%: %.o
 # Autres cibles
 ###############################################################################
 
-.PHONY: all $(PROJECT) unit-tests code-coverage doc init clean help
+.PHONY: all $(PROJECT) unit-tests coverage doc init help
 .PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(SHARED)/%.so
 
 all: $(PROJECT)
@@ -137,7 +137,9 @@ unit-tests: init $(PROJECT) common.o $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(PASS) $@
 
 # @brief Génère un rapport sur la couverture de code des tests.
-code-coverage: init $(SHARED)/lib$(PROJECT).gcno
+coverage: unit-tests $(SHARED)/lib$(PROJECT).gcno
+	@rm -rf $(REPORTS)
+	@mkdir -p $(REPORTS)
 	@$(COV) $(COVOPTS) $(COVXML) $(COVHTML) $(BUILD)
 	@$(PASS) $@
 

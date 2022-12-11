@@ -155,7 +155,7 @@ init:
 
 # @brief Nettoyage post-compilation
 clean:
-	@rm -rf $(BUILD)
+	@git clean -d -f
 
 # @brief Affiche la documentation du Makefile
 help:

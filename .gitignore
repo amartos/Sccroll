@@ -1,12 +1,1 @@
-*
-!*/
-
-!.gitignore
-!.clang-format
-!Jenkinsfile
-!compile_flags.txt
-!Makefile
-!include/**
-!src/**
-!tests/**
-!scripts/**
+ignore

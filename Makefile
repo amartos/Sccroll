@@ -3,10 +3,11 @@
 ###############################################################################
 
 PROJECT 	:= sccroll
-DESCRIPTION	:= Makefile du projet $(PROJECT)
 VERSION		:= 0.1.0
-COPYRIGHT 	:= Copyright (c) 2022 Alexandre Martos <contact@amartos.fr>
-LICENSE 	:= Licence MIT
+LICENSEFILE	:= LICENSE
+BRIEF		:= $(shell head -n 1 $(LICENSEFILE))
+NAME		:= $(firstword $(BRIEF))
+LICENSE 	:= $(shell head -n 2 $(LICENSEFILE))
 
 ###############################################################################
 # Environnement
@@ -64,7 +65,7 @@ COVXML		:= --cobertura-pretty --cobertura $(REPORTS)/coverage.xml
 COVHTML :=	--html-details $(REPORTS)/coverage.html \
 			--html-medium-threshold $(COVLOW) --html-high-threshold $(COVHIGH) \
 			--html-details-syntax-highlighting --html-theme blue \
-			--html-title "$(PROJECT) code coverage report"
+			--html-title "$(NAME) code coverage report"
 
 
 ###############################################################################
@@ -158,10 +159,7 @@ clean:
 
 # @brief Affiche la documentation du Makefile
 help:
-	@echo "$(DESCRIPTION) - version $(VERSION)"
-	@echo "$(COPYRIGHT)"
-	@echo "$(LICENSE)"
-	@echo ""
+	@head -n 5 $(LICENSEFILE)
 	@echo "Cibles disponibles:"
 	@$(SCRIPTS)/pdoc.awk Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 

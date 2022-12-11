@@ -265,15 +265,6 @@ static int sccroll_test(void);
 
 /**
  * @since 0.1.0
- * @brief Indique si #flag a été donné pour le test.
- * @param testflags Les drapeaux donnés pour le test.
- * @param flag Le drapeau à tester.
- * @return true si #flags est donné dans #testflags, sinon false.
- */
-static bool sccroll_flag(int testflags, SccrollFlags flag);
-
-/**
- * @since 0.1.0
  * @brief Retire le premier noeud de la liste de tests et renvoie le
  * pointeur du test qui y est stocké.
  * @return Le test du premier noeud de la liste.
@@ -520,7 +511,7 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
  * @param ... Les arguments de la chaîne de formatage.
  */
 #define sccroll_pdiff(flags, fmt, ...)                                  \
-    if (!sccroll_flag(flags, NODIFF)) fprintf(stderr, fmt, ##__VA_ARGS__)
+    if (!sccroll_hasFlags(flags, NODIFF)) fprintf(stderr, fmt, ##__VA_ARGS__)
 
 /**
  * @def sccroll_strcmp
@@ -583,6 +574,30 @@ static void sccroll_review(int report[REPORTMAX]) __attribute__((nonnull));
  * @param effects La structure à libérer.
  */
 static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((nonnull));
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @addtogroup Mocks Fonctions interne pour les simulacres.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief fonction renvoyant toujours #SCCENONE.
+ * @note est utilisée comme alias faible de sccroll_mockTrigger().
+ * @return #SCCENONE.
+ */
+static unsigned sccroll_enone(void);
+
+/**
+ * @since 0.1.0
+ * @brief Fonction sauvegardant les données utilisées par gcov.
+ */
+extern void __gcov_dump(void);
 
 // clang-format off
 
@@ -659,7 +674,7 @@ static int sccroll_test(void)
 {
     const SccrollEffects* expected = sccroll_pop();
     const SccrollEffects* result   =
-        sccroll_flag(expected->flags, NOFORK)
+        sccroll_hasFlags(expected->flags, NOFORK)
         ? sccroll_nofork(sccroll_dup(expected))
         : sccroll_fork(sccroll_dup(expected));
     int failed = sccroll_diff(expected, result);
@@ -667,11 +682,6 @@ static int sccroll_test(void)
     free((void*)expected);
     sccroll_free(result);
     return failed;
-}
-
-static bool sccroll_flag(int testflags, SccrollFlags flag)
-{
-    return (bool)(testflags & flag);
 }
 
 static const SccrollEffects* sccroll_pop(void)
@@ -845,7 +855,7 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
 static const char* sccroll_strip(int flags, const char* restrict string)
 {
     char* stripped = strdup(string ? string : "");
-    if (!sccroll_flag(flags, NOSTRP)) {
+    if (!sccroll_hasFlags(flags, NOSTRP)) {
         while(isspace(*stripped)) ++stripped;
         char* end = stripped+strlen(stripped)-1;
         while(end > stripped && isspace(*end)) {
@@ -885,9 +895,10 @@ static void sccroll_free(const SccrollEffects* restrict effects)
  ******************************************************************************/
 // clang-format on
 
-void sccroll_assert(int test, const char* restrict fmt, ...)
+__attribute__((format(printf,2,3)))
+void sccroll_assert(int expr, const char* restrict fmt, ...)
 {
-    if (!test) {
+    if (!expr) {
         va_list args;
         va_start(args, fmt);
         vfprintf(stderr, fmt, args);
@@ -897,4 +908,34 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
     }
 }
 
+// clang-format off
+
+/******************************************************************************
+ * Mocks
+ ******************************************************************************/
+// clang-format on
+
+weak_alias(sccroll_enone, sccroll_mockTrigger);
+static unsigned sccroll_enone(void) { return SCCENONE; }
+
+SCCROLL_MOCK(void, abort, void)
+{
+    // On enregistre les fonctions avec atexit afin de permettre une
+    // couverture de code complète: puisque les fonctions sont
+    // appelées après exit, toutes les lignes de la fonction sont
+    // utilisées. L'ordre est important, car les fonctions sont
+    // appelée en ordre inverse de leur inscription.
+    //
+    // La fonction doit quitter. Mais une erreur possible pour elle
+    // est de quitter de la mauvaise manière: au lieu de s'arrêter
+    // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
+    // s'arrête avec exit et un status d'erreur. Ici c'est une
+    // fonction qui ne fait rien qui est utilisée à la place de la
+    // fonction abort originelle car ce simulacre quitte déjà avec un
+    // exit et un code d'erreur (qui ne sera pas renvoyé si l'abort
+    // originelle est utilisée).
+    atexit(sccroll_hasFlags(sccroll_mockTrigger(), SCCEABORT) ? sccroll_void : __real_abort);
+    atexit(__gcov_dump);
+    exit(SIGABRT);
+}
 /** @} */

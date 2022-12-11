@@ -123,6 +123,17 @@ typedef enum SccrollFlags {
 } SccrollFlags;
 
 /**
+ * @def sccroll_hasFlags
+ * @since 0.1.0
+ * @brief Détermine si les drapeaux @p values sont contenus dans flags.
+ * @param flags Les drapeaux combinés avec OR.
+ * @param values Les drapeaux recherchés combinés avec OR.
+ * @return @p values si @p flags les contient, sinon 0.
+ * @throw SIGABRT si @p value a une valeur impaire si > 1.
+ */
+#define sccroll_hasFlags(flags, values) ((flags) & (values))
+
+/**
  * @struct SccrollEffects
  * @since 0.1.0
  * @brief Gère les informations sur les effets secondaires de
@@ -379,8 +390,8 @@ int sccroll_run(void);
 /**
  * @since 0.1.0
  */
-void sccroll_assert(int test, const char* restrict fmt, ...)
-    __attribute__((format(printf, 2, 3)));
+void sccroll_assert(int expr, const char* restrict fmt, ...)
+    __attribute__((nonnull(2)));
 
 /**
  * @def assertMsg
@@ -627,6 +638,46 @@ void sccroll_assert(int test, const char* restrict fmt, ...)
 #define SCCROLL_MOCK(retval, name, ...)         \
     extern __typeof__(name) __real_##name;      \
     retval __wrap_##name(__VA_ARGS__)
+
+/**
+ * @enum SccrollMockFlags
+ * @since 0.1.0
+ * @brief Drapeaux utilisables par sccroll_mockTrigger() pour indiquer
+ * quel simulacre pré-fourni doit être en erreur.
+ */
+typedef enum SccrollMockFlags {
+    SCCENONE  = 0, /**< Drapeau ne provoquant pas d'erreurs. */
+    SCCEABORT = 2, /**< Drapeau de abort(). */
+} SccrollMockFlags;
+
+/**
+ * @since 0.1.0
+ * @brief Fonction utilisée pour provoquer une erreur dans les
+ * simulacres fournis par la bibliothèque.
+ * @attention Cette fonction de provoque pas d'erreur par défaut. Elle
+ * peut cependant être redéfinie sans problèmes par l'utilisateur afin
+ * de provoquer les erreurs voulues selon les conditions voulues.
+ * @see sccroll_hasFlags
+ * @return Un ensemble de SccrollMockFlags combinés avec OR; tous les
+ * simulacres correspondants aux drapeaux entreront en erreur.
+ */
+unsigned sccroll_mockTrigger(void);
+
+/**
+ * @since 0.1.0
+ * @brief Simulacre de @c abort permettant de sauvegarder les données
+ * de couverture de gcov.
+ *
+ * La fonction @c abort interromp la récolte de données entamée par @c
+ * gcov , provoquant ainsi un biais de couverture. L'utilisation de ce
+ * simulacre corrige ces biais.
+ *
+ * Ce simulacre peut provoquer une erreur si #SCCEABORT est contenu
+ * dans les drappeaux renvoyés par sccroll_mockTrigger(). L'erreur
+ * provoquée est que le programme quittera avec `exit(SIGABRT)` au
+ * lieu d'utiliser la fonction __real_abort().
+ */
+void __wrap_abort(void) __attribute__((noreturn));
 
 // clang-format off
 /******************************************************************************

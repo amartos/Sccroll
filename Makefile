@@ -46,7 +46,7 @@ vpath %.d  $(DEPS)
 
 CC		:= gcc
 STD		:= gnu99
-CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) -c
+CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) $(shell $(SCRIPTS)/mocks.awk $(SRCS)/$(PROJECT).c) -c
 LDLIBS	 	:= -L $(SHARED) -l $(PROJECT)
 DEPFLAGS	:= -MMD -MP -MF
 
@@ -94,10 +94,7 @@ lib%.so: %.c
 	@$(CC) $(CFLAGS) -fpic -shared $(DEPFLAGS) $(DEPS)/$*.d $< -o $(SHARED)/$@
 
 $(BIN)/%: %.o
-	@$(CC) $(OBJS)/$*.o $(OBJS)/common.o $(LDLIBS) \
-		$(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c) \
-		$(shell $(SCRIPTS)/mocks.awk $(TESTS)/common.c) \
-		-o $@
+	@$(CC) $(OBJS)/$*.o $(LDLIBS) -o $@
 
 %.log: $(BIN)/%
 	@mkdir -p $(TMP)
@@ -120,8 +117,9 @@ $(PROJECT): init lib$(PROJECT).so
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 unit-tests: CFLAGS += --coverage -g -O0
 unit-tests: LDLIBS += --coverage -lgcov
+unit-tests: LDLIBS += $(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c $(SRCS)/$(PROJECT).c)
 unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
-unit-tests: init $(PROJECT) common.o $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
+unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
 	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
 	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(TMP)/$(PROJECT)_main_tests.log)

@@ -339,6 +339,19 @@ static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][
 
 /**
  * @since 0.1.0
+ * @brief Copie la chaîne, et retire les espaces en début et fin si
+ * @p flags ne contien pas #NOSTRP.
+ * @see #NOSTRP
+ * @attention Utilise malloc.
+ * @param flags Les drapeaux du test.
+ * @param string La chaîne à traiter.
+ * @return Une copie de la chaîne, avec les espaces amonts et avals
+ * retirés si le drapeau #NOSTRIP n'est pas donné.
+ */
+static char* sccroll_strip(int flags, const char* restrict string);
+
+/**
+ * @since 0.1.0
  * @brief Lis le contenu des fichiers de SccollEffects::files::path et
  * stocke les #SCCMAX premiers caractères dans
  * SccrollEffects::files::content.
@@ -530,19 +543,6 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
                       expected->name, ##__VA_ARGS__);                   \
         diff = true;                                                    \
     }
-
-/**
- * @since 0.1.0
- * @brief Si #NOSTRIP n'a pas été donné pour le test, renvoie une
- * copie de la chaîne où les espaces en amont et aval ont été retirés.
- * @attention Utilise malloc.
- * @param flags Les drapeaux du test.
- * @param string La chaîne à traiter.
- * @return Une copie de la chaîne, avec les espaces amonts et avals
- * retirés si le drapeau #NOSTRIP n'est pas donné; si #string est
- * @c NULL , renvoie une chaîne vide.
- */
-static const char* sccroll_strip(int flags, const char* restrict string);
 
 /**
  * @since 0.1.0
@@ -761,9 +761,21 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
     char buffer[SCCMAX] = { 0 };
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
         sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer);
-        result->std[i] = strdup(buffer);
+        result->std[i] = sccroll_strip(result->flags, buffer);
         memset(buffer, 0, strlen(buffer));
     }
+}
+
+static char* sccroll_strip(int flags, const char* restrict string)
+{
+    char* stripped = strdup(string);
+    if (!sccroll_hasFlags(flags, NOSTRP)) {
+        while(isspace(*stripped)) ++stripped;
+        char* end = stripped+strlen(stripped)-1;
+        while(end > stripped && isspace(*end)) *end-- = 0;
+    }
+
+    return stripped;
 }
 
 static void sccroll_files(SccrollEffects* restrict result)
@@ -816,8 +828,6 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
     bool diff                    = false;
     int flags                    = expected->flags;
     const char* name             = expected->name;
-    const char* expectedstr      = NULL;
-    const char* resultstr        = NULL;
     const char* const descs[][3] = {
         {"errno", "signal", "status"},
         {   NULL, "stdout", "stderr"}
@@ -832,13 +842,13 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
         }
 
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
-    {
-        expectedstr = sccroll_strip(flags, expected->std[i]);
-        resultstr   = sccroll_strip(flags, result->std[i]);
-        sccroll_strcmp(expectedstr, resultstr, OUTPUTFMT, descs[1][i], resultstr);
-        free((void*)expectedstr);
-        free((void*)resultstr);
-    }
+        sccroll_strcmp(
+            expected->std[i] ? expected->std[i] : "",
+            result->std[i],
+            OUTPUTFMT,
+            descs[1][i],
+            result->std[i]
+        );
 
     for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i)
         sccroll_strcmp(
@@ -850,21 +860,6 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
             result->files[i].content);
 
     return diff;
-}
-
-static const char* sccroll_strip(int flags, const char* restrict string)
-{
-    char* stripped = strdup(string ? string : "");
-    if (!sccroll_hasFlags(flags, NOSTRP)) {
-        while(isspace(*stripped)) ++stripped;
-        char* end = stripped+strlen(stripped)-1;
-        while(end > stripped && isspace(*end)) {
-            *end = 0;
-            --end;
-        }
-    }
-
-    return stripped;
 }
 
 static void sccroll_review(int report[REPORTMAX])

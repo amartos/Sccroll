@@ -856,8 +856,9 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
             result->files[i].content,
             FILESFMT,
             expected->files[i].path,
-            expected->files[i].content,
-            result->files[i].content);
+            expected->files[i].content ? expected->files[i].content : "",
+            result->files[i].content
+        );
 
     return diff;
 }

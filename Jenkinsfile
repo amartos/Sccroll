@@ -10,7 +10,7 @@ pipeline {
         }
         stage("Coverage reports") {
             steps {
-                sh "make code-coverage"
+                sh "make coverage"
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: false,

@@ -1,50 +1,18 @@
 /**
  * @file        sccroll.h
  * @version     0.1.0
- * @brief       Librairie Sccroll, framework de tests unitaires.
+ * @brief       Ficher en-tête de Sccroll.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
  * @compilation
  * @code{.sh}
- * gcc -xc -Wall -Wextra -std=gnu99 \
- *     -fpic -shared sccroll.c \
- *     -o libsccroll.so
+ * gcc -xc -Wall -std=gnu99 -I include \
+ *     -fpic -shared -Wl,--wrap,abort \
+ *     -o build/libs/libsccroll.so
  * @endcode
  *
- * @details
- * @parblock
- * Ce module est un framework de tests unitaires. Le fichier header
- * est à importer dans le fichier source contenant les tests unitaires
- * à effectuer. Les tests sont définis selon la syntaxe suivante:
- *
- * @code{.c}
- * SCCROLL_TEST(nom_du_test) { assert(...); }
- * @endcode
- *
- * La macro s'occupe d'inscrire le test pour exécution et rapport.
- * La macro prend également en charge les attributs optionnels du
- * compilateur GCC (et compatibles) si placé en en-tête de la
- * définition (cf. documentation).
- *
- * Le fichier de tests ne nécessite aucune fonction @c main(), puisque la
- * librairie en fournit une. Toutefois, si un @c main() personnalisé est
- * nécessaire, il est possible de désactiver la fonction par défaut en
- * définissant la macro @c SCCROLL_NOMAIN à la compilation.
- * Les fonctions sccroll_register() et sccroll_run() permettent
- * respectivement d'inscrire une fonction de test non définie par
- * #SCCROLL_TEST et d'exécuter les tests.
- *
- * L'ordre d'exécution des tests n'est pas garantit, il est donc
- * déconseillé de faire dépendre plusieurs tests entre eux.
- *
- * La librairie fournit également des fonctions d'assertion:
- *
- *
- * @endparblock
- *
- * @addtogroup Sccroll
- *
+ * @addtogroup API API de Sccroll
  * @{
  */
 
@@ -69,14 +37,75 @@
 // clang-format off
 
 /******************************************************************************
- * @addtogroup Definition Les tests unitaires.
- * @brief Gestion de l'inscription, exécution et rapport de tests
- * unitaires.
+ * @addtogroup TestsAPI Tests unitaires
+ * @{
  *
- * Les structures, macros et fonctions du groupe permettent de
- * préparer les tests, de les définir, de les enregistrer pour
- * éxécution, et d'effectuer un nettoyage après exécution.
+ * @addtogroup PrepAPI Préparation
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @name Fonctions exécutée à des moments précis lors des tests
  *
+ * Ces fonctions de préparation sont exécutées à des moments
+ * prédéterminés autour de l'exécution d'un test.
+ *
+ * Cette section ne représente qu'une interface disponible, la
+ * définition de ses fonctions sont laissées à l'utilisateur. Si l'une
+ * d'elles n'est pas définie, elle n'a aucun effet.
+ *
+ * @internal
+ * @note Toutes les fonctions de cette section sont des alias faibles d'une
+ * fonction qui n'a aucun effet.
+ * @endinternal
+ * @{
+ */
+
+/**
+ * @since 0.1.0
+ * @brief Première fonction exécutée par sccroll_run().
+ */
+void sccroll_init(void);
+
+/**
+ * @since 0.1.0
+ * @brief Dernière fonction exécutée par sccroll_run().
+ */
+void sccroll_clean(void);
+/** @} */
+
+/**
+ * @name Fonctions exécutées avec chaque test
+ * @{
+ */
+
+/**
+ * @since 0.1.0
+ * @brief Fonction appelée juste avant l'exécution de *chaque*
+ * SccrollEffects::wrapper.
+ */
+void sccroll_before(void);
+
+/**
+ * @since 0.1.0
+ * @brief Fonction appelée juste après l'exécution de *chaque*
+ * SccrollEffects::wrapper.
+ */
+void sccroll_after(void);
+/** @} */
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @addtogroup DefAPI Définition
+ *
+ * Les tests unitaires et leurs effets sont décris à la librairie à
+ * l'aide de la structure SccrollEffects. Leur définition est
+ * facilitée par la macro SCCROLL_TEST() dont l'utilisation est
+ * similaire à celle d'une définition de fonction.
  * @{
  *****************************************************************************/
 // clang-format on
@@ -92,21 +121,14 @@ typedef void (*SccrollFunc)(void);
  * @enum SccrollIndexes
  * @since 0.1.0
  * @brief Index des tables de SccrollEffects.
- * @note #SCCMAX est généralement utilisé comme valeur d'index maximal
- * dans la librairie.
- * @attention Les index utilisables de SccrollEffects::std sont
- * #STDOUT_FILENO et #STDERR_FILENO.
  */
 typedef enum SccrollIndexes {
-    /**
-     * @name Codes
-     * @brief codes d'erreur de la fonction de test.
-     * @{ */
-    SCCERRNUM = 0, /**< Code errno. */
-    SCCSIGNAL = 1, /**< Code de signal. */
-    SCCSTATUS = 2, /**< Code de status/exit. */
-    SCCMAXSIG = 3, /**< Index maximal de SccrollEffects::codes. */
-    /** @} */
+    SCCERRNUM = 0,                 /**< Index du code errno. */
+    SCCSIGNAL = 1,                 /**< Index du code de signal. */
+    SCCSTATUS = 2,                 /**< Index du code de status/exit. */
+    SCCMAXSIG = 3,                 /**< Index maximal de SccrollEffects::codes. */
+    SCCSTDOUT = STDOUT_FILENO,     /**< Index de l'output sur stdout. */
+    SCCSTDERR = STDERR_FILENO,     /**< Index de l'output sur stderr. */
     SCCMAXSTD = STDERR_FILENO + 1, /**< Index maximal de SccrollEffects::std. */
     SCCMAX    = BUFSIZ,            /**< Index maximal de SccrollEffects::files. */
 } SccrollIndexes;
@@ -115,6 +137,8 @@ typedef enum SccrollIndexes {
  * @enum SccrollFlags
  * @since 0.1.0
  * @brief Drapeaux d'options pour un test.
+ * @attention Le comportement par défaut du programme est l'inverse de
+ * toutes les options définies ici.
  */
 typedef enum SccrollFlags {
     NOSTRP = 1, /**< Ne pas réduire les espaces autour des sorties standard.*/
@@ -139,25 +163,24 @@ typedef enum SccrollFlags {
  * @brief Gère les informations sur les effets secondaires de
  * l'exécution d'une fonction.
  *
- * @parblock
- * Cette structure est la structure principale de la librairie. Elle
- * sert à passer au programme les informations sur les effets que l'on
- * attend d'un test, qui échouera si l'un d'eux diffère en réalité.
+ * Cette structure permet de décrire les effets attendus d'un
+ * test, et de passer certaines options au programme pour un test
+ * spécifique.
  *
- * La structure est également versatile. Elle permet de tester une
- * fonction "généraliste", contenant par exemple de multiples
- * assertions, ou encore de tester les effets attendu d'une unique
- * fonction appelée seule (et sans assertions) dans la fonction
- * SccrollEffects::wrapper.
+ * Le pointeur de la fonction de test est tocké dans
+ * SccrollEffects::wrapper. Lors de son exécution, si l'un des effets
+ * attendus diffère de celui observé, un message d'erreur est levé. Le
+ * message utilise le nom défini dans SccrollEffects::name pour une
+ * bonne identification du test en échec.
  *
- * À l'exception de SccrollEffects::files, toutes les valeurs de
- * #expected sont vérifiées, même si elles sont nulles. Les chaînes de
- * caractères NULL équivalent à une chaîne vide. De plus, la valeur de
- * #errno est remise à 0 juste avant l'exécution du test.
+ * Cette structure est très versatile, dans le sens où elle permet
+ * soit d'effectuer une série de tests, soit de tester les effets
+ * d'une unique fonction, la seule différence résidant dans le code de
+ * la fonction SccrollEffects::wrapper et dans les effets attendus
+ * indiqués.
  *
- * Pour SccrollEffects::files, seuls les fichiers ayant un
- * SccrollEffects::files::path défini (non @c NULL ) sont testés.
- * @endparblock
+ * Les options disponibles pour un test sont listées dans la structure
+ * SccrollFlags, et doivent être données par combinaison OR.
  */
 typedef struct SccrollEffects {
     struct {
@@ -166,128 +189,76 @@ typedef struct SccrollEffects {
     } files[SCCMAX];      /**< Vérification du  contenu de fichiers. */
     char* std[SCCMAXSTD]; /**< Vérification des outputs sur les sorties standard. */
     int codes[SCCMAXSIG]; /**< Vérification des codes d'erreur, signal et status. */
-    int flags;            /**< Drapeaux d'options SccrollFlags. */
+    unsigned flags;       /**< Drapeaux d'options SccrollFlags. */
     SccrollFunc wrapper;  /**< La fonction de test unitaire. */
     const char* name;     /**< Nom descriptif du test. */
 } SccrollEffects;
 
-// clang-format off
-
-/******************************************************************************
- * @addtogroup TestPrep Préparation des tests.
- * @brief Commandes exécutées avant ou après les tests unitaires.
- *
- * @parblock
- * Les fonctions sccroll_init() et sccroll_clean() sont exécutées
- * respectivement avant @b l'ensemble des tests unitaires et juste
- * avant la fin du programme (cf. atexit()).
- *
- * Les fonctions sccroll_before() et sccroll_after() sont appelées
- * respectivement avant et après @b chacune des fonctions de
- * test.
- * @endparblock
- *
- * @attention Toutes ces fonctions sont à définir par
- * l'utilisateur. Elles sont appelées automatiquement par la fonction
- * sccroll_run().
- *
+/**
+ * @name Générateurs de données
  * @{
- ******************************************************************************/
-// clang-format on
-
-/**
- * @since 0.1.0
- * @brief Première fonction exécutée par sccroll_run().
  */
-void sccroll_init(void);
 
 /**
- * @since 0.1.0
- * @brief Dernière fonction exécutée par le main fournit.
- * @note Cette fonction est inscrite pour exécution lors d'un exit
- * avec atexit.
- */
-void sccroll_clean(void);
-
-/**
- * @since 0.1.0
- * @brief Prépare un test unitaire.
- *
- * Fonction appelée avant chaque test dont elle permet la
- * préparation (initialisation de variables, etc...).
- */
-void sccroll_before(void);
-
-/**
- * @since 0.1.0
- * @brief Nettoie après un test unitaire.
- *
- * Fonction appelée après chaque test dont elle permet le
- * nettoyage (libération de mémoire, etc...).
- */
-void sccroll_after(void);
-
-/**
+ * @def sccroll_monkey
  * @since 0.1.0
  * @brief Rempli un espace mémoire de données aléatoires.
- *
- * Remmplit l'espace mémoire pointé par #blob sur #size octets de
- * données aléatoires.
- *
  * @param blob Un espace mémoire à remplir.
  * @param size Le nombre d'octets à remplir.
  */
 #define sccroll_monkey arc4random_buf
+/** @} */
 
 // clang-format off
 
 /******************************************************************************
  * @}
  *
- * @addtogroup Register Enregistrement des tests.
- * @brief Commandes enregistrant les tests pour exécution.
+ * @addtogroup RecAPI Enregistrement
  *
+ * Il existe deux manières d'inscrire un test unitaire pour exécution:
+ * soit la structure SccrollEffects correspondante est confiée à
+ * sccroll_register(), soit le test est défini à l'aide de la macro
+ * SCCROLL_TEST(). Les deux méthodes peuvent être utilisées dans un
+ * même fichier source de tests.
+ *
+ * @attention Un test défini avec SCCROLL_TEST() et enregistré avec
+ * sccroll_register() sera exécuté **deux** fois.
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Inscrit le test décrit par #expected pour exécution.
- * @attention Cette fonction n'a pas besoin d'être appelée par
- * l'utilisateur s'il définit les tests à l'aide de la macro
- * #SCCROLL_TEST. Un test défini par cette dernière et inscrit avec
- * sccroll_register() sera exécuté deux fois.
+ * @brief Inscrit le test décrit par @p expected pour exécution.
+ * @attention Un test défini par SCCROLL_TEST() et inscrit avec
+ * sccroll_register() sera exécuté **deux** fois.
  * @param expected Les informations nécessaires pour l'exécution d'un
  * test et comparaison des résultats.
+ * @throw SIGABRT si la fonction est exécutée au
+ * sein d'une fonction de test.
  */
 void sccroll_register(const SccrollEffects* restrict expected)
     __attribute__((nonnull));
 
 /**
- * @ingroup Definition
+ * @ingroup DefAPI
  * @def SCCROLL_TEST
  * @since 0.1.0
  * @brief Définit et enregistre un test pour exécution.
  *
- * @parblock
- * Créé et inscrit une fonction de test unitaire #testname ayant
- * pour code la suite d'instructions située dans les accolades suivant
- * directement la macro (comme pour la définition d'une fonction), et
- * l'inscrit pour exécution. Le nom du test est identique à celui de
- * la fonction.
+ * La macro s'utilise de manière similaire à la définition d'une
+ * fonction. Le code entre crochets situé directement après la macro
+ * constitue le code de la fonction de test @p testname , qui est
+ * automatiquement enregistrée pour exécution.
  *
- * Il est possible de fournir les valeurs attendues pour les
- * différents membres de SccrollEffects (à l'exception de
- * SccrollEffects::wrapper et SccrollEffects::name), comme lors d'une
- * initialisation de la structure.
+ * Les paramètres suivants sont ceux donnés à la structure
+ * SccrollEffects afin de décrire les effets attendus (même syntaxe
+ * que pour l'initialisation de la structure). Si aucun paramètre
+ * n'est donné, les valeurs des effets attendus seront @c 0 ou @c ""
+ * pour l'ensemble des éléments testés.
  *
- * Toute donnée attendue non fournie équivaut à une donnée attendue
- * valant 0 (ou vide pour les chaînes de caractères).
- *
- * Exemples de définition de tests:
- * @include tests/sccroll_template_tests.c
- * @enparblock
+ * @example SCCROLL_TEST.c
  *
  * @param testname Le nom du test unitaire.
  * @param ... Les données SccrollEffects attendues (syntaxe d'une
@@ -311,28 +282,15 @@ void sccroll_register(const SccrollEffects* restrict expected)
 /******************************************************************************
  * @}
  *
- * @addtogroup Execution Exécution des tests unitaires.
- * @brief Commandes gérant l'exécution et l'affichage des rapports des
- * tests unitaires.
+ * @addtogroup ExeAPI Exécution
  *
- * @parblock
- * <b>L'ordre d'exécution des tests n'est pas garantit</b>; aucun test
- * ne peut donc dépendre de manière fiable de l'exécution d'un
- * autre. L'ordre d'exécution garanti des fonctions de la librairie
- * (fonction sccroll_run() ou la fonction main() fournie) est le
- * suivant:
+ * La librairie fournit une fonction main exécutée par
+ * défaut. Un fichier source de tests unitaires n'a donc besoin que de
+ * la définition des tests avec SCCROLL_TEST().
  *
- * 1. sccroll_init()
- * 2. sccroll_run()
- *   - Pour chaque test unitaire:
- *   1. sccroll_before()
- *   2. @c fonction_du_test()
- *   3. sccroll_after()
- * 3. sccroll_clean() (lors d'un exit).
- *
- * Tous les rapports sont affichés par défault sur stderr.
- * @endparblock
- *
+ * Cependant, si une fonction main est redéfinie par l'utilisateur, il
+ * est possible de lancer l'exécution des tests à l'aide de
+ * sccroll_run().
  * @{
  ******************************************************************************/
 // clang-format on
@@ -340,15 +298,14 @@ void sccroll_register(const SccrollEffects* restrict expected)
 /**
  * @since 0.1.0
  * @brief Exécute les tests unitaires et affiche un rapport.
- *
- * Exécute tous les tests définis avec la macro #SCCROLL_TEST (ou
- * enregistrés avec la fonction sccroll_register() ), et affiche un
- * rapport détaillé sur le résultat.
- *
- * @attention Cette fonction est appelée automatiquement par la
- * fonction main() fournie. Elle n'est à utiliser que lors d'une
- * redéfinition de cette dernière.
- * @return le nombre de tests ayant échoué.
+ * @attention La librairie fournit une fonction main par défaut qui
+ * exécute sccroll_run(). Si la fonction main est redéfinie, il est
+ * nécessaire d'appeler sccroll_run() pour lancer les tests. À
+ * l'inverse, si aucun main n'est défini pour les tests, l'appel de
+ * sccroll_run() est inutile.
+ * @return le nombre de tests en échec.
+ * @throw SIGABRT si la fonction est exécutée au
+ * sein d'une fonction de test.
  */
 int sccroll_run(void);
 
@@ -356,35 +313,59 @@ int sccroll_run(void);
 
 /******************************************************************************
  * @}
+ * @}
  *
- * @addtogroup Asserts Fonctions d'assertion.
+ * @addtogroup AssertAPI Assertions
  *
+ * La bibliothèque définit sa propre macro assert() et/ou remplace celle
+ * de la bibliothèque standard @c assert.h dans deux cas:
+ * - la librairie @c assert.h n'est pas incluse;
+ * - la librairie @c assert.h est incluse, mais @c NDEBUG est défini.
+ *
+ * Ceci assure que l'ensemble des assertions des tests unitaires
+ * seront bien effectuées dans tous les cas. De même, les tests
+ * unitaires deviennent donc insensibles à la définition de @c NDEBUG.
+ *
+ * La macro assert(), bien que mimant le comportement de celle de la
+ * bibliothèque standard, affiche un message différent de cette
+ * dernière.
+ *
+ * La librairie s'assure aussi que les données de couverture pour gcov
+ * sont bien récupérées avant l'appel à @c abort; la fonction
+ * sccroll_abort() est spécifiquement conçue dans cette optique.
+ * Dans le cas où la macro @c assert de la librairie standard est
+ * utilisée, un mock de @c abort est doit être généré par la librairie
+ * dans ce but.
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
- * @ingroup FormatStrings
  * @def SCCASSERTFMT
  * @since 0.1.0
  * @brief Format des messages d'erreurs d'assertion.
+ * @see sccroll_assert()
  * @param s Le nom du fichier.
- * @param s Le numéro de ligne.
+ * @param i Le numéro de ligne.
  * @param s Le nom de la fonction.
  * @param s L'expression testée.
  */
 #define SCCASSERTFMT "%s (l. %i): Assertion `%s' failed."
 
 /**
- * @name AssertMsg
- * @brief Si #test vaut 0, lève une erreur d'assertion, affiche un
- * message d'erreur et termine le programme.
- * @param test Indique de lever une erreur d'assertion si sa valeur
- * est nulle. N'importe quelle autre valeur évite l'erreur.
+ * @name Assertions avec messages personnalisés
+ *
+ * Les macros et fonctions suivantes ne génèrent pas de message
+ * d'erreur automatiquement, laissant sa définition à l'utilisateur.
+ *
+ * @note Ces macros et fonctions appellent __gcov_dump() *avant*
+ * d'appeler abort().
+ * @{
+ * @param expr Expression booléenne indiquant de lever une erreur
+ * d'assertion si elle est fausse.
  * @param fmt Chaîne de formatage du message d'erreur.
  * @param ... Paramètres de la chaîne de formatage.
- * @throw AssertionError si #test vaut 0.
- * @{
+ * @throw SIGABRT si @p expr est fausse.
  */
 
 /**
@@ -396,17 +377,17 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def assertMsg
  * @since 0.1.0
- * Cette macro est un alias simplifié de sccroll_assert().
+ * @brief Alias de sccroll_assert().
  */
 #define assertMsg sccroll_assert
 /** @} */
 
 /**
  * @name Assertion
- * @brief Si l'expression #expr est fausse, lève une erreur
- * d'assertion, affiche un message d'erreur et termine le programme.
- * @param expr Une expression à évaluer.
- * @throw AssertionError si #expr est fausse.
+ * @{
+ * @param expr Expression booléenne indiquant de lever une erreur
+ * d'assertion si elle est fausse.
+ * @throw SIGABRT si @p expr est fausse.
  */
 
 #if !defined(_ASSERT_H) || (defined(_ASSERT_H) && defined(NDEBUG))
@@ -415,14 +396,12 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
     /**
      * @def assert
      * @since 0.1.0
-     *
-     * Cette macro est une alternative à la macro @c assert de la
-     * librairie standard.
-     *
+     * @brief Alternative à la macro @c assert de la librairie
+     * standard.
      * @attention Cette macro n'est pas chargée si le fichier header
      * @c assert.h est inclus dans un fichier de tests. De plus, au
      * contraire de celle de la librairie standard, cette macro-ci n'est
-     * pas sensible à la définition de la macro #NDEBUG.
+     * pas sensible à la définition de la macro @c NDEBUG .
      */
     #define assert(expr)             \
         sccroll_assert((bool)(expr), \
@@ -432,17 +411,17 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def assertTrue
  * @since 0.1.0
- * Alias de assert pour plus de clarté.
+ * @brief Alias de assert().
  */
 #define assertTrue assert
 /** @} */
 
 /**
- * @name AssertFalse
- * @brief Assertion vérifiant que l'expression #expr est fausse.
- * @param expr Une expression à évaluer.
- * @throw AssertionError si l'expression #expr est vraie.
+ * @name Assertions inversées
  * @{
+ * @param expr Expression booléenne indiquant de lever une erreur
+ * d'assertion si elle est vraie.
+ * @throw SIGABRT si @p expr est vraie.
  */
 
 /**
@@ -454,118 +433,120 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def assertNot
  * @since 0.1.0
- * Alias de #assertFalse.
+ * @brief Alias de assertFalse().
  */
 #define assertNot assertFalse
 
 /**
  * @def assertNull
  * @since 0.1.0
- * Alias de #assertFalse.
+ * @brief Alias de assertFalse().
  */
 #define assertNull assertFalse
 /** @} */
 
 /**
- * @name AssertPointers
- * @brief Lève une erreur d'assertion si la comparaison des pointeurs
- * #a et #b est fausse.
- * @param a,b Deux pointeurs à comparer.
- * @throw AssertionError si la comparaison est fausse.
+ * @name Assertions sur l'identité de pointeurs
+ * @brief Macros et fonctions levant une erreur d'assertion si la
+ * comparaison des **pointeurs** est fausse.
+ * @attention Les pointeurs ne sont pas déréférencés, et leur
+ * comparaison implique donc de comparer les adresses qu'ils
+ * contiennent et non les données correspondantes.
  * @{
+ * @param a,b Pointeurs à comparer.
+ * @throw SIGABRT si la comparaison attendue est fausse.
  */
 
 /**
  * @def assertEql
  * @since 0.1.0
- * Vérifie que @verbatim a == b @endverbatim.
+ * @brief Vérifie que `a == b`
  */
 #define assertEql(a, b) assert(a == b)
 
 /**
- * @brief assertNotEql
+ * @def assertNotEql
  * @since 0.1.0
- * Vérifie que @verbatim a != b @endverbatim.
+ * @brief Vérifie que `a != b`
  */
 #define assertNotEql(a, b) assert(a != b)
 /** @} */
 
 /**
- * @name AssertComp
- * @brief Assertion vérifiant que la comparaison des données des deux
- * variables indiquée est vraie.
- * @attention Au contraire de #assertEql, ce sont les données de #a et
- * #b qui sont comparées, et non les pointeurs.
- * @param a,b Pointeurs des variables à comparer.
+ * @name Assertions sur les données
+ * @brief Macros et fonctions levant une erreur d'assertion si la
+ * comparaison des **données pointées** est fausse.
+ * @{
+ * @param a,b Pointeurs de données à comparer.
+ * @param sign Signe de comparaison d'entiers symbolisant la
+ * comparaison attendue entre @p a et @p b. La comparaison est
+ * toujours effectuée dans le sens `a sign b`
  * @param cmp Fonction de comparaison prenant au moins les deux
- * pointeurs en arguments et renvoyant un nombre négatif, nul ou
- * positif selon que, respectivement, @verbatim a < b @endverbatim,
- * @verbatim a == b @endverbatim ou @verbatim a > b @endverbatim. Le
- * modèle est celui des fonction de type #comparison_fn_t (utilisé par
- * qsort()).
- * @param ... Arguments supplémentaires optionnels pour #cmp qui lui
- * sont passés tels quels.
- * @throw AssertionError si la comparaison est fausse.
+ * pointeurs @p a et @p b en arguments et renvoyant un nombre négatif,
+ * nul ou positif selon que, respectivement: `a < b`, `a == b` ou
+ * `a > b`. Le prototype attendu est analogue à celui des fonctions
+ * utilisées par
+ * [qsort](https://www.gnu.org/software/libc/manual/html_node/Comparison-Functions.html),
+ * bien que le type de @p a et @p b ne soit pas restreint
+ * à @c void* .
+ * @param ... Arguments supplémentaires **optionnels** pour @p cmp qui
+ * lui sont passés tels quels. Le prototype de @p cmp doit alors être
+ * celui d'une fonction de comparaison, mais dont les arguments
+ * supplémentaires sont situés *après* les pointeurs à comparer:
+ * `int cmp(type a, type b, type arg1, type arg2, etc);`
+ * @throw SIGABRT si la comparaison attendue est fausse
  */
 
 /**
  * @def assertCmp
  * @since 0.1.0
- * @param sign Signe de comparaison des variables parmi
- * @verbatim < <= == => > != @enverbatim; la comparaison est toujours
- * dans le sens @verbatim a sign b @enverbatim.
+ * @brief Effectue la comparaison `a sign b`.
  */
 #define assertCmp(a, sign, b, cmp, ...) assert(cmp(a, b, ##__VA_ARGS__) sign 0)
 
 /**
  * @def assertEqual
  * @since 0.1.0
- *
- * Vérifie que les données de #a et #b sont identiques.
+ * @brief Vérifie que les données de @p a et @p b sont identiques.
  */
 #define assertEqual(a, b, cmp, ...) assertCmp(a, ==, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertNotEqual
  * @since 0.1.0
- *
- * Vérifie que les données de #a et #b sont différentes.
+ * @brief Vérifie que les données de @p a et @p b sont différentes.
  */
 #define assertNotEqual(a, b, cmp, ...) assertCmp(a, !=, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertSmaller
  * @since 0.1.0
- *
- * Vérifie que les données de #a sont toutes plus petites que delles
- * de #b.
+ * @brief Vérifie que les données de @p a sont plus petites que celles de
+ * @p b selon @p cmp.
  */
 #define assertSmaller(a, b, cmp, ...) assertCmp(a, <, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertGreater
  * @since 0.1.0
- *
- * Vérifie que les données de #a sont toutes plus grandes que celles
- * de #b.
+ * @brief Vérifie que les données de @p a sont plus grandes que celles de
+ * @p b selon @p cmp.
  */
 #define assertGreater(a, b, cmp, ...) assertCmp(a, >, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertSmallerOrEqual
  * @since 0.1.0
- *
- * Vérifie que les données de #a sont toutes plus petites que ou
- * égales à celles de #b.
+ * @brief Vérifie que les données de @p a sont plus petites ou égales que
+ * celles de @p b selon @p cmp.
  */
 #define assertSmallerOrEqual(a, b, cmp, ...) assertCmp(a, <=, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertGreaterOrEqual
  * @since 0.1.0
- *
- * Vérifie que les données de #a sont toutes plus grandes que ou
- * égales à celles de #b.
+ * @brief Vérifie que les données de @p a sont plus grandes ou égales que
+ * celles de @p b selon @p cmp.
  */
 #define assertGreaterOrEqual(a, b, cmp, ...) assertCmp(a, >=, b, cmp, ##__VA_ARGS__)
 /** @} */
@@ -575,14 +556,13 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /******************************************************************************
  * @}
  *
- * @addtogroup LibMocks Génération de mocks.
+ * @addtogroup MocksAPI Simulacres
  *
- * Afin de pouvoir générer des résultats prévisibles pour certaines
- * assertions (par exemple, les captures d'erreurs conditionnelles),
- * il est parfois nécessaire de générer des mocks des fonctions
- * d'autres librairies. Les macros de cette section sont utilisées à
- * ces fins.
- *
+ * En C, la définition de simulacres (*mocks* en anglais) n'a pas la
+ * même signification que dans les langages orientés objets. Ici, un
+ * simulacre sera principalement une fonction (et non plus un objet)
+ * altérée de manière à pouvoir contrôler finement son comportement
+ * lors de l'exécution du programme.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -590,54 +570,53 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def sccroll_unused
  * @since 0.1.0
- * @brief Indique à la fonction qu'un paramètre n'est pas utilisé.
+ * @brief Indique à la fonction que le paramètre n'est pas utilisé.
  *
  * Cette macro est utile pour les mocks pour éviter les erreurs de
  * compilation si un des paramètres n'est pas utilisé.
+ * @param var Une variable non utilisée dans la fonction.
  */
 #define sccroll_unused(var) (void) var
 
 /**
  * @def SCCROLL_MOCK
  * @since 0.1.0
- * @brief Génère un un mock d'une fonction.
+ * @brief Génère un simulacre d'une fonction.
  *
- * @parblock
- * Cette macro est un simple alias pour la définition d'un @c wrapper
- * par le linker de GCC (@c ld ). Elle génère une fonction appelée à
- * la place de l'originale #name, cette dernière restant accessible
- * via l'alias @c __real_name().
+ * Comme pour SCCROLL_TEST(), cette macro s'utilise de manière analogue
+ * à la définition d'une fonction. Le prototype est passé à la macro
+ * et le code du simulacre et inclus dans des crochets suivant
+ * directement la macro. La fonction originelle est toujours
+ * disponible *via* l'appel de @c __real_name .
  *
- * La macro s'utilise comme pour la définition d'une fonction.
- * Voici un exemple de mock, ici de la fonction calloc() de la
- * librairie standard C:
+ * La syntaxe d'une définition de simulacre est particulère pour les
+ * paramètres dans le sens où un paramètre doit contenir à la fois le
+ * type et le nom de la variable (ce dernier peut être différent de
+ * celui de la fonction originelle) non séparés par une virgule.
  *
- * @code{.c}
- * SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
- * {
- *     // ... mon code, exemple:
- *     if (my_error_trigger) return NULL;
- *     // On utilise ici la fonction calloc originale.
- *     return __real_calloc(nmemb, size);
- * }
- * @endcode
- * @endparblock
+ * Il est possible de fournir des attributs à la fonction; ils doivent
+ * toutefois être placés avant la macro pour être pris en compte.
  *
- * @attention Nécessite l'option
- * @verbatim -Wl,--wrap,name,--wrap,... @endverbatim
- * (un @verbatim --wrap,name @enverbatim pour chaque fonction mockée)
- * à la compilation. La syntaxe est celle indiquée dans le manuel de
- * GCC (option @c -Wl ).
- *
- * @param rettype Le type des données renvoyées par la fonction.
- * @param name Le nom de la fonction mockée.
- * @param ... Les paramètres de la fonction mockée
- * (syntaxe: @verbatim rettype, name, typea variablea,
- * typeb variableb, ... @endverbatim) ou @c void si aucun paramètre.
+ * @attention Cette macro est conçue pour une compilation avec GCC.
+ * @attention L'utilisation de cette macro nécessite de passer le
+ * paramètre `--wrap name` au linker @c ld .
+ * L'option @c -Wl de GCC est utile en ce sens. De plus, le script
+ * @c mocks.awk de la librairie facilite la compilation de sources
+ * avec cette macro.
+ * @param retval Le type des données renvoyées par la fonction
+ * originelle.
+ * @param name Le nom de la fonction originelle.
+ * @param ... Les paramètres de la fonction originelle ou @c void si
+ * le simulacre ne prend aucun paramètre.
  */
 #define SCCROLL_MOCK(retval, name, ...)         \
     extern __typeof__(name) __real_##name;      \
     retval __wrap_##name(__VA_ARGS__)
+
+/**
+ * @name Simulacres prédéfinis
+ * @{
+ */
 
 /**
  * @enum SccrollMockFlags
@@ -647,7 +626,7 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
  */
 typedef enum SccrollMockFlags {
     SCCENONE  = 0, /**< Drapeau ne provoquant pas d'erreurs. */
-    SCCEABORT = 2, /**< Drapeau de abort(). */
+    SCCEABORT = 2, /**< Drapeau de __wrap_abort(). */
 } SccrollMockFlags;
 
 /**
@@ -678,12 +657,14 @@ unsigned sccroll_mockTrigger(void);
  * lieu d'utiliser la fonction __real_abort().
  */
 void __wrap_abort(void) __attribute__((noreturn));
+/** @} */
+
 
 // clang-format off
 /******************************************************************************
  * @}
- * @}
  ******************************************************************************/
 // clang-format on
 
-#endif // @} SCCROLL_H_
+#endif // SCCROLL_H_
+/** @} */

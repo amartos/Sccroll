@@ -7,15 +7,10 @@
  * @copyright   MIT License
  * @compilation
  * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -Iinclude \
- * tests/sccroll_main_tests.c -L build/libs -l scroll \
- * -o build/bin/sccroll_basics_tests
- * @encode
- *
- * @addtogroup Sccroll
- * @{
- * @addtogroup UnitTests
- * @{
+ * gcc -xc -Wall -std=gnu99 -I include \
+ *     -L build/libs -l scroll -Wl,--wrap,abort \
+ *     tests/sccroll_main_tests.c -o build/bin/sccroll_main_tests
+ * @endcode
  */
 
 // On s'assure d'utiliser l'assert original et non pas celui défini
@@ -24,32 +19,33 @@
 
 #include "sccroll.h"
 
-/**
- * @since 0.1.0
- * @brief Affiche un message sur stdout si le test est exécuté.
- */
+// clang-format off
+
+/******************************************************************************
+ * Préparation des tests.
+ ******************************************************************************/
+// clang-format on
+
+// Test simple, affiche un message sur stdout si le test est exécuté.
 SCCROLL_TEST(test_print) { assert(false && "Test executed."); }
 
-/**
- * @since 0.1.0
- * @brief Test de redéfinition du main() (version avec arguments).
- *
- * @param argc Le nombre d'arguments de la ligne de commande.
- * @param argv Les arguments de la ligne de commande.
- * @return EXIT_SUCESS.
- */
+// clang-format off
+
+/******************************************************************************
+ * Exécution des tests.
+ ******************************************************************************/
+// clang-format on
+
+// Test de redéfinition du main() (version avec arguments).
 int main(int argc, const char* argv[])
 {
     --argc;
     ++argv;
+    // L'affichage du test permet de montrer que c'est bien ce main
+    // qui a été exécuté.
     printf("Main executed with %i arguments: [ ", argc);
     while(*argv) printf("%s ", *argv++);
     puts("]");
     assert(sccroll_run() == 1);
     return EXIT_SUCCESS;
 }
-
-/******************************************************************************
- * @} (UnitTests)
- * @} (Sccroll)
- ******************************************************************************/

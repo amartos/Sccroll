@@ -7,15 +7,10 @@
  * @copyright   MIT License
  * @compilation
  * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -Iinclude \
- * tests/sccroll_prepfunc_tests.c -L build/libs -l scroll \
- * -o build/bin/sccroll_basics_tests
- * @encode
- *
- * @addtogroup Sccroll
- * @{
- * @addtogroup UnitTests
- * @{
+ * gcc -xc -Wall -std=gnu99 -I include \
+ *     -L build/libs -l scroll -Wl,--wrap,abort \
+ *     tests/sccroll_prepfunc_tests.c -o build/bin/sccroll_prepfunc_tests
+ * @endcode
  */
 
 // On s'assure d'utiliser l'assert original et non pas celui défini
@@ -24,42 +19,57 @@
 
 #include "sccroll.h"
 
-/**
- * @since 0.1.0
- *
- * Constantes numériques du test unitaire.
- */
+// clang-format off
+
+/******************************************************************************
+ * Préparation des tests.
+ ******************************************************************************/
+// clang-format on
+
+// Constantes numériques des tests unitaires.
 enum {
-    MAX_PREP = 100, /**< Nombre maximum de tests standard exécutés. */
+    MAX_PREP = 100, // Nombre maximum de tests exécutés.
 };
 
-/**
- * @{
- * @since 0.1.0
- *
- * Variables permettant de tester les fonctions de préparation (en les
- * modifiant dans chacune d'elles).
- */
+// Variables comptant le nombre d'appel des fonctions de préparation
+// correspondantes.
 static int init   = 0;
 static int clean  = 0;
 static int before = 0;
 static int after  = 0;
-/** @} */
+
+// clang-format off
+
+/******************************************************************************
+ * Tests unitaires.
+ ******************************************************************************/
+// clang-format on
 
 void sccroll_init(void) {  ++init; }
 void sccroll_clean(void) { ++clean; }
 void sccroll_before(void) { ++before; }
 void sccroll_after(void) { ++after; }
 
-/**
- * @since 0.1.0
- * @brief Test vérifiant les effets des fonctions de préparation.
- */
+// Test vérifiant les effets des fonctions de préparation au cours de
+// l'exécution.
 void test_prepfuncs(void)
 {
+    // sccroll_init() a été exécutée une fois avant tous les tests,
+    // mais sccroll_clean() ne le sera qu'après le dernier test.
     assert(init == 1 && clean == init-1);
+
+    // Pour le premier test, sccroll_before() a été exécuté, mais pas
+    // encore sccroll_after(). sccroll_before() est donc exécutée une
+    // fois de plus que sccroll_after() pour un test en cours.
     assert(before > 0 && after == before-1);
 }
+
+// clang-format off
+
+/******************************************************************************
+ * Exécution des tests.
+ ******************************************************************************/
+// clang-format on
 
 int main(void)
 {
@@ -68,23 +78,32 @@ int main(void)
         .wrapper = test_prepfuncs,
     };
 
-    // 10 to MAX_PREP tests at random
+    // 10 à MAX_PREP tests (nombre aléatoire).
     int repeats = 10 + random() % MAX_PREP;
     for (int i=0; i<repeats; ++i) sccroll_register(&test);
 
+    // On vérifie que les tests faits en cours d'exécution ont réussi.
     assert(!sccroll_run());
+
+    // sccroll_init() et sccroll_clean() ne doivent être exécutées
+    // qu'une seule fois.
     assert(init == clean && init == 1);
+
+    // sccroll_before() et sccroll_after() doivent être exécutées
+    // toutes deux une fois par test.
     assert(before == after && before == repeats);
+
+    // Autres fonctions.
 
     // On s'assure que sccroll_monkey fonctionne.
     int zero = 0;
     sccroll_monkey(&zero, sizeof(int));
+
+    // sccroll_monkey() remplit de manière aléatoire. Il y a donc une
+    // (infime) chance que l'assertion échoue, et il n'est pas
+    // possible de tester le nombre exact (seulement qu'il n'est plus
+    // identique au précédent).
     assert(zero);
 
     return EXIT_SUCCESS;
 }
-
-/******************************************************************************
- * @} (UnitTests)
- * @} (Sccroll)
- ******************************************************************************/

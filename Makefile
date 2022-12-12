@@ -8,6 +8,8 @@ LICENSEFILE	:= LICENSE
 BRIEF		:= $(shell head -n 1 $(LICENSEFILE))
 NAME		:= $(firstword $(BRIEF))
 LICENSE 	:= $(shell head -n 2 $(LICENSEFILE))
+LOGO		:=
+PROJECTLANG	:= French
 
 ###############################################################################
 # Environnement
@@ -32,6 +34,10 @@ OBJS		:= $(BUILD)/objs
 SHARED		:= $(BUILD)/libs
 REPORTS	:= $(BUILD)/reports
 DOCS		:= docs
+EXAMPLES	:= $(DOCS)/examples
+DOXCONF		:= $(DOCS)/doxygen.conf
+HTML		:= $(DOCS)/html
+LATEX		:= $(DOCS)/latex
 
 vpath %.c  $(SRCS) $(TESTS)
 vpath %.h  $(INCLUDES)
@@ -105,14 +111,14 @@ $(BIN)/%: %.o
 # Autres cibles
 ###############################################################################
 
-.PHONY: all $(PROJECT) unit-tests coverage doc init help
+.PHONY: all $(PROJECT) unit-tests coverage docs init help
 .PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(SHARED)/%.so
 
 all: $(PROJECT)
 
 # @brief Compile la librairie (cible par défaut)
 $(PROJECT): init lib$(PROJECT).so
-	@$(INFO) $@ compilation ok
+	@$(PASS) compilation
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 unit-tests: CFLAGS += --coverage -g -O0
@@ -142,8 +148,20 @@ coverage: unit-tests $(SHARED)/lib$(PROJECT).gcno
 	@$(COV) $(COVOPTS) $(COVXML) $(COVHTML) $(BUILD)
 	@$(PASS) $@
 
-# @brief Génère la documentation du projet
-doc:
+export NAME VERSION BRIEF LOGO DOCS EXAMPLES PROJECTLANG SRCS INCLUDES TESTS
+
+# @brief Génère la documentation automatisée du projet
+docs: init html pdf
+	@$(PASS) $@
+
+$(LATEX)/Makefile $(HTML)/index.html: $(DOXCONF)
+	@doxygen -q $(DOXCONF)
+
+html: $(HTML)/index.html
+
+pdf: $(LATEX)/Makefile
+	@bash -c "make -C $(DOCS)/latex pdf" &>/dev/null
+	@mv $(DOCS)/latex/refman.pdf $(DOCS)
 
 # @brief Initialise la structure du projet
 init:
@@ -153,7 +171,8 @@ init:
 
 # @brief Nettoyage post-compilation
 clean:
-	@git clean -d -f
+	@git clean -q -d -f
+	@$(PASS) $@
 
 # @brief Affiche la documentation du Makefile
 help:

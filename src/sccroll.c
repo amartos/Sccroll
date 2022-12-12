@@ -5,9 +5,14 @@
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
+ * @compilation
+ * @code{.sh}
+ * gcc -xc -Wall -std=gnu99 -I include \
+ *     -fpic -shared -Wl,--wrap,abort \
+ *     -o build/libs/libsccroll.so
+ * @endcode
  *
- * @addtogroup Sccroll
- *
+ * @addtogroup Internals Structures internes de Sccroll
  * @{
  */
 
@@ -16,31 +21,23 @@
 // clang-format off
 
 /******************************************************************************
- * @addtogroup General Macros et fonctions d'aides.
- * @brief Commandes d'aides pour la définition des fonctions et autres
- * macros de la librairie.
- *
+ * @addtogroup Misc Aide à la programmation
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
- * @name Alias
- * @brief Macros générant des alias de fonctions.
+ * @name Alias Macros générant des alias de fonctions
+ * @{
  * @param name Nom de la fonction d'origine.
  * @param aliasname Nom de l'alias.
- * @{
+ * @param ... Attributs supplémentaires pour l'alias.
  */
 
 /**
  * @def attr_alias
  * @since 0.1.0
- *
- * Macro créant un alias, et qui permet de fournir à l'alias d'autres
- * attributs. C'est une quasi-copie de la macro @c weak_alias de la
- * librairie C de GNU.
- *
- * @param ... Attributs supplémentaires pour l'alias.
+ * @brief Génère un alias.
  */
 #define attr_alias(name, aliasname, ...) \
     extern __typeof__(name) aliasname __attribute__((alias(#name), ##__VA_ARGS__))
@@ -48,16 +45,14 @@
 /**
  * @def strong_alias
  * @since 0.1.0
- *
- * Définit un alias fort #aliasname de la fonction #name.
+ * @brief Génère un alias fort.
  */
 #define strong_alias(name, aliasname) attr_alias(name, aliasname)
 
 /**
  * @def weak_alias
  * @since 0.1.0
- *
- * Définit un alias faible #aliasname de la fonction #name.
+ * @brief Génère un alias faible.
  */
 #define weak_alias(name, aliasname) attr_alias(name, aliasname, weak)
 /** @} */
@@ -65,19 +60,20 @@
 /**
  * @def sccroll_err
  * @since 0.1.0
- * @brief Si #expr est vrai, affiche un message d'erreur et termine le
- * programme.
+ * @brief Lève une erreur si @p expr est vraie.
  *
  * Cette macro est utilisée pour les vérification de fonctions
- * modifiant #errno en cas d'erreur.
+ * modifiant @c errno en cas d'erreur.
+ *
  * @param expr Une expression booléenne valant @c true pour une
  * erreur, sinon valant @c false.
- * @param op L'opération effectuée ayant échoué.
+ * @param op Description de l'opération effectuée ayant échoué.
  * @param name Un nom d'étape pour une description plus fine de
  * l'erreur.
- * @exit EXIT_FAILURE si #expr est vrai.
+ * @throw EXIT_FAILURE si @p expr est vraie.
  */
-#define sccroll_err(expr, op, name) if ((expr)) err(EXIT_FAILURE, "%s failed for %s", op, name);
+#define sccroll_err(expr, op, name)                             \
+    if ((expr)) err(EXIT_FAILURE, "%s failed for %s", op, name);
 
 /**
  * @enum SccrollConstant
@@ -85,40 +81,22 @@
  * @brief Constantes numériques internes.
  */
 typedef enum SccrollConstant {
-    /**
-     * @ingroup Report
-     * @name ReportConstants
-     * @since 0.1.0
-     * @brief Constantes numériques utilisée pour la génération de
-     * rapports.
-     */
-    REPORTTOTAL = 0, /**< Index du nombre de tests totaux dans la
-                      * table des rapport. */
-    REPORTFAIL = 1,  /**< Index du nombre de tests échoués dans la
-                      * table des rapports. */
+    REPORTTOTAL = 0, /**< Index du nombre total de tests. */
+    REPORTFAIL = 1,  /**< Index du nombre de tests échoués. */
     REPORTMAX  = 2,  /**< Index maximal de la table des rapports. */
     MAXLINE = 80,    /**< Longueur maximale des lignes d'un rapport. */
-    /** @} */
-    /**
-     * @ingroup Execution
-     * @name Pipes
-     * @since 0.1.0
-     * @brief Index et drapeaux de gestion des pipes.
-     */
     PIPEREAD = 0, /**< Index du côté lecture d'un pipe. */
     PIPEWRTE = 1, /**< Index du côté écriture d'un pipe. */
     PIPEOPEN,     /**< Drapeau d'ouverture d'un pipe. */
     PIPECLOSE,    /**< Drapeau de fermeture d'un côté d'un pipe. */
     PIPEDUP,      /**< Drapeau de duplication d'un pipe. */
     PIPEMAX,      /**< Index maximal des drapeaux d'opérations de pipe. */
-    /** @} */
 } SccrollConstant;
 
 /**
- * @ingroup Report
  * @var PIPEDESC
  * @since 0.1.0
- * @brief Description des drapeaux de pipes de SccrollConstant.
+ * @brief Description d'opération des valeurs SccrollConstant::PIPE*.
  */
 const char* const PIPEDESC[PIPEMAX] = {
     "read pipe", "write pipe",
@@ -131,20 +109,46 @@ const char* const PIPEDESC[PIPEMAX] = {
 /******************************************************************************
  * @}
  *
- * @addtogroup Register
+ * @addtogroup Tests Tests unitaires
+ * @{
  *
+ * @addtogroup Preparation Préparation
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
+ * @since 0.1.0
+ * @brief Fonction ne faisant absolument rien.
+ *
+ * Cette fonction est utilisée dans cette librairie comme base d'alias
+ * faibles pour les fonctions dont la définition est laissée à
+ * l'utilisateur.
+ */
+static void sccroll_void(void) __attribute__((unused));
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @addtogroup Registration Enregistrement
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @name Liste des tests
+ * @{
+ */
+
+/**
  * @struct SccrollNode
  * @since 0.1.0
  * @brief Structure d'un noeud de la liste de tests.
- *
- * SccrollNode::nth est utilisable pour déterminer le nombre total de
- * tests: le dernier test inscrit étant en tête de liste, son numéro
- * correspond au nombre total de tests.
+ * @note SccrollNode::nth est utilisable pour déterminer le nombre
+ * total de tests: le dernier test inscrit étant en tête de liste, son
+ * numéro correspond au nombre total de tests.
  */
 typedef struct SccrollNode {
     int nth;                   /**< Numéro du noeud dans la liste. */
@@ -160,33 +164,37 @@ typedef struct SccrollNode {
 typedef SccrollNode* SccrollList;
 
 /**
- * @name SccrollListAccess
- * @brief Pseudo-fonctions d'accès au données d'une SccrollList.
- * @param list la SccrollList dont on veut accéder aux données.
+ * @since 0.1.0
+ * @var tests
+ * @brief Liste des tests à exécuter.
+ */
+static SccrollList tests = NULL;
+/** @} */
+
+/**
+ * @name Accès au données d'une SccrollList
  * @{
+ * @param list la SccrollList dont on veut accéder aux données.
  */
 
 /**
  * @def sccroll_car
  * @since 0.1.0
- *
- * Accède au test du noeud.
+ * @brief Accède au test du noeud.
  */
 #define sccroll_car(list) (list)->car
 
 /**
  * @def sccroll_nth
  * @since 0.1.0
- *
- * Accède au numéro du noeud.
+ * @brief Accède au numéro du noeud.
  */
 #define sccroll_nth(list) (list)->nth
 
 /**
  * @def sccroll_cdr
  * @since 0.1.0
- *
- * Accède au reste de la liste.
+ * @brief Accède au reste de la liste.
  */
 #define sccroll_cdr(list) (list)->cdr
 /** @} */
@@ -195,17 +203,23 @@ typedef SccrollNode* SccrollList;
  * @since 0.1.0
  * @brief Ajoute le test en tête de la liste #tests.
  * @param expected Le SccrollEffects attendu pour le test.
- * @{
  */
 static void sccroll_push(const SccrollEffects* restrict expected) __attribute__((nonnull));
-/** @} */
+
+/**
+ * @name Générateurs de SccrollEffects
+ * @attention Ces fonctions utilisent calloc.
+ * @{
+ */
 
 /**
  * @since 0.1.0
- * @brief Génère une copie de #effects.
- * @attention Utilise calloc.
+ * @brief Génère une copie de @p effects.
+ * @attention La structure est copiée, mais pas le contenu des
+ * emplacements des pointeurs stockés dans la structure (ce sont les
+ * mêmes pointeurs entre l'original et la copie).
  * @param effects Le SccrollEffects à copier.
- * @return Le pointeur d'une copie de #effects.
+ * @return Le pointeur d'une copie de @p effects.
  */
 static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects) __attribute__((nonnull));
 
@@ -216,36 +230,17 @@ static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects) __att
  * @return Le pointeur d'un SccrollEffects initialisé à 0.
  */
 static SccrollEffects* sccroll_gen(void);
-
-/**
- * @since 0.1.0
- * @var tests
- * @brief Liste des tests à exécuter.
- */
-static SccrollList tests = NULL;
-
-static bool in_test = false;
+/** @} */
 
 // clang-format off
 
 /******************************************************************************
  * @}
  *
- * @addtogroup Execution
- *
+ * @addtogroup Execution Exécution
  * @{
  ******************************************************************************/
 // clang-format on
-
-/**
- * @since 0.1.0
- * @brief Ne faisant absolument rien.
- *
- * Cette fonction est utilisée dans cette librairie comme base d'alias
- * faibles pour les fonctions dont la définition est laissée à
- * l'utilisateur.
- */
-static void sccroll_void(void) __attribute__((unused));
 
 /**
  * @since 0.1.0
@@ -264,6 +259,16 @@ static int sccroll_main(void);
 static int sccroll_test(void);
 
 /**
+ * @var in_test
+ * @since 0.1.0
+ * @brief Indique si les tests sont en cours d'exécution.
+ *
+ * Cette variable sert à empêcher l'exécution de certaines fonctions
+ * au cours des tests.
+ */
+static bool in_test = false;
+
+/**
  * @since 0.1.0
  * @brief Retire le premier noeud de la liste de tests et renvoie le
  * pointeur du test qui y est stocké.
@@ -272,9 +277,15 @@ static int sccroll_test(void);
 static const SccrollEffects* sccroll_pop(void);
 
 /**
+ * @name Test avec fork
+ * @{
+ */
+
+/**
  * @since 0.1.0
  * @brief exécute la fonction du test dans un fork et enregistre les
  * effets dans la structure SccrollEffects donnée.
+ * @see #NOFORK
  *
  * Les données enregistrées comprennent la valeur de errno après le
  * test (elle est remise à 0 avant le test), les valeurs de signal et
@@ -291,10 +302,9 @@ static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result) __att
  * @since 0.1.0
  * @brief Gère l'ouverture, la duplication, l'écriture, la lecture et
  * la fermeture de pipes.
- *
+ * @see Pipes
  * @attention Cette fonction ferme le pipe d'écriture après écriture,
  * et les deux côtés du pipe à la lecture.
- *
  * @param type Une valeur SccrollConstant:
  * - #PIPEOPEN  pour l'ouverture;
  * - #PIPECLOSE pour la fermeture d'un côté du pipe;
@@ -305,15 +315,44 @@ static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result) __att
  * @param name Le nom du test courant.
  * @param pipefd Le pipe du test courant à modifier.
  * @param ... Arguments supplémentaires dépendant de la valeur de
- * #type:
+ * @p type:
  * - #PIPEOPEN:  arguments supplémentaires ignorés;
- * - #PIPECLOSE: #PIPEREAD <b>ou</b> #PIPEWRTE selon le côté à fermer;
+ * - #PIPECLOSE: #PIPEREAD **ou** #PIPEWRTE selon le côté à fermer;
  * - #PIPEWRTE:  la chaîne de #SCCMAX caractères à écrire dans le pipe;
  * - #PIPEREAD:  une chaîne de #SCCMAX caractères comme destination de
  *               la lecture du pipe;
  * - #PIPEDUP:   le descripteur de fichier où dupliquer le pipe.
  */
 static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
+/** @} */
+
+/**
+ * @name Test sans fork
+ * @{
+ */
+
+/**
+ * @since 0.1.0
+ * @brief exécute la fonction du test et enregistre les
+ * effets dans la structure SccrollEffects donnée.
+ * @see #NOFORK
+ *
+ * Les données enregistrées comprennent la valeur de errno après le
+ * test (elle est remise à 0 avant le test), les affichages des
+ * sorties standard stderr et stdout, ainsi que le contenu des
+ * fichiers SccrollEffects::files après exécution du test.
+ *
+ * @attention Toute erreur qui terminerait le programme levée dans le test
+ * @param result Le test à exécuter avec ses effets attendus.
+ * @return Toujours result, mais modifié avec les effets obtenus.
+ */
+static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result) __attribute__((nonnull));
+/** @} */
+
+/**
+ * @name Récolte des effets secondaires
+ * @{
+ */
 
 /**
  * @since 0.1.0
@@ -330,6 +369,7 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
  * @since 0.1.0
  * @brief Lis les outputs sur les sorties standard obtenus lors de
  * l'exécution d'un test et les stockes dans SccrollEffects::std.
+ * @see #NOSTRP
  * @param result La structure SccrollEffects de destination.
  * @param pipestd Une table de pipes utilisés pour capter les sorties;
  * l'index des pipes correspond au descripteur de fichier des sorties
@@ -340,13 +380,13 @@ static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][
 /**
  * @since 0.1.0
  * @brief Copie la chaîne, et retire les espaces en début et fin si
- * @p flags ne contien pas #NOSTRP.
+ * @p flags ne contient pas #NOSTRP.
  * @see #NOSTRP
  * @attention Utilise malloc.
  * @param flags Les drapeaux du test.
  * @param string La chaîne à traiter.
  * @return Une copie de la chaîne, avec les espaces amonts et avals
- * retirés si le drapeau #NOSTRIP n'est pas donné.
+ * retirés si le drapeau #NOSTRP n'est pas donné.
  */
 static char* sccroll_strip(int flags, const char* restrict string);
 
@@ -358,34 +398,22 @@ static char* sccroll_strip(int flags, const char* restrict string);
  * @param result La structure SccrollEffects de destination.
  */
 static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnull));
-
-/**
- * @since 0.1.0
- * @brief exécute la fonction du test et enregistre les
- * effets dans la structure SccrollEffects donnée.
- *
- * Les données enregistrées comprennent la valeur de errno après le
- * test (elle est remise à 0 avant le test), les affichages des
- * sorties standard stderr et stdout, ainsi que le contenu des
- * fichiers SccrollEffects::files après exécution du test.
- * @attention Toute erreur qui terminerait le programme levée dans le test
- * @param result Le test à exécuter avec ses effets attendus.
- * @return Toujours result, mais modifié avec les effets obtenus.
- */
-static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result) __attribute__((nonnull));
+/** @} */
 
 // clang-format off
 
 /******************************************************************************
  * @}
  *
- * @addtogroup Report
- *
- * description
- *
+ * @addtogroup Report Affichage des rapports
  * @{
  ******************************************************************************/
 // clang-format on
+
+/**
+ * @name Formats des rapports
+ * @{
+ */
 
 /**
  * @enum SccrollColors
@@ -399,19 +427,10 @@ typedef enum SccrollColors{
 } SccrollColors;
 
 /**
- * @name FormatStrings
- * @brief Chaînes de formatage pour les messages des tests.
- * @{
- */
-
-/**
  * @def BASEFMT
  * @since 0.1.0
- *
- * Formatage de l'indicateur de status.
- *
- * @param i Un chiffre de code de couleur ANSI (SccrollColors est
- * adapté pour ce paramètre).
+ * @brief Format de l'indicateur de status.
+ * @param i Un chiffre SccrollColors.
  * @param s Status
  * @param s Nom du test.
  */
@@ -420,10 +439,9 @@ typedef enum SccrollColors{
 /**
  * @def REPORTFMT
  * @since 0.1.0
- *
- * Formatage du rapport final.
- *
+ * @brief Format du rapport final.
  * @param s Ligne de séparation
+ * @param i Un chiffre SccrollColors.
  * @param s Status.
  * @param s Nom du test.
  * @param f Pourcentage de réussite des tests.
@@ -434,12 +452,9 @@ typedef enum SccrollColors{
 
 /**
  * @def DIFFFMT
- *
- * Formatage de l'affichage des différences attendu/obtenu.
- *
- * @param
- * @param i Un chiffre de code de couleur ANSI (SccrollColors est
- * adapté pour ce paramètre).
+ * @since 0.1.0
+ * @brief Format de l'affichage des différences attendu/obtenu.
+ * @param i Un chiffre SccrollColors.
  * @param s Status
  * @param s Nom du test.
  * @param s Description de la différence.
@@ -449,9 +464,8 @@ typedef enum SccrollColors{
 /**
  * @def OUTPUTFMT
  * @since 0.1.0
- *
- * Formatage d'affichage des différences des sorties standard.
- *
+ * @brief Format d'affichage des différences des sorties standard.
+ * @param i Un chiffre SccrollColors.
  * @param s Status.
  * @param s Nom du test.
  * @param s Description de la différence.
@@ -462,8 +476,8 @@ typedef enum SccrollColors{
 /**
  * @def FILESFMT
  * @since 0.1.0
- *
- * Formatage d'affichage de différences entre fichiers.
+ * @brief Format d'affichage de différences entre fichiers.
+ * @param i Un chiffre SccrollColors.
  * @param s Status.
  * @param s Nom du test.
  * @param s Description de la différence.
@@ -475,37 +489,31 @@ typedef enum SccrollColors{
 /**
  * @def EXITFMT
  * @since 0.1.0
- *
- * Formatage d'affichage d'erreurs concernant les codes d'erreur et
+ * @brief Format d'affichage d'erreurs concernant les codes d'erreur et
  * sortie attendus.
- *
- * @param s1 Status.
- * @param s2 Nom du test.
- * @param s3 Description du test.
- * @param s4 code attendu.
- * @param s5 code obtenu.
+ * @param i Un chiffre SccrollColors.
+ * @param s Status.
+ * @param s Nom du test.
+ * @param s Description du test.
+ * @param i code attendu.
+ * @param i code obtenu.
  */
 #define EXITFMT DIFFFMT "expected %i, got %i\n"
 /** @} */
 
 /**
+ * @name Comparaison des effets obtenus et attendus
+ * @{
+ */
+
+/**
  * @since 0.1.0
- * @brief Compare deux SccrollEffects et indique si les valeurs des
- * données du test qu'elles contiennent sont différentes.
+ * @brief Compare deux SccrollEffects et indique leurs différences.
  *
- * @parblock
- * Si la macro #SCCROLL_NODIFF est définie, la fonction ne fait que
- * renvoyer le résultat. Si elle ne l'est pas, la fonction affiche
- * égalemnt un message pour chaque élément différent entre les effets
- * attendus et obtenus.
- *
- * Les données comparées sont:
- * - Les valeur de SccrollEffects::codes;
- * - Les chaînes de caractères de SccrollEffects::std des index
- * #STDOUT_FILENO et #STDERR_FILENO;
- * - Les chaînes de caractères SccrollEffects::files::content jusqu'au
- * premier SccrollEffects::files::path valant @c NULL .
- * @endparblock
+ * La fonction détermine si @p expected et @p result diffèrent, et
+ * renvoie @c true si c'est le cas. Si l'option #NODIFF est définie
+ * pour le test, elle ne fait rien de plus. Dans le cas contraire,
+ * elle affiche la différence entre les deux structures.
  *
  * @param expected,result Les structures à comparer.
  * @return true si au moins une des données comparées diffère entre
@@ -517,10 +525,10 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
 /**
  * @def sccroll_pdiff
  * @since 0.1.0
- * @brief Affiche un message d'erreur sur stderr sauf si le drapeau
- * #NODIFF est donné pour le test.
+ * @brief Affiche un message d'erreur sur stderr uniquement si le
+ * drapeau #NODIFF n'est pas donné pour le test.
  * @param flags Les drapeaux donnés pour le test.
- * @param fmt La chaîne de formatage du message.
+ * @param fmt Format du message.
  * @param ... Les arguments de la chaîne de formatage.
  */
 #define sccroll_pdiff(flags, fmt, ...)                                  \
@@ -534,7 +542,7 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
  * @attention Cette macro est spécifique à la fonction sccroll_diff().
  * @param exp La chaîne attendue.
  * @param res La chaîne obtenue.
- * @param fmt La chaîne de formatage du message.
+ * @param fmt Format du message.
  * @param ... Les arguments de la chaîne de formatage.
  */
 #define sccroll_strcmp(exp, res, fmt, ...)                              \
@@ -543,6 +551,7 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
                       expected->name, ##__VA_ARGS__);                   \
         diff = true;                                                    \
     }
+/** @} */
 
 /**
  * @since 0.1.0
@@ -557,7 +566,7 @@ static void sccroll_review(int report[REPORTMAX]) __attribute__((nonnull));
 /******************************************************************************
  * @}
  *
- * @addtogroup Clean Fonctions internes de nettoyage.
+ * @addtogroup Clean Nettoyage
  * @{
  ******************************************************************************/
 // clang-format on
@@ -570,7 +579,7 @@ static void sccroll_review(int report[REPORTMAX]) __attribute__((nonnull));
  * - Tous les SccrollEffects::files::content jusqu'au premier
  * SccrollEffects::files::path valant NULL;
  * - Tous les SccrollEffects::std;
- * - #effects.
+ * - @p effects .
  * @param effects La structure à libérer.
  */
 static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((nonnull));
@@ -579,15 +588,16 @@ static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((
 
 /******************************************************************************
  * @}
+ * @}
  *
- * @addtogroup Mocks Fonctions interne pour les simulacres.
+ * @addtogroup Mocks Simulacres
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief fonction renvoyant toujours #SCCENONE.
+ * @brief Fonction renvoyant toujours #SCCENONE.
  * @note est utilisée comme alias faible de sccroll_mockTrigger().
  * @return #SCCENONE.
  */
@@ -603,8 +613,11 @@ extern void __gcov_dump(void);
 
 /******************************************************************************
  * @}
+ * @}
  *
- * Implémentation des fonctions d'enregistrement-exécution.
+ * Implémentation des fonctions.
+ *
+ * Préparation, définition, enregistrement et exécution des tests.
  ******************************************************************************/
 // clang-format on
 
@@ -720,7 +733,7 @@ static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result)
     return result;
 }
 
-static void sccroll_pipes(SccrollConstant type, const char* name, int pipefd[2], ...)
+static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...)
 {
     int status = 0, index = -1;
     va_list args;
@@ -887,7 +900,7 @@ static void sccroll_free(const SccrollEffects* restrict effects)
 // clang-format off
 
 /******************************************************************************
- * Implémentation des fonctions d'assertion.
+ * Assertions
  ******************************************************************************/
 // clang-format on
 
@@ -934,4 +947,3 @@ SCCROLL_MOCK(void, abort, void)
     atexit(__gcov_dump);
     exit(SIGABRT);
 }
-/** @} */

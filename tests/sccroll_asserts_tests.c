@@ -1,21 +1,16 @@
 /**
- * @file        sccroll_asserts_single_tests.c
+ * @file        sccroll_asserts_tests.c
  * @version     0.1.0
- * @brief       Tests unitaires des assertions simples.
+ * @brief       Tests unitaires des assertions.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
  * @compilation
  * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -Iinclude \
- * tests/sccroll_asserts_single_tests.c -L build/libs -l scroll \
- * -o build/bin/sccroll_basics_tests
- * @encode
- *
- * @addtogroup Sccroll
- * @{
- * @addtogroup UnitTests
- * @{
+ * gcc -xc -Wall -std=gnu99 -I include \
+ *     -L build/libs -l scroll -Wl,--wrap,abort \
+ *     tests/sccroll_asserts_tests.c -o build/bin/sccroll_asserts_tests
+ * @endcode
  */
 
 #include "sccroll.h"
@@ -27,7 +22,7 @@
  ******************************************************************************/
 // clang-format on
 
-static int count = 0;
+static int count = 0; // compte le nombre de tests effectués.
 void sccroll_before(void) { ++count; }
 
 static const char* a = "foo";
@@ -44,15 +39,15 @@ static const int testib[10] = {
 
 static const int testic[10] = { 0 };
 
-/**
- * @brief Compare deux entiers signés.
- * @param a,b Deux entiers à comparer.
- * @return
- * - @c  0 si @verbatim a == b @endverbatim
- * - @c  1 si @verbatim a > b @endverbatim
- * - @c -1 si @verbatim a < b @endverbatim
- */
+// Compare deux entiers et renvoie:
+// 0  si a == b
+// 1  si a > b
+// -1 si a < b
 int intcmp(int a, int b) { return a == b ? 0 : a < b ? -1 : 1; };
+
+// La macro assert de la librairie ne devrait pas être sensible à la
+// définition de cette macro, au contraire de celle de la librairie C.
+#define NDEBUG
 
 // clang-format off
 
@@ -61,11 +56,7 @@ int intcmp(int a, int b) { return a == b ? 0 : a < b ? -1 : 1; };
  ******************************************************************************/
 // clang-format on
 
-// La macro assert de la librairie ne devrait pas être sensible à la
-// définition de cette macro, au contraire de celle de la librairie C.
-#define NDEBUG
-
-/** 1/2 test en échec. **/
+// 1 test /2 en échec.
 
 SCCROLL_TEST(test_sccroll_assert_success) { sccroll_assert(true, "invisible line"); }
 SCCROLL_TEST(test_sccroll_assert_fail) { sccroll_assert(false, "this test must fail successfully"); }
@@ -99,7 +90,7 @@ SCCROLL_TEST(test_assertSmallerOrEqual_success) {
     assertSmallerOrEqual(testia[0], testic[0], intcmp);
 }
 
-/**  Tests supposés réussir. **/
+// 100% de tests réussis.
 
 SCCROLL_TEST(test_assert_array)
 {
@@ -121,16 +112,15 @@ SCCROLL_TEST(test_assert_str)
     assertNotEqual("foo", "bar", strcmp);
 }
 
+// clang-format off
+/******************************************************************************
+ * Exécution des tests.
+ ******************************************************************************/
+// clang-format on
+
 int main(void)
 {
-    // count-2 pour prendre en compte test_assert_array et
-    // test_assert_str.
+    // count-2 pour prendre en compte les tests qui n'échouent pas.
     assert(sccroll_run() == (count-2)/2);
     return EXIT_SUCCESS;
 }
-
-/******************************************************************************
- * @} (UnitTests)
- * @} (Sccroll)
- ******************************************************************************/
-

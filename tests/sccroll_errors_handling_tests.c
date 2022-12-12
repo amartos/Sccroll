@@ -7,15 +7,12 @@
  * @copyright   MIT License
  * @compilation
  * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -Iinclude \
- * tests/sccroll_errors_handling_tests.c -L build/libs -l scroll \
- * -o build/bin/sccroll_basics_tests
- * @encode
- *
- * @addtogroup Sccroll
- * @{
- * @addtogroup UnitTests
- * @{
+ * gcc -xc -Wall -std=gnu99 -I include \
+ *     -L build/libs -l scroll \
+ *     -Wl,--wrap,abort,--wrap,calloc,--wrap,pipe,\
+ *     --wrap,fork,--wrap,dup2,--wrap,close,--wrap,read,--wrap,write \
+ *     tests/sccroll_errors_handling_tests.c -o build/bin/sccroll_errors_handling_tests
+ * @endcode
  */
 
 // On s'assure d'utiliser l'assert original et non pas celui défini
@@ -24,21 +21,36 @@
 
 #include "sccroll.h"
 
+// clang-format off
+
+/******************************************************************************
+ * Préparation des tests.
+ ******************************************************************************/
+// clang-format on
+
+// Variable contenant le code d'erreur testée courant.
 static int errnum = 0;
+
+// Variable permettant de repousser la levée d'erreur de delay
+// appels. Ceci permet de tester les appels et leurs erreurs qui sont
+// situés plus loin dans la séquence d'exécution (puisqu'une erreur
+// plus tôt stoppera le programme).
 static int delay = 0;
 
+// Drapeaux indiquant quelle erreur est testée.
 enum {
-    NOERR = 0,
-    DOFORK = 1,
-    CALLOC = 2,
-    PIPE = 4,
-    FORK = 8,
-    DUP2 = 16,
-    CLOSE = 32,
-    READ = 64,
-    WRITE = 128,
+    NOERR = 0,   // Aucune erreur levée
+    DOFORK = 1,  // Utilise sccroll_fork (sccroll_nofork par défaut)
+    CALLOC = 2,  // Test de calloc()
+    PIPE = 4,    // Test de pipe()
+    FORK = 8,    // Test de fork()
+    DUP2 = 16,   // Test de dup2()
+    CLOSE = 32,  // Test de close()
+    READ = 64,   // Test de read()
+    WRITE = 128, // Test de write()
 };
 
+// Détermine si la valeur donnée correspond au code d'erreur à lever.
 static bool trigger(int value)
 {
     if (delay > 0 && (errnum & value))
@@ -49,13 +61,25 @@ static bool trigger(int value)
     return errnum & value;
 }
 
+// Lève une erreur d'assertion uniquement si la fonction testée est
+// fork.
 void ftest(void) { assert(!trigger(FORK)); }
 
+// Template de test neutre.
+// NOSTRP est utilisé ici afin de pouvoir vérifier les messages non
+// modifiés levés par les erreurs rencontrées.
 static SccrollEffects test = {
     .wrapper = ftest,
     .name = "test_success",
     .flags = NOSTRP,
 };
+
+// clang-format off
+
+/******************************************************************************
+ * Tests unitaires.
+ ******************************************************************************/
+// clang-format on
 
 SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
 {
@@ -98,6 +122,12 @@ SCCROLL_MOCK(ssize_t, write, int fd, const void* buf, size_t count)
     return trigger(WRITE) ? -1 : __real_write(fd, buf, count);
 }
 
+// Effectue un test unitaire de ftest dans un fork (la fonction
+// originale), et vérifie qu'une erreur est bien levée par
+// sccroll_run.
+// mocktrigger: Le code d'erreur correspondant à la gestion d'erreur
+// testée.
+// name: Le nom du test.
 static void _assertMock(int mocktrigger, const char* restrict name)
 {
     pid_t pid = __real_fork();
@@ -118,7 +148,15 @@ static void _assertMock(int mocktrigger, const char* restrict name)
     fprintf(stderr, "ok\n");
 }
 
+// Macro facilitant l'usage de _assertMock.
 #define assertMock(errval) _assertMock(errval, #errval)
+
+// clang-format off
+
+/******************************************************************************
+ * Exécution des tests.
+ ******************************************************************************/
+// clang-format on
 
 int main(void)
 {
@@ -139,8 +177,3 @@ int main(void)
 
     return EXIT_SUCCESS;
 }
-
-/******************************************************************************
- * @} (UnitTests)
- * @} (Sccroll)
- ******************************************************************************/

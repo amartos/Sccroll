@@ -608,11 +608,11 @@ extern void __gcov_dump(void);
  ******************************************************************************/
 // clang-format on
 
-static void sccroll_void(void) {}
 weak_alias(sccroll_void, sccroll_init);
 weak_alias(sccroll_void, sccroll_clean);
 weak_alias(sccroll_void, sccroll_before);
 weak_alias(sccroll_void, sccroll_after);
+static void sccroll_void(void) {}
 
 strong_alias(sccroll_push, sccroll_register);
 static void sccroll_push(const SccrollEffects* restrict expected)

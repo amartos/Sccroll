@@ -40,7 +40,7 @@ static int delay = 0;
 // Drapeaux indiquant quelle erreur est testée.
 enum {
     NOERR = 0,   // Aucune erreur levée
-    DOFORK = 1,  // Utilise sccroll_fork (sccroll_nofork par défaut)
+    DOFORK = 1,  // fork (nofork par défaut)
     CALLOC = 2,  // Test de calloc()
     PIPE = 4,    // Test de pipe()
     FORK = 8,    // Test de fork()
@@ -95,7 +95,7 @@ SCCROLL_MOCK(pid_t, fork, void)
 {
     // On indique un fork réussi, mais on ne fork pas vraiment pour ne
     // pas fausser les résultats attendus.
-    return trigger(FORK) ? -1 : 0;
+    return trigger(FORK) ? -1 : __real_fork();
 }
 
 SCCROLL_MOCK(int, dup2, int oldfd, int newfd)
@@ -144,7 +144,7 @@ static void _assertMock(int mocktrigger, const char* restrict name)
     int status = 0;
     wait(&status);
     fprintf(stderr, ">>>>>> %s (delay: %i): ", name, delay);
-    assert((bool) mocktrigger == (bool) WEXITSTATUS(status));
+    assert((bool) (mocktrigger & ~DOFORK) == (bool) WEXITSTATUS(status));
     fprintf(stderr, "ok\n");
 }
 
@@ -161,6 +161,7 @@ static void _assertMock(int mocktrigger, const char* restrict name)
 int main(void)
 {
     delay = 0;
+    assertMock(NOERR | DOFORK);
     assertMock(NOERR);
     assertMock(CALLOC);
     assertMock(PIPE);
@@ -169,7 +170,7 @@ int main(void)
     assertMock(CLOSE | DOFORK);
     assertMock(CLOSE);
     assertMock(READ);
-    assertMock(WRITE | DOFORK);
+    assertMock(WRITE);
 
     delay = 1;
     assertMock(CALLOC);

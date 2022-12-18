@@ -347,26 +347,24 @@ static bool in_test = false;
 static const SccrollEffects* sccroll_pop(void);
 
 /**
- * @name Test avec fork
- * @{
- */
-
-/**
  * @since 0.1.0
- * @brief exécute la fonction du test dans un fork et enregistre les
- * effets dans la structure SccrollEffects donnée.
- * @see #NOFORK
+ * @brief exécute la fonction du test et enregistre les effets dans la
+ * structure SccrollEffects donnée.
+ *
+ * Si l'option #NOFORK est donnée, La fonction exécute directement la
+ * fonction de test. Sinon, elle créé un fork avant de l'exécuter.
  *
  * Les données enregistrées comprennent la valeur de errno après le
  * test (elle est remise à 0 avant le test), les valeurs de signal et
- * status émises par le fork, les affichages des sorties standard
- * stderr et stdout, ainsi que le contenu des fichiers
- * SccrollEffects::files après exécution du test.
+ * status émises par l'éventuel fork (sinon 0), les affichages des
+ * sorties standard stderr et stdout, ainsi que le contenu des
+ * fichiers SccrollEffects::files après exécution du test.
  *
+ * @see #NOFORK
  * @param result Le test à exécuter avec ses effets attendus.
  * @return Toujours result, mais modifié avec les effets obtenus.
  */
-static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result) __attribute__((nonnull));
+static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
@@ -394,30 +392,6 @@ static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result) __att
  * - #PIPEDUP:   le descripteur de fichier où dupliquer le pipe.
  */
 static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
-/** @} */
-
-/**
- * @name Test sans fork
- * @{
- */
-
-/**
- * @since 0.1.0
- * @brief exécute la fonction du test et enregistre les
- * effets dans la structure SccrollEffects donnée.
- * @see #NOFORK
- *
- * Les données enregistrées comprennent la valeur de errno après le
- * test (elle est remise à 0 avant le test), les affichages des
- * sorties standard stderr et stdout, ainsi que le contenu des
- * fichiers SccrollEffects::files après exécution du test.
- *
- * @attention Toute erreur qui terminerait le programme levée dans le test
- * @param result Le test à exécuter avec ses effets attendus.
- * @return Toujours result, mais modifié avec les effets obtenus.
- */
-static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result) __attribute__((nonnull));
-/** @} */
 
 /**
  * @name Récolte des effets secondaires
@@ -792,10 +766,7 @@ int sccroll_run(void)
 static int sccroll_test(void)
 {
     const SccrollEffects* expected = sccroll_pop();
-    const SccrollEffects* result   =
-        sccroll_hasFlags(expected->flags, NOFORK)
-        ? sccroll_nofork(sccroll_dup(expected))
-        : sccroll_fork(sccroll_dup(expected));
+    const SccrollEffects* result   = sccroll_exe(sccroll_dup(expected));
     int failed = sccroll_diff(expected, result);
     if (failed) fprintf(stderr, BASEFMT "\n", RED, "FAIL", expected->name);
     sccroll_free(expected);
@@ -812,27 +783,35 @@ static const SccrollEffects* sccroll_pop(void)
     return expected;
 }
 
-static const SccrollEffects* sccroll_fork(SccrollEffects* restrict result)
+static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
 {
+    bool dofork              = !sccroll_hasFlags(result->flags, NOFORK);
     int status               = 0;
     char buffer[SCCMAX]      = { 0 };
+    int origstd[SCCMAXSTD]   = { 0 };
     int pipefd[SCCMAXSTD][2] = { 0 };
     for (int i = 0; i < SCCMAXSTD; ++i)
         sccroll_pipes(PIPEOPEN, result->name, pipefd[i]);
 
-    pid_t pid = fork();
+    pid_t pid = dofork ? fork() : 0;
     sccroll_err(pid < 0, "fork", result->name);
     if (pid == 0) {
-        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+            if (!dofork) sccroll_err((origstd[i] = dup(i)) < 0, "dup save of standard", result->name);
             sccroll_pipes(PIPEDUP, result->name, pipefd[i], i);
+        }
+
         errno = 0;
         result->wrapper();
         sprintf(buffer, "%i", errno);
         sccroll_pipes(PIPEWRTE, result->name, pipefd[0], buffer);
-        exit(EXIT_SUCCESS);
+
+        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+            sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
+        if (dofork) exit(EXIT_SUCCESS);
     }
 
-    wait(&status);
+    if (dofork) wait(&status);
     sccroll_codes(result, pipefd[SCCERRNUM], status);
     sccroll_std(result, pipefd);
     sccroll_files(result);
@@ -871,8 +850,13 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
     char buffer[SCCMAX] = { 0 };
     sccroll_pipes(PIPEREAD, result->name, pipefd, buffer);
     result->codes[SCCERRNUM] = strtol(buffer, NULL, 10);
-    result->codes[SCCSTATUS] = WEXITSTATUS(status);
-    result->codes[SCCSIGNAL] = WIFSIGNALED(status) ? WTERMSIG(status) : 0;
+
+    result->codes[SCCSTATUS] = status;
+    result->codes[SCCSIGNAL] = status;
+    if (!sccroll_hasFlags(result->flags, NOFORK)) {
+        result->codes[SCCSTATUS] = WEXITSTATUS(status);
+        result->codes[SCCSIGNAL] = WIFSIGNALED(status) ? WTERMSIG(status) : 0;
+    }
 }
 
 static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2])
@@ -883,32 +867,6 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
         result->std[i] = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
         memset(buffer, 0, strlen(buffer));
     }
-}
-
-static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result)
-{
-    int origfd[SCCMAXSTD] = { 0 };
-    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
-        sccroll_err((origfd[i] = dup(i)) < 0, "dup save of standard", result->name);
-
-    int pipefd[SCCMAXSTD][2] = { 0 };
-    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
-        sccroll_pipes(PIPEOPEN, result->name, pipefd[i]);
-        sccroll_pipes(PIPEDUP, result->name, pipefd[i], i);
-    }
-
-    errno = 0;
-    result->wrapper();
-    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
-        if (dup2(origfd[i], i) < 0) {
-            printf("dup2 standard back to original failed for %s", result->name);
-            exit(EXIT_FAILURE);
-        }
-
-    result->codes[SCCERRNUM] = errno;
-    sccroll_std(result, pipefd);
-    sccroll_files(result);
-    return result;
 }
 
 static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)

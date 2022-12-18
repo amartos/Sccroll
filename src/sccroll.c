@@ -232,6 +232,57 @@ static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects) __att
 static SccrollEffects* sccroll_gen(void);
 /** @} */
 
+/**
+ * @name Préparation du SccrollEffects des effets attendus
+ * @{
+ */
+
+/**
+ * @since 0.1.0
+ * @brief Détermine si des options nécessitant un pré-traitement ont
+ * été données, et les applique.
+ * @attention Utilise malloc.
+ * @param effects Une structure SccrollEffects à pré-traiter.
+ * @return Une copie de @p effects avec les options de traitement appliquées.
+ */
+static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Copie la chaîne, et retire les espaces en début et fin si
+ * @p flags ne contient pas #NOSTRP.
+ * @see #NOSTRP
+ * @attention Utilise malloc.
+ * @param flags Les drapeaux du test.
+ * @param string La chaîne à traiter.
+ * @return Une copie de la chaîne, avec les espaces amonts et avals
+ * retirés si le drapeau #NOSTRP n'est pas donné.
+ */
+static char* sccroll_strip(const char* string) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Lis le contenu des fichiers de SccollEffects::files::path et
+ * stocke les #SCCMAX premiers caractères dans
+ * SccrollEffects::files::content.
+ * @param result La structure SccrollEffects de destination.
+ */
+static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Lit le contenu du fichier décrit par @p path et stocke
+ * #SCCMAX caractères dans @p buffer.
+ * @param path Le chemin du fichier.
+ * @param buffer La table où stocker les #SCCMAX premiers caractères
+ * de @p path.
+ * @param name Le nom du test.
+ * @throw EXIT_FAILURE si un problème survient dans la lecture du
+ * fichier.
+ */
+static void sccroll_fread(const char* restrict path, char buffer[SCCMAX+1], const char* restrict name) __attribute__((nonnull));
+/** @} */
+
 // clang-format off
 
 /******************************************************************************
@@ -376,28 +427,6 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
  * standard.
  */
 static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][2]) __attribute__((nonnull));
-
-/**
- * @since 0.1.0
- * @brief Copie la chaîne, et retire les espaces en début et fin si
- * @p flags ne contient pas #NOSTRP.
- * @see #NOSTRP
- * @attention Utilise malloc.
- * @param flags Les drapeaux du test.
- * @param string La chaîne à traiter.
- * @return Une copie de la chaîne, avec les espaces amonts et avals
- * retirés si le drapeau #NOSTRP n'est pas donné.
- */
-static char* sccroll_strip(int flags, const char* restrict string);
-
-/**
- * @since 0.1.0
- * @brief Lis le contenu des fichiers de SccollEffects::files::path et
- * stocke les #SCCMAX premiers caractères dans
- * SccrollEffects::files::content.
- * @param result La structure SccrollEffects de destination.
- */
-static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnull));
 /** @} */
 
 // clang-format off
@@ -635,10 +664,28 @@ static void sccroll_push(const SccrollEffects* restrict expected)
     SccrollNode* node = calloc(1, sizeof(SccrollNode));
     sccroll_err(!node, "test registration", expected->name);
 
-    node->car = sccroll_dup(expected);
+    node->car = sccroll_prepare(expected);
     node->nth = !tests ? 1 : sccroll_nth(tests) + 1;
     node->cdr = tests;
     tests = node;
+}
+
+static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
+{
+    SccrollEffects* prepared = sccroll_dup(effects);
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+        if (!prepared->std[i]) prepared->std[i] = strdup("");
+        else if (!sccroll_hasFlags(prepared->flags, NOSTRP))
+            prepared->std[i] = sccroll_strip(prepared->std[i]);
+    }
+
+    for (int i = 0; i < SCCMAX && prepared->files[i].path; ++i) {
+        if (!prepared->files[i].content) prepared->files[i].content = strdup("");
+        else
+            sccroll_files(prepared);
+    }
+
+    return prepared;
 }
 
 static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects)
@@ -653,6 +700,35 @@ static SccrollEffects* sccroll_gen(void)
     SccrollEffects* effects = calloc(1, sizeof(SccrollEffects));
     sccroll_err(!effects, "alloc", "SccrollEffects");
     return effects;
+}
+
+static char* sccroll_strip(const char* oldstring)
+{
+    if (!*oldstring) return strdup(oldstring);
+    while(isspace(*oldstring)) ++oldstring;
+    char* string = strdup(oldstring);
+    char* end = string+strlen(string)-1;
+    while(isspace(*end)) --end;
+    *(end+1) = 0;
+    return string;
+}
+
+static void sccroll_files(SccrollEffects* restrict result)
+{
+    int i;
+    char buffer[SCCMAX+1] = { 0 };
+    for (i = 0; i < SCCMAX && result->files[i].path; ++i, memset(buffer, 0, strlen(buffer))) {
+        sccroll_fread(result->files[i].path, buffer, result->name);
+        result->files[i].content = strdup(buffer);
+    }
+}
+
+static void sccroll_fread(const char* restrict path, char buffer[SCCMAX+1], const char* restrict name)
+{
+    FILE* file = fopen(path, "r");
+    sccroll_err(!file, path, name);
+    sccroll_err(!fread(buffer, sizeof(char), SCCMAX, file) && ferror(file), path, name);
+    fclose(file);
 }
 
 weak_alias(sccroll_main, main);
@@ -692,7 +768,7 @@ static int sccroll_test(void)
         : sccroll_fork(sccroll_dup(expected));
     int failed = sccroll_diff(expected, result);
     if (failed) fprintf(stderr, BASEFMT "\n", RED, "FAIL", expected->name);
-    free((void*)expected);
+    sccroll_free(expected);
     sccroll_free(result);
     return failed;
 }
@@ -774,40 +850,9 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
     char buffer[SCCMAX] = { 0 };
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
         sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer);
-        result->std[i] = sccroll_strip(result->flags, buffer);
+        result->std[i] = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
         memset(buffer, 0, strlen(buffer));
     }
-}
-
-static char* sccroll_strip(int flags, const char* restrict string)
-{
-    char* stripped = strdup(string);
-    if (!sccroll_hasFlags(flags, NOSTRP)) {
-        while(isspace(*stripped)) ++stripped;
-        char* end = stripped+strlen(stripped)-1;
-        while(end > stripped && isspace(*end)) *end-- = 0;
-    }
-
-    return stripped;
-}
-
-static void sccroll_files(SccrollEffects* restrict result)
-{
-    int i;
-    char buffer[SCCMAX] = { 0 };
-    char error[SCCMAX]  = { 0 };
-    FILE* file;
-
-    for (i = 0; i < SCCMAX && result->files[i].path && !error[0]; ++i, memset(buffer, 0, strlen(buffer))) {
-        file  = fopen(result->files[i].path, "w+b");
-        if (!file)
-            sprintf(error, "%s: %s", result->name, "open");
-        else if (!fread(buffer, sizeof(char), SCCMAX, file) && ferror(file))
-            sprintf(error, "%s: %s", result->name, "read");
-        result->files[i].content = strdup(buffer);
-        fclose(file);
-    }
-    sccroll_err(error[0], error, result->files[i - 1].path);
 }
 
 static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result)

@@ -681,7 +681,7 @@ static void sccroll_push(const SccrollEffects* restrict expected)
 static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
 {
     SccrollEffects* prepared = sccroll_dup(effects);
-    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) {
         if (!prepared->std[i]) prepared->std[i] = strdup("");
         else {
             if (sccroll_hasFlags(prepared->flags, EXPATH))
@@ -812,32 +812,34 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
     int origstd[SCCMAXSTD]   = { 0 };
     int pipefd[PIPEMAXFD][2] = { 0 };
 
-    for (int i = 0; i < PIPEMAXFD; ++i)
+    for (int i = STDIN_FILENO; i < PIPEMAXFD; ++i)
         sccroll_pipes(PIPEOPEN, result->name, pipefd[i]);
 
     pid_t pid = dofork ? fork() : 0;
     sccroll_err(pid < 0, "fork", result->name);
     if (pid == 0) {
-        for (int i = STDOUT_FILENO, p = PIPEWRTE; i < SCCMAXSTD; ++i) {
+        for (int i = STDIN_FILENO, p = PIPEREAD; i < SCCMAXSTD; ++i, p = PIPEWRTE) {
             if (!dofork) sccroll_err((origstd[i] = dup(i)) < 0, "dup save of standard", result->name);
             sccroll_pipes(PIPEDUP, result->name, pipefd[i], p, i);
         }
 
         errno = 0;
+        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO]);
         result->wrapper();
         sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 
-        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+        for (int i = STDIN_FILENO, p = PIPEREAD; i < SCCMAXSTD; ++i, p = PIPEWRTE) {
             sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
-            sccroll_pipes(PIPECLOSE, result->name, pipefd[i], PIPEWRTE);
+            sccroll_pipes(PIPECLOSE, result->name, pipefd[i], p);
         }
 
         if (dofork) exit(EXIT_SUCCESS);
     }
 
     if (dofork) {
-        for (int i = STDOUT_FILENO; i < PIPEMAXFD; ++i)
+        for (int i = STDIN_FILENO; i < PIPEMAXFD; ++i)
             sccroll_pipes(PIPECLOSE, result->name, pipefd[i], PIPEWRTE);
+        sccroll_pipes(PIPECLOSE, result->name, pipefd[STDIN_FILENO], PIPEREAD);
         wait(&status);
     }
     sccroll_codes(result, pipefd[PIPEERRN], status);
@@ -895,6 +897,10 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
 
 static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2])
 {
+    // La chaîne de charactères est identique (non dupliquée) avec
+    // expected. Libérer celle de result engendrerait une erreur.
+    result->std[STDIN_FILENO] = NULL;
+
     char buffer[SCCMAX] = { 0 };
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i, memset(buffer, 0, strlen(buffer))) {
         sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer, SCCMAX);
@@ -1011,7 +1017,7 @@ static void sccroll_review(int report[REPORTMAX])
 
 static void sccroll_free(const SccrollEffects* restrict effects)
 {
-    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i]);
+    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i]);
     for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
     free((void*)effects);
 }

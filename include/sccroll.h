@@ -176,6 +176,9 @@ typedef enum SccrollFlags {
  * message utilise le nom défini dans SccrollEffects::name pour une
  * bonne identification du test en échec.
  *
+ * Une entrée *via* stdin peut être simulée en passant une chaîne de
+ * caractères à SccrollEffects::std[STDIN_FILENO].
+ *
  * Cette structure est très versatile, dans le sens où elle permet
  * soit d'effectuer une série de tests, soit de tester les effets
  * d'une unique fonction, la seule différence résidant dans le code de

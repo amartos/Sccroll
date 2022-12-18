@@ -25,6 +25,7 @@
 #include <err.h>
 #include <errno.h>
 #include <ctype.h>
+#include <libgen.h>
 #include <search.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -143,6 +144,9 @@ typedef enum SccrollFlags {
     NOSTRP = 1, /**< Ne pas réduire les espaces autour des sorties standard.*/
     NOFORK = 2, /**< Ne pas @c fork avant d'exécuter le test. */
     NODIFF = 4, /**< Ne pas afficher les différences attendu/obtenu. */
+    EXPATH = 8, /**< Interpréter les chemins absolus de fichiers passés à
+                  * SccrollEffects::std et SccrollEffects::files comme
+                  * contennant les textes attendus. */
 } SccrollFlags;
 
 /**
@@ -186,7 +190,7 @@ typedef struct SccrollEffects {
         const char* path; /**< Le chemin du fichier. */
         char* content;    /**< Le contenu du fichier. */
     } files[SCCMAX];      /**< Vérification du  contenu de fichiers. */
-    char* std[SCCMAXSTD]; /**< Vérification des outputs sur les sorties standard. */
+    char* std[SCCMAXSTD]; /**< I/O des sorties standard. */
     int codes[SCCMAXSIG]; /**< Vérification des codes d'erreur, signal et status. */
     unsigned flags;       /**< Drapeaux d'options SccrollFlags. */
     SccrollFunc wrapper;  /**< La fonction de test unitaire. */

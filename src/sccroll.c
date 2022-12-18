@@ -262,6 +262,25 @@ static char* sccroll_strip(const char* string) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
+ * @brief Détermine si @p path est effectivement un chemin de fichier,
+ * et en récupère le contenu.
+ *
+ * @p path est un chemin si sa taille est `> 1` et si `dirname(path)`
+ * renvoie autre chose que `"."`. Si @p path ne correspond pas à ces
+ * critères, la fonction renvoie une simple copie de sa valeur.
+ *
+ * @see #EXPATH
+ * @attention Utilise malloc.
+ * @param path Une chaîne pouvant contenir un chemin de fichier.
+ * @param name Le nom du test correspondant au fichier.
+ * @return Si @p path est un chemin, le contenu du fichier
+ * correspondant, sinon la valeur de @p path (les valeurs renvoyées
+ * sont toujours des copies générées avec malloc).
+ */
+static char* sccroll_content(const char* restrict path, const char* restrict name);
+
+/**
+ * @since 0.1.0
  * @brief Lis le contenu des fichiers de SccollEffects::files::path et
  * stocke les #SCCMAX premiers caractères dans
  * SccrollEffects::files::content.
@@ -668,12 +687,18 @@ static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
     SccrollEffects* prepared = sccroll_dup(effects);
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
         if (!prepared->std[i]) prepared->std[i] = strdup("");
-        else if (!sccroll_hasFlags(prepared->flags, NOSTRP))
-            prepared->std[i] = sccroll_strip(prepared->std[i]);
+        else {
+            if (sccroll_hasFlags(prepared->flags, EXPATH))
+                prepared->std[i] = sccroll_content(prepared->std[i], prepared->name);
+            if (!sccroll_hasFlags(prepared->flags, NOSTRP))
+                prepared->std[i] = sccroll_strip(prepared->std[i]);
+        }
     }
 
     for (int i = 0; i < SCCMAX && prepared->files[i].path; ++i) {
         if (!prepared->files[i].content) prepared->files[i].content = strdup("");
+        else if (sccroll_hasFlags(prepared->flags, EXPATH))
+            prepared->files[i].content = sccroll_content(prepared->files[i].content, prepared->name);
         else
             sccroll_files(prepared);
     }
@@ -704,6 +729,18 @@ static char* sccroll_strip(const char* oldstring)
     while(isspace(*end)) --end;
     *(end+1) = 0;
     return string;
+}
+
+static char* sccroll_content(const char* restrict path, const char* restrict name)
+{
+    char buffer[SCCMAX+1] = { 0 };
+    char* content = strdup(path);
+    if (strlen(content) > 1 && (bool)strcmp(".", dirname(content))) {
+        sccroll_fread(content, buffer, name);
+        free(content);
+        content = strdup(buffer);
+    }
+    return content;
 }
 
 static void sccroll_files(SccrollEffects* restrict result)

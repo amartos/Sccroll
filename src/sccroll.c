@@ -417,7 +417,7 @@ static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipe
  * fork du test.
  * @param status Le wstatus obtenu avec la fonction wait().
  */
-static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status) __attribute__((nonnull(2)));
+static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status) __attribute__((nonnull(1,2)));
 
 /**
  * @since 0.1.0

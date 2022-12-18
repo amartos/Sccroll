@@ -75,35 +75,6 @@
 #define sccroll_err(expr, op, name)                             \
     if ((expr)) err(EXIT_FAILURE, "%s failed for %s", op, name);
 
-/**
- * @enum SccrollConstant
- * @since 0.1.0
- * @brief Constantes numériques internes.
- */
-typedef enum SccrollConstant {
-    REPORTTOTAL = 0, /**< Index du nombre total de tests. */
-    REPORTFAIL = 1,  /**< Index du nombre de tests échoués. */
-    REPORTMAX  = 2,  /**< Index maximal de la table des rapports. */
-    MAXLINE = 80,    /**< Longueur maximale des lignes d'un rapport. */
-    PIPEREAD = 0, /**< Index du côté lecture d'un pipe. */
-    PIPEWRTE = 1, /**< Index du côté écriture d'un pipe. */
-    PIPEOPEN,     /**< Drapeau d'ouverture d'un pipe. */
-    PIPECLOSE,    /**< Drapeau de fermeture d'un côté d'un pipe. */
-    PIPEDUP,      /**< Drapeau de duplication d'un pipe. */
-    PIPEMAX,      /**< Index maximal des drapeaux d'opérations de pipe. */
-} SccrollConstant;
-
-/**
- * @var PIPEDESC
- * @since 0.1.0
- * @brief Description d'opération des valeurs SccrollConstant::PIPE*.
- */
-const char* const PIPEDESC[PIPEMAX] = {
-    "read pipe", "write pipe",
-    "open pipe", "close pipe",
-    "duplicate pipe"
-};
-
 // clang-format off
 
 /******************************************************************************
@@ -367,6 +338,38 @@ static const SccrollEffects* sccroll_pop(void);
 static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result) __attribute__((nonnull));
 
 /**
+ * @name Pipes
+ * @{
+ */
+
+/**
+ * @typedef SccrollPipes
+ * @since 0.1.0
+ * @brief Constantes internes liées aux pipes.
+ */
+typedef enum SccrollPipes {
+    PIPEREAD = 0, /**< Index du côté lecture d'un pipe. */
+    PIPEWRTE = 1, /**< Index du côté écriture d'un pipe. */
+    PIPEOPEN,     /**< Drapeau d'ouverture d'un pipe. */
+    PIPECLOSE,    /**< Drapeau de fermeture d'un côté d'un pipe. */
+    PIPEDUP,      /**< Drapeau de duplication d'un pipe. */
+    PIPEMAX,      /**< Index maximal des drapeaux d'opérations de pipe. */
+    PIPEERRN = SCCMAXSTD, /**< Index du pipe pour récolter errno. */
+    PIPEMAXFD,            /**< Index maximal d'une table de pipes pour un test. */
+} SccrollPipes;
+
+/**
+ * @var PIPEDESC
+ * @since 0.1.0
+ * @brief Description d'opération des valeurs SccrollPipes::PIPE*.
+ */
+const char* const PIPEDESC[PIPEMAX] = {
+    "read pipe", "write pipe",
+    "open pipe", "close pipe",
+    "duplicate pipe"
+};
+
+/**
  * @since 0.1.0
  * @brief Gère l'ouverture, la duplication, l'écriture, la lecture et
  * la fermeture de pipes.
@@ -377,7 +380,7 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result) __attr
  * - #PIPEOPEN  pour l'ouverture;
  * - #PIPECLOSE pour la fermeture d'un côté du pipe;
  * - #PIPEWRTE  pour l'écriture et fermeture du côté écriture;
- * - #PIPEREAD  pour la lecture et fermeture complète du pipe;
+ * - #PIPEREAD  pour la lecture et fermeture du côté lecture;
  * - #PIPEDUP   pour dupliquer le côté écriture du pipe sur un
  *              descripteur de fichier.
  * @param name Le nom du test courant.
@@ -386,12 +389,19 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result) __attr
  * @p type:
  * - #PIPEOPEN:  arguments supplémentaires ignorés;
  * - #PIPECLOSE: #PIPEREAD **ou** #PIPEWRTE selon le côté à fermer;
- * - #PIPEWRTE:  la chaîne de #SCCMAX caractères à écrire dans le pipe;
+ * - #PIPEWRTE:  un pointeur vers les données à écrire dans
+ *               @p pipefd[PIPEWRTE], et la taille en octets des
+ *               données.
+ * - #PIPEREAD:  un pointeur vers les données à lire de
+ *               @p pipefd[PIPEREAD], et la taille maximale en octets
+ *               des données.
  * - #PIPEREAD:  une chaîne de #SCCMAX caractères comme destination de
  *               la lecture du pipe;
- * - #PIPEDUP:   le descripteur de fichier où dupliquer le pipe.
+ * - #PIPEDUP:   le côté du pipe à dupliquer (#PIPEREAD ou #PIPEWRTE),
+ *               puis le descripteur de fichier où dupliquer le pipe.
  */
-static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
+static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
+/** @} */
 
 /**
  * @name Récolte des effets secondaires
@@ -431,6 +441,18 @@ static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][
  * @{
  ******************************************************************************/
 // clang-format on
+
+/**
+ * @enum SccrollReport
+ * @since 0.1.0
+ * @brief Constantes numériques internes liées aux rapports.
+ */
+typedef enum SccrollReport {
+    REPORTTOTAL = 0, /**< Index du nombre total de tests. */
+    REPORTFAIL = 1,  /**< Index du nombre de tests échoués. */
+    REPORTMAX  = 2,  /**< Index maximal de la table des rapports. */
+    MAXLINE = 80,    /**< Longueur maximale des lignes d'un rapport. */
+} SccrollReport;
 
 /**
  * @name Coloration avec codes ANSI.
@@ -787,57 +809,72 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
 {
     bool dofork              = !sccroll_hasFlags(result->flags, NOFORK);
     int status               = 0;
-    char buffer[SCCMAX]      = { 0 };
     int origstd[SCCMAXSTD]   = { 0 };
-    int pipefd[SCCMAXSTD][2] = { 0 };
-    for (int i = 0; i < SCCMAXSTD; ++i)
+    int pipefd[PIPEMAXFD][2] = { 0 };
+
+    for (int i = 0; i < PIPEMAXFD; ++i)
         sccroll_pipes(PIPEOPEN, result->name, pipefd[i]);
 
     pid_t pid = dofork ? fork() : 0;
     sccroll_err(pid < 0, "fork", result->name);
     if (pid == 0) {
-        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
+        for (int i = STDOUT_FILENO, p = PIPEWRTE; i < SCCMAXSTD; ++i) {
             if (!dofork) sccroll_err((origstd[i] = dup(i)) < 0, "dup save of standard", result->name);
-            sccroll_pipes(PIPEDUP, result->name, pipefd[i], i);
+            sccroll_pipes(PIPEDUP, result->name, pipefd[i], p, i);
         }
 
         errno = 0;
         result->wrapper();
-        sprintf(buffer, "%i", errno);
-        sccroll_pipes(PIPEWRTE, result->name, pipefd[0], buffer);
+        sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 
-        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
+        for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
             sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
+            sccroll_pipes(PIPECLOSE, result->name, pipefd[i], PIPEWRTE);
+        }
+
         if (dofork) exit(EXIT_SUCCESS);
     }
 
-    if (dofork) wait(&status);
-    sccroll_codes(result, pipefd[SCCERRNUM], status);
+    if (dofork) {
+        for (int i = STDOUT_FILENO; i < PIPEMAXFD; ++i)
+            sccroll_pipes(PIPECLOSE, result->name, pipefd[i], PIPEWRTE);
+        wait(&status);
+    }
+    sccroll_codes(result, pipefd[PIPEERRN], status);
     sccroll_std(result, pipefd);
     sccroll_files(result);
     return result;
 }
 
-static void sccroll_pipes(SccrollConstant type, const char* restrict name, int pipefd[2], ...)
+static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipefd[2], ...)
 {
-    int status = 0, index = -1;
+    int status = 0, pipeside = 0, fd = 0;
+    void* buf;
+    size_t size;
     va_list args;
     va_start(args, pipefd);
     switch (type) {
     case PIPEOPEN: status = pipe(pipefd); break;
-    case PIPEDUP: status = dup2(pipefd[PIPEWRTE], va_arg(args, int)); break;
+    case PIPEDUP:
+        pipeside = va_arg(args, int);
+        fd = va_arg(args, int);
+        status = dup2(pipefd[pipeside], fd);
+        break;
     case PIPEREAD:
-        sccroll_pipes(PIPECLOSE, name, pipefd, PIPEWRTE);
-        status = read(pipefd[PIPEREAD], va_arg(args, char*), SCCMAX);
+        buf = va_arg(args, void*);
+        size = va_arg(args, size_t);
+        status = read(pipefd[PIPEREAD], buf, size);
         if (status >= 0) sccroll_pipes(PIPECLOSE, name, pipefd, PIPEREAD);
         break;
     case PIPEWRTE:
-        status = write(pipefd[PIPEWRTE], va_arg(args, char*), SCCMAX);
+        buf = va_arg(args, void*);
+        size = va_arg(args, size_t);
+        status = write(pipefd[PIPEWRTE], buf, size);
         if (status >= 0) sccroll_pipes(PIPECLOSE, name, pipefd, PIPEWRTE);
         break;
     case PIPECLOSE:
-        index  = index < 0 ? va_arg(args, int) : index;
-        status = close(pipefd[index]);
+        pipeside = va_arg(args, int);
+        status = close(pipefd[pipeside]);
         break;
     default: break;
     }
@@ -847,10 +884,7 @@ static void sccroll_pipes(SccrollConstant type, const char* restrict name, int p
 
 static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status)
 {
-    char buffer[SCCMAX] = { 0 };
-    sccroll_pipes(PIPEREAD, result->name, pipefd, buffer);
-    result->codes[SCCERRNUM] = strtol(buffer, NULL, 10);
-
+    sccroll_pipes(PIPEREAD, result->name, pipefd, &result->codes[SCCERRNUM], sizeof(int));
     result->codes[SCCSTATUS] = status;
     result->codes[SCCSIGNAL] = status;
     if (!sccroll_hasFlags(result->flags, NOFORK)) {
@@ -862,10 +896,9 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
 static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2])
 {
     char buffer[SCCMAX] = { 0 };
-    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i) {
-        sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer);
+    for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i, memset(buffer, 0, strlen(buffer))) {
+        sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer, SCCMAX);
         result->std[i] = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
-        memset(buffer, 0, strlen(buffer));
     }
 }
 

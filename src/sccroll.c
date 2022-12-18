@@ -440,7 +440,7 @@ static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][
 // clang-format on
 
 /**
- * @name Formats des rapports
+ * @name Coloration avec codes ANSI.
  * @{
  */
 
@@ -456,21 +456,36 @@ typedef enum SccrollColors{
 } SccrollColors;
 
 /**
+ * @def COLSTRFMT
+ * @since 0.1.0
+ * @brief Ajoute les codes ANSI de coloration à une chaîne.
+ * @param i Un code SccrollColors
+ * @param s La chaîne à colorer
+ */
+#define COLSTRFMT "\e[0;1;3%im%s\e[0m"
+/** @} */
+
+/**
+ * @name Formats des rapports
+ * @{
+ */
+
+/**
  * @def BASEFMT
  * @since 0.1.0
  * @brief Format de l'indicateur de status.
- * @param i Un chiffre SccrollColors.
+ * @param i Un code SccrollColors.
  * @param s Status
  * @param s Nom du test.
  */
-#define BASEFMT "[ \e[0;1;3%im%-4s\e[0m ] %s"
+#define BASEFMT "[ " COLSTRFMT " ] %s"
 
 /**
  * @def REPORTFMT
  * @since 0.1.0
  * @brief Format du rapport final.
  * @param s Ligne de séparation
- * @param i Un chiffre SccrollColors.
+ * @param i Un code SccrollColors.
  * @param s Status.
  * @param s Nom du test.
  * @param f Pourcentage de réussite des tests.
@@ -483,40 +498,13 @@ typedef enum SccrollColors{
  * @def DIFFFMT
  * @since 0.1.0
  * @brief Format de l'affichage des différences attendu/obtenu.
- * @param i Un chiffre SccrollColors.
- * @param s Status
- * @param s Nom du test.
+ * @param name Nom du test
  * @param s Description de la différence.
  */
-#define DIFFFMT BASEFMT " (%s): "
+#define DIFFFMT BASEFMT ": %s\n"
 
 /**
- * @def OUTPUTFMT
- * @since 0.1.0
- * @brief Format d'affichage des différences des sorties standard.
- * @param i Un chiffre SccrollColors.
- * @param s Status.
- * @param s Nom du test.
- * @param s Description de la différence.
- * @param s Chaîne obtenue.
- */
-#define OUTPUTFMT DIFFFMT "%s\n"
-
-/**
- * @def FILESFMT
- * @since 0.1.0
- * @brief Format d'affichage de différences entre fichiers.
- * @param i Un chiffre SccrollColors.
- * @param s Status.
- * @param s Nom du test.
- * @param s Description de la différence.
- * @param s Chaîne attendue.
- * @param s Chaîne obtenue.
- */
-#define FILESFMT DIFFFMT "expected '%s', read '%s'\n"
-
-/**
- * @def EXITFMT
+ * @def CODEFMT
  * @since 0.1.0
  * @brief Format d'affichage d'erreurs concernant les codes d'erreur et
  * sortie attendus.
@@ -524,10 +512,12 @@ typedef enum SccrollColors{
  * @param s Status.
  * @param s Nom du test.
  * @param s Description du test.
- * @param i code attendu.
- * @param i code obtenu.
+ * @param i Code attendu.
+ * @param s Description du code attendu.
+ * @param i Code obtenu.
+ * @param s Description du code obtenu.
  */
-#define EXITFMT DIFFFMT "expected %i, got %i\n"
+#define CODEFMT BASEFMT ": %s: expected %i (%s), got %i (%s)\n"
 /** @} */
 
 /**
@@ -552,34 +542,37 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
     __attribute__((nonnull));
 
 /**
- * @def sccroll_pdiff
  * @since 0.1.0
- * @brief Affiche un message d'erreur sur stderr uniquement si le
- * drapeau #NODIFF n'est pas donné pour le test.
- * @param flags Les drapeaux donnés pour le test.
- * @param fmt Format du message.
- * @param ... Les arguments de la chaîne de formatage.
+ * @brief Affiche un message d'erreur décrivant la différence entre
+ * @p exp et @p res.
+ * @param name Le nom du test.
+ * @param code Le type de code (voir SccrollIndexes).
+ * @param exp La valeur du code attendu.
+ * @param res La valeur du code obtenu.
  */
-#define sccroll_pdiff(flags, fmt, ...)                                  \
-    if (!sccroll_hasFlags(flags, NODIFF)) fprintf(stderr, fmt, ##__VA_ARGS__)
+static void sccroll_pcodes(const char* restrict name, int code, int exp, int res) __attribute__((nonnull(1)));
 
 /**
- * @def sccroll_strcmp
+ * @typedef SccrollStrDiff
  * @since 0.1.0
- * @brief Compare deux chaînes et affiche un message si elles sont
- * différences.
- * @attention Cette macro est spécifique à la fonction sccroll_diff().
- * @param exp La chaîne attendue.
- * @param res La chaîne obtenue.
- * @param fmt Format du message.
- * @param ... Les arguments de la chaîne de formatage.
+ * @brief Structure contenant les informations minimales pour
+ * l'affichage de différences entre deux chaînes d'un test.
  */
-#define sccroll_strcmp(exp, res, fmt, ...)                              \
-    if (strcmp(exp, res)) {                                             \
-        sccroll_pdiff(flags, fmt, CYAN, "DIFF",                         \
-                      expected->name, ##__VA_ARGS__);                   \
-        diff = true;                                                    \
-    }
+typedef struct SccrollStrDiff {
+    const char* expected; /**< La chaîne attendue. */
+    const char* result;   /**< La chaîne obtenue. */
+    const char* name;     /**< Le nom du test. */
+    const char* desc;     /**< La description des chaînes. */
+} SccrollStrDiff;
+
+/**
+ * @since 0.1.0
+ * @brief Affiche les différences entre deux chaînes au niveau des
+ * lignes.
+ * @param infos La structure SccrollStrDiff contenant les chaînes
+ * SccrollStrDiff::expected et SccrollStrDiff::result différentes.
+ */
+static void sccroll_pdiff(const SccrollStrDiff* restrict infos) __attribute__((nonnull));
 /** @} */
 
 /**
@@ -883,42 +876,95 @@ static const SccrollEffects* sccroll_nofork(SccrollEffects* restrict result)
 
 static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
 {
-    bool diff                    = false;
-    int flags                    = expected->flags;
-    const char* name             = expected->name;
-    const char* const descs[][3] = {
-        {"errno", "signal", "status"},
-        {   NULL, "stdout", "stderr"}
-    };
+    bool diff            = false;
+    SccrollStrDiff infos = { .name = expected->name };
 
     for (int i = SCCERRNUM; i < SCCMAXSIG; ++i)
-        if (i < SCCMAXSIG && expected->codes[i] != result->codes[i]) {
+        if (expected->codes[i] != result->codes[i]) {
             diff = true;
-            sccroll_pdiff(
-                flags, EXITFMT, CYAN, "DIFF", name,
-                descs[0][i], expected->codes[i], result->codes[i]);
+            if(!sccroll_hasFlags(expected->flags, NODIFF))
+                sccroll_pcodes(expected->name, i, expected->codes[i], result->codes[i]);
         }
 
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
-        sccroll_strcmp(
-            expected->std[i] ? expected->std[i] : "",
-            result->std[i],
-            OUTPUTFMT,
-            descs[1][i],
-            result->std[i]
-        );
+        if (strcmp(expected->std[i], result->std[i])) {
+            diff = true;
+            if (!sccroll_hasFlags(expected->flags, NODIFF)) {
+                infos.expected = expected->std[i];
+                infos.result = result->std[i];
+                infos.desc = i == STDOUT_FILENO ? "stdout" : "stderr";
+                sccroll_pdiff(&infos);
+            }
+        }
 
     for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i)
-        sccroll_strcmp(
-            expected->files[i].content ? expected->files[i].content : "",
-            result->files[i].content,
-            FILESFMT,
-            expected->files[i].path,
-            expected->files[i].content ? expected->files[i].content : "",
-            result->files[i].content
-        );
-
+        if (strcmp(expected->files[i].content, result->files[i].content)) {
+            diff = true;
+            if (!sccroll_hasFlags(expected->flags, NODIFF)) {
+                infos.expected = expected->files[i].content;
+                infos.result = result->files[i].content;
+                infos.desc = expected->files[i].path;
+                sccroll_pdiff(&infos);
+            }
+        }
     return diff;
+}
+
+static void sccroll_pcodes(const char* restrict name, int code, int exp, int res)
+{
+    char expdesc[MAXLINE] = { 0 };
+    char resdesc[MAXLINE] = { 0 };
+    char* desc = NULL;
+
+    switch(code)
+    {
+    case SCCERRNUM:
+        desc = "errno";
+        sprintf(expdesc, "%s", strerrorname_np(exp));
+        sprintf(resdesc, "%s", strerrorname_np(res));
+        break;
+    case SCCSIGNAL:
+        desc = "signal";
+        exp
+            ? sprintf(expdesc, "SIG%s", sigabbrev_np(exp))
+            : sprintf(expdesc, "no signal");
+        res
+            ? sprintf(resdesc, "SIG%s", sigabbrev_np(res))
+            : sprintf(resdesc, "no signal");
+        break;
+    case SCCSTATUS:
+        desc = "status";
+        sprintf(expdesc, exp ? "error" : "no error");
+        sprintf(resdesc, res ? "error" : "no error");
+        break;
+    default: break;
+    }
+    fprintf(stderr, CODEFMT, CYAN, "DIFF", name, desc, exp, expdesc, res, resdesc);
+}
+
+static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
+{
+    size_t expc, resc;
+    char *expz = NULL, *resz = NULL;
+    char *expn = NULL, *resn = NULL;
+
+    sccroll_err(argz_create_sep(infos->expected, '\n', &expz, &expc), infos->desc, infos->name);
+    sccroll_err(argz_create_sep(infos->result, '\n', &resz, &resc), infos->desc, infos->name);
+
+    fprintf(stderr, DIFFFMT, CYAN, "DIFF", infos->name, infos->desc);
+    for (
+        expn = argz_next(expz, expc, expn), resn=argz_next(resz, resc, resn);
+        expn || resn;
+        expn = argz_next(expz, expc, expn), resn=argz_next(resz, resc, resn)
+        )
+        if (((bool)expn ^ (bool)resn) || (expn && strcmp(expn, resn)))
+        {
+            if (expn) fprintf(stderr, "- " COLSTRFMT "\n", RED, expn);
+            if (resn) fprintf(stderr, "+ " COLSTRFMT "\n", GREEN, resn);
+        }
+
+    free(expz);
+    free(resz);
 }
 
 static void sccroll_review(int report[REPORTMAX])

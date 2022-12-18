@@ -21,6 +21,7 @@
 
 #define _GNU_SOURCE
 
+#include <argz.h>
 #include <err.h>
 #include <errno.h>
 #include <ctype.h>
@@ -127,8 +128,6 @@ typedef enum SccrollIndexes {
     SCCSIGNAL = 1,                 /**< Index du code de signal. */
     SCCSTATUS = 2,                 /**< Index du code de status/exit. */
     SCCMAXSIG = 3,                 /**< Index maximal de SccrollEffects::codes. */
-    SCCSTDOUT = STDOUT_FILENO,     /**< Index de l'output sur stdout. */
-    SCCSTDERR = STDERR_FILENO,     /**< Index de l'output sur stderr. */
     SCCMAXSTD = STDERR_FILENO + 1, /**< Index maximal de SccrollEffects::std. */
     SCCMAX    = BUFSIZ,            /**< Index maximal de SccrollEffects::files. */
 } SccrollIndexes;

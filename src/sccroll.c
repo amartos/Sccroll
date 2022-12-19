@@ -965,23 +965,3 @@ static void sccroll_free(const SccrollEffects* restrict effects)
     for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
     free((void*)effects);
 }
-
-// clang-format off
-
-/******************************************************************************
- * Assertions
- ******************************************************************************/
-// clang-format on
-
-__attribute__((format(printf,2,3)))
-void sccroll_assert(int expr, const char* restrict fmt, ...)
-{
-    if (!expr) {
-        va_list args;
-        va_start(args, fmt);
-        vfprintf(stderr, fmt, args);
-        fprintf(stderr, "\n");
-        va_end(args);
-        abort();
-    }
-}

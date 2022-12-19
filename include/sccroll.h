@@ -31,7 +31,6 @@
 #include <errno.h>
 #include <ctype.h>
 #include <libgen.h>
-#include <search.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -39,7 +38,6 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <time.h>
 
 // clang-format off
 

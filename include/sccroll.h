@@ -22,6 +22,7 @@
 #define _GNU_SOURCE
 
 #include "sccroll/helpers.h"
+#include "sccroll/data.h"
 #include "sccroll/assert.h"
 #include "sccroll/mocks.h"
 
@@ -192,21 +193,6 @@ typedef struct SccrollEffects {
     SccrollFunc wrapper;  /**< La fonction de test unitaire. */
     const char* name;     /**< Nom descriptif du test. */
 } SccrollEffects;
-
-/**
- * @name Générateurs de données
- * @{
- */
-
-/**
- * @def sccroll_monkey
- * @since 0.1.0
- * @brief Rempli un espace mémoire de données aléatoires.
- * @param blob Un espace mémoire à remplir.
- * @param size Le nombre d'octets à remplir.
- */
-#define sccroll_monkey arc4random_buf
-/** @} */
 
 // clang-format off
 

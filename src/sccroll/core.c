@@ -114,18 +114,18 @@ static void sccroll_void(void) __attribute__((unused));
  * total de tests: le dernier test inscrit étant en tête de liste, son
  * numéro correspond au nombre total de tests.
  */
-typedef struct SccrollNode {
+struct SccrollNode {
     int nth;                   /**< Numéro du noeud dans la liste. */
     const SccrollEffects* car; /**< Le test et ses effets attendus. */
     struct SccrollNode* cdr;   /**< Le prochain noeud de la liste. */
-} SccrollNode;
+};
 
 /**
  * @typedef SccrollList
  * @since 0.1.0
  * @brief Structure de la liste de tests.
  */
-typedef SccrollNode* SccrollList;
+typedef struct SccrollNode* SccrollList;
 
 /**
  * @def sccroll_car
@@ -591,7 +591,7 @@ static void sccroll_void(void) {}
 strong_alias(sccroll_push, sccroll_register);
 static void sccroll_push(const SccrollEffects* restrict expected)
 {
-    SccrollNode* node = calloc(1, sizeof(SccrollNode));
+    struct SccrollNode* node = calloc(1, sizeof(struct SccrollNode));
     sccroll_err(!node, "test registration", expected->name);
 
     node->car = sccroll_prepare(expected);
@@ -725,7 +725,7 @@ static int sccroll_test(void)
 static const SccrollEffects* sccroll_pop(void)
 {
     const SccrollEffects* expected = sccroll_car(tests);
-    SccrollNode* popped = tests;
+    struct SccrollNode* popped = tests;
     tests = sccroll_cdr(popped);
     free(popped);
     return expected;

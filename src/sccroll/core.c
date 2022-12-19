@@ -217,44 +217,13 @@ static char* sccroll_strip(const char* string) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
- * @brief Détermine si @p path est effectivement un chemin de fichier,
- * et en récupère le contenu.
- *
- * @p path est un chemin si sa taille est `> 1` et si `dirname(path)`
- * renvoie autre chose que `"."`. Si @p path ne correspond pas à ces
- * critères, la fonction renvoie une simple copie de sa valeur.
- *
- * @see #EXPATH
+ * @brief Récupère le contenu du fichier donné.
  * @attention Utilise malloc.
- * @param path Une chaîne pouvant contenir un chemin de fichier.
+ * @param path Le chemin de fichier.
  * @param name Le nom du test correspondant au fichier.
- * @return Si @p path est un chemin, le contenu du fichier
- * correspondant, sinon la valeur de @p path (les valeurs renvoyées
- * sont toujours des copies générées avec malloc).
+ * @return Les #SCCMAX-1 premiers octets du fichier.
  */
-static char* sccroll_content(const char* restrict path, const char* restrict name);
-
-/**
- * @since 0.1.0
- * @brief Lis le contenu des fichiers de SccollEffects::files::path et
- * stocke les #SCCMAX premiers caractères dans
- * SccrollEffects::files::content.
- * @param result La structure SccrollEffects de destination.
- */
-static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnull));
-
-/**
- * @since 0.1.0
- * @brief Lit le contenu du fichier décrit par @p path et stocke
- * #SCCMAX caractères dans @p buffer.
- * @param path Le chemin du fichier.
- * @param buffer La table où stocker les #SCCMAX premiers caractères
- * de @p path.
- * @param name Le nom du test.
- * @throw EXIT_FAILURE si un problème survient dans la lecture du
- * fichier.
- */
-static void sccroll_fread(const char* restrict path, char buffer[SCCMAX+1], const char* restrict name) __attribute__((nonnull));
+static char* sccroll_fread(const char* restrict path, const char* restrict name) __attribute__((nonnull));
 
 // clang-format off
 
@@ -412,6 +381,15 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
  * standard.
  */
 static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][2]) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Lis le contenu des fichiers de SccollEffects::files::path et
+ * stocke les #SCCMAX-1 premiers caractères dans
+ * SccrollEffects::files::content.
+ * @param result La structure SccrollEffects de destination.
+ */
+static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnull));
 
 // clang-format off
 
@@ -603,23 +581,22 @@ static void sccroll_push(const SccrollEffects* restrict expected)
 static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
 {
     SccrollEffects* prepared = sccroll_dup(effects);
-    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) {
-        if (!prepared->std[i]) prepared->std[i] = strdup("");
-        else {
-            if (sccroll_hasFlags(prepared->flags, EXPATH))
-                prepared->std[i] = sccroll_content(prepared->std[i], prepared->name);
-            if (!sccroll_hasFlags(prepared->flags, NOSTRP))
-                prepared->std[i] = sccroll_strip(prepared->std[i]);
+    int i;
+    char *string, *stripped;
+    for (i = STDIN_FILENO; i < SCCMAXSTD; ++i) {
+        string = prepared->std[i].path
+            ? sccroll_fread(prepared->std[i].path, prepared->name)
+            : strdup(prepared->std[i].content ? prepared->std[i].content : "");
+        if (!sccroll_hasFlags(prepared->flags, NOSTRP)) {
+            stripped = sccroll_strip(string);
+            free(string);
+            string = stripped;
         }
+        prepared->std[i].content = string;
     }
 
-    for (int i = 0; i < SCCMAX && prepared->files[i].path; ++i) {
-        if (!prepared->files[i].content) prepared->files[i].content = strdup("");
-        else if (sccroll_hasFlags(prepared->flags, EXPATH))
-            prepared->files[i].content = sccroll_content(prepared->files[i].content, prepared->name);
-        else
-            sccroll_files(prepared);
-    }
+    for (int i = 0; i < SCCMAX && prepared->files[i].path; ++i)
+        prepared->files[i].content = sccroll_fread(prepared->files[i].path, prepared->name);
 
     return prepared;
 }
@@ -649,34 +626,14 @@ static char* sccroll_strip(const char* oldstring)
     return string;
 }
 
-static char* sccroll_content(const char* restrict path, const char* restrict name)
+static char* sccroll_fread(const char* restrict path, const char* restrict name)
 {
-    char buffer[SCCMAX+1] = { 0 };
-    char* content = strdup(path);
-    if (strlen(content) > 1 && (bool)strcmp(".", dirname(content))) {
-        sccroll_fread(content, buffer, name);
-        free(content);
-        content = strdup(buffer);
-    }
-    return content;
-}
-
-static void sccroll_files(SccrollEffects* restrict result)
-{
-    int i;
-    char buffer[SCCMAX+1] = { 0 };
-    for (i = 0; i < SCCMAX && result->files[i].path; ++i, memset(buffer, 0, strlen(buffer))) {
-        sccroll_fread(result->files[i].path, buffer, result->name);
-        result->files[i].content = strdup(buffer);
-    }
-}
-
-static void sccroll_fread(const char* restrict path, char buffer[SCCMAX+1], const char* restrict name)
-{
+    char buffer[SCCMAX] = { 0 };
     FILE* file = fopen(path, "r");
     sccroll_err(!file, path, name);
     sccroll_err(!fread(buffer, sizeof(char), SCCMAX, file) && ferror(file), path, name);
     fclose(file);
+    return strdup(buffer);
 }
 
 // clang-format off
@@ -750,7 +707,7 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
         }
 
         errno = 0;
-        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO]);
+        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO].content);
         result->wrapper();
         sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 
@@ -832,13 +789,19 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
 {
     // La chaîne de charactères est identique (non dupliquée) avec
     // expected. Libérer celle de result engendrerait une erreur.
-    result->std[STDIN_FILENO] = NULL;
+    result->std[STDIN_FILENO].content = NULL;
 
     char buffer[SCCMAX] = { 0 };
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i, memset(buffer, 0, strlen(buffer))) {
         sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer, SCCMAX);
-        result->std[i] = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
+        result->std[i].content = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
     }
+}
+
+static void sccroll_files(SccrollEffects* restrict result)
+{
+    for (int i = 0; i < SCCMAX && result->files[i].path; ++i)
+        result->files[i].content = sccroll_fread(result->files[i].path, result->name);
 }
 
 // clang-format off
@@ -861,11 +824,11 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
         }
 
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
-        if (strcmp(expected->std[i], result->std[i])) {
+        if (strcmp(expected->std[i].content, result->std[i].content)) {
             diff = true;
             if (!sccroll_hasFlags(expected->flags, NODIFF)) {
-                infos.expected = expected->std[i];
-                infos.result = result->std[i];
+                infos.expected = expected->std[i].content;
+                infos.result = result->std[i].content;
                 infos.desc = i == STDOUT_FILENO ? "stdout" : "stderr";
                 sccroll_pdiff(&infos);
             }
@@ -964,7 +927,7 @@ static void sccroll_review(int report[REPORTMAX])
 
 static void sccroll_free(const SccrollEffects* restrict effects)
 {
-    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i]);
+    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i].content);
     for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
     free((void*)effects);
 }

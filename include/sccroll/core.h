@@ -126,10 +126,17 @@ typedef enum SccrollFlags {
     NOSTRP = 1, /**< Ne pas réduire les espaces autour des sorties standard.*/
     NOFORK = 2, /**< Ne pas @c fork avant d'exécuter le test. */
     NODIFF = 4, /**< Ne pas afficher les différences attendu/obtenu. */
-    EXPATH = 8, /**< Interpréter les chemins absolus de fichiers passés à
-                  * SccrollEffects::std et SccrollEffects::files comme
-                  * contennant les textes attendus. */
 } SccrollFlags;
+
+/**
+ * @struct SccrollFile
+ * @since 0.1.0
+ * @brief Structure stockant le chemin d'un fichier et son contenu.
+ */
+typedef struct SccrollFile {
+    const char* path; /**< Le chemin du fichier. */
+    char* content;    /**< Le contenu du fichier. */
+} SccrollFile;
 
 /**
  * @struct SccrollEffects
@@ -147,8 +154,31 @@ typedef enum SccrollFlags {
  * message utilise le nom défini dans SccrollEffects::name pour une
  * bonne identification du test en échec.
  *
+ * Si un chemin de fichier est passé à SccrollEffects::std::path, il
+ * est considéré que les #SCCMAX-1 premiers caractères de son contenu
+ * sont ceux à enregistrer pour SccrollEffects::std::content. Ce
+ * dernier sera remplacé dans tous les cas si
+ * SccrollEffects::std::path est non @c NULL. Si les deux membres de
+ * SccrollEffects::std sont @c NULL, la comparaison sera effctuée avec
+ * une chaîne vide.
+ *
  * Une entrée *via* stdin peut être simulée en passant une chaîne de
  * caractères à SccrollEffects::std[STDIN_FILENO].
+ *
+ * Les codes SccrollEffects::codes ne sont pas tous comparables en
+ * même temps; SccrollEffects::codes[SCCERRNUM] ne peut être récupérée
+ * que si la fonction de test ne termine pas le programme; à
+ * l'inverse, les codes SccrollEffects::codes[SCCSIGNAL] et
+ * SccrollEffects::codes[SCCSTATUS] ne seront récupérables que si la
+ * fonction termine le programme.
+ *
+ * Si le contenu de fichiers doit être testé, leur chemin doit être
+ * passé à SccrollEffects::files::path. L'analyse s'arrête à la
+ * première occurrence de SccrollEffects::files::path de valeur
+ * @c NULL.
+ *
+ * Les options de test, décrites dans SccrollFlags, sont à passer à
+ * SccrollEffects::flags en les groupant avec OR.
  *
  * Cette structure est très versatile, dans le sens où elle permet
  * soit d'effectuer une série de tests, soit de tester les effets
@@ -160,11 +190,8 @@ typedef enum SccrollFlags {
  * SccrollFlags, et doivent être données par combinaison OR.
  */
 typedef struct SccrollEffects {
-    struct {
-        const char* path; /**< Le chemin du fichier. */
-        char* content;    /**< Le contenu du fichier. */
-    } files[SCCMAX];      /**< Vérification du  contenu de fichiers. */
-    char* std[SCCMAXSTD]; /**< I/O des sorties standard. */
+    SccrollFile files[SCCMAX];  /**< Vérification du  contenu de fichiers. */
+    SccrollFile std[SCCMAXSTD]; /**< I/O des sorties standard. */
     int codes[SCCMAXSIG]; /**< Vérification des codes d'erreur, signal et status. */
     unsigned flags;       /**< Drapeaux d'options SccrollFlags. */
     SccrollFunc wrapper;  /**< La fonction de test unitaire. */

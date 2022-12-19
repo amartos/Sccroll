@@ -27,37 +27,6 @@
 // clang-format on
 
 /**
- * @name Alias Macros générant des alias de fonctions
- * @{
- * @param name Nom de la fonction d'origine.
- * @param aliasname Nom de l'alias.
- * @param ... Attributs supplémentaires pour l'alias.
- */
-
-/**
- * @def attr_alias
- * @since 0.1.0
- * @brief Génère un alias.
- */
-#define attr_alias(name, aliasname, ...) \
-    extern __typeof__(name) aliasname __attribute__((alias(#name), ##__VA_ARGS__))
-
-/**
- * @def strong_alias
- * @since 0.1.0
- * @brief Génère un alias fort.
- */
-#define strong_alias(name, aliasname) attr_alias(name, aliasname)
-
-/**
- * @def weak_alias
- * @since 0.1.0
- * @brief Génère un alias faible.
- */
-#define weak_alias(name, aliasname) attr_alias(name, aliasname, weak)
-/** @} */
-
-/**
  * @def sccroll_err
  * @since 0.1.0
  * @brief Lève une erreur si @p expr est vraie.
@@ -627,31 +596,6 @@ static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((
  * @}
  * @}
  *
- * @addtogroup Mocks Simulacres
- * @{
- ******************************************************************************/
-// clang-format on
-
-/**
- * @since 0.1.0
- * @brief Fonction renvoyant toujours #SCCENONE.
- * @note est utilisée comme alias faible de sccroll_mockTrigger().
- * @return #SCCENONE.
- */
-static unsigned sccroll_enone(void);
-
-/**
- * @since 0.1.0
- * @brief Fonction sauvegardant les données utilisées par gcov.
- */
-extern void __gcov_dump(void);
-
-// clang-format off
-
-/******************************************************************************
- * @}
- * @}
- *
  * Implémentation des fonctions.
  *
  * Préparation, définition, enregistrement et exécution des tests.
@@ -1040,35 +984,4 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
         va_end(args);
         abort();
     }
-}
-
-// clang-format off
-
-/******************************************************************************
- * Mocks
- ******************************************************************************/
-// clang-format on
-
-weak_alias(sccroll_enone, sccroll_mockTrigger);
-static unsigned sccroll_enone(void) { return SCCENONE; }
-
-SCCROLL_MOCK(void, abort, void)
-{
-    // On enregistre les fonctions avec atexit afin de permettre une
-    // couverture de code complète: puisque les fonctions sont
-    // appelées après exit, toutes les lignes de la fonction sont
-    // utilisées. L'ordre est important, car les fonctions sont
-    // appelée en ordre inverse de leur inscription.
-    //
-    // La fonction doit quitter. Mais une erreur possible pour elle
-    // est de quitter de la mauvaise manière: au lieu de s'arrêter
-    // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
-    // s'arrête avec exit et un status d'erreur. Ici c'est une
-    // fonction qui ne fait rien qui est utilisée à la place de la
-    // fonction abort originelle car ce simulacre quitte déjà avec un
-    // exit et un code d'erreur (qui ne sera pas renvoyé si l'abort
-    // originelle est utilisée).
-    atexit(sccroll_hasFlags(sccroll_mockTrigger(), SCCEABORT) ? sccroll_void : __real_abort);
-    atexit(__gcov_dump);
-    exit(SIGABRT);
 }

@@ -1,27 +1,54 @@
 /**
- * @file        sccroll.c
+ * @file        core.c
  * @version     0.1.0
- * @brief       Fichier source de la librairie Sccroll.
+ * @brief       Fichier source de la gestions de tests.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
- * @compilation
- * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -I include \
- *     -fpic -shared -Wl,--wrap,abort \
- *     -o build/libs/libsccroll.so
- * @endcode
+ * @compilation @ref sccroll.h
  *
  * @addtogroup Internals Structures internes de Sccroll
  * @{
+ * @addtogroup Core Création, exécution et analyse des tests unitaires
+ * @{
  */
 
-#include "sccroll.h"
+#include "sccroll/core.h"
 
 // clang-format off
 
 /******************************************************************************
- * @addtogroup Misc Aide à la programmation
+ * @name Gestion basique de messages avec coloration
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @enum SccrollColors
+ * @since 0.1.0
+ * @brief Couleur pour les codes ANSI.
+ */
+typedef enum SccrollColors{
+    RED   = 1, /**< Rouge. */
+    GREEN = 2, /**< Vert. */
+    CYAN  = 6, /**< Cyan. */
+} SccrollColors;
+
+/**
+ * @def COLSTRFMT
+ * @since 0.1.0
+ * @brief Ajoute les codes ANSI de coloration à une chaîne.
+ * @param i Un code SccrollColors
+ * @param s La chaîne à colorer
+ */
+#define COLSTRFMT "\e[0;1;3%im%s\e[0m"
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @name Gestion d'erreurs
  * @{
  ******************************************************************************/
 // clang-format on
@@ -49,10 +76,7 @@
 /******************************************************************************
  * @}
  *
- * @addtogroup Tests Tests unitaires
- * @{
- *
- * @addtogroup Preparation Préparation
+ * @name Interfaces utilisateur
  * @{
  ******************************************************************************/
 // clang-format on
@@ -72,15 +96,15 @@ static void sccroll_void(void) __attribute__((unused));
 /******************************************************************************
  * @}
  *
- * @addtogroup Registration Enregistrement
+ * @name Enregistrement des tests
+ *
+ * La gestion de l'enregistrement des tests passe par une queue
+ * (LIFO). Bien que cette méthode suffise, elle peut être modifiée à
+ * l'avenir; c'est la raison pour laquelle l'ordre des tests n'est pas
+ * garanti.
  * @{
  ******************************************************************************/
 // clang-format on
-
-/**
- * @name Liste des tests
- * @{
- */
 
 /**
  * @struct SccrollNode
@@ -104,20 +128,6 @@ typedef struct SccrollNode {
 typedef SccrollNode* SccrollList;
 
 /**
- * @since 0.1.0
- * @var tests
- * @brief Liste des tests à exécuter.
- */
-static SccrollList tests = NULL;
-/** @} */
-
-/**
- * @name Accès au données d'une SccrollList
- * @{
- * @param list la SccrollList dont on veut accéder aux données.
- */
-
-/**
  * @def sccroll_car
  * @since 0.1.0
  * @brief Accède au test du noeud.
@@ -137,7 +147,6 @@ static SccrollList tests = NULL;
  * @brief Accède au reste de la liste.
  */
 #define sccroll_cdr(list) (list)->cdr
-/** @} */
 
 /**
  * @since 0.1.0
@@ -147,10 +156,21 @@ static SccrollList tests = NULL;
 static void sccroll_push(const SccrollEffects* restrict expected) __attribute__((nonnull));
 
 /**
- * @name Générateurs de SccrollEffects
- * @attention Ces fonctions utilisent calloc.
- * @{
+ * @since 0.1.0
+ * @var tests
+ * @brief Liste des tests à exécuter.
  */
+static SccrollList tests = NULL;
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @name Gestion de structures SccrollEffects et leurs membres
+ * @{
+ ******************************************************************************/
+// clang-format on
 
 /**
  * @since 0.1.0
@@ -158,6 +178,7 @@ static void sccroll_push(const SccrollEffects* restrict expected) __attribute__(
  * @attention La structure est copiée, mais pas le contenu des
  * emplacements des pointeurs stockés dans la structure (ce sont les
  * mêmes pointeurs entre l'original et la copie).
+ * @attention utilise calloc.
  * @param effects Le SccrollEffects à copier.
  * @return Le pointeur d'une copie de @p effects.
  */
@@ -170,12 +191,6 @@ static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects) __att
  * @return Le pointeur d'un SccrollEffects initialisé à 0.
  */
 static SccrollEffects* sccroll_gen(void);
-/** @} */
-
-/**
- * @name Préparation du SccrollEffects des effets attendus
- * @{
- */
 
 /**
  * @since 0.1.0
@@ -240,14 +255,13 @@ static void sccroll_files(SccrollEffects* restrict result) __attribute__((nonnul
  * fichier.
  */
 static void sccroll_fread(const char* restrict path, char buffer[SCCMAX+1], const char* restrict name) __attribute__((nonnull));
-/** @} */
 
 // clang-format off
 
 /******************************************************************************
  * @}
  *
- * @addtogroup Execution Exécution
+ * @name Exécution des tests
  * @{
  ******************************************************************************/
 // clang-format on
@@ -296,10 +310,15 @@ static const SccrollEffects* sccroll_pop(void);
  */
 static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result) __attribute__((nonnull));
 
-/**
- * @name Pipes
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @name Gestion de pipes
  * @{
- */
+ ******************************************************************************/
+// clang-format on
 
 /**
  * @typedef SccrollPipes
@@ -360,12 +379,16 @@ const char* const PIPEDESC[PIPEMAX] = {
  *               puis le descripteur de fichier où dupliquer le pipe.
  */
 static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipefd[2], ...) __attribute__((nonnull(2, 3)));
-/** @} */
 
-/**
- * @name Récolte des effets secondaires
+// clang-format off
+
+/******************************************************************************
+ * @}
+ *
+ * @name Récolte des effets obtenus
  * @{
- */
+ ******************************************************************************/
+// clang-format on
 
 /**
  * @since 0.1.0
@@ -389,14 +412,13 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
  * standard.
  */
 static void sccroll_std(SccrollEffects* restrict result, int pipestd[SCCMAXSTD][2]) __attribute__((nonnull));
-/** @} */
 
 // clang-format off
 
 /******************************************************************************
  * @}
  *
- * @addtogroup Report Affichage des rapports
+ * @name Analyse des effets obtenus et rapports
  * @{
  ******************************************************************************/
 // clang-format on
@@ -412,37 +434,6 @@ typedef enum SccrollReport {
     REPORTMAX  = 2,  /**< Index maximal de la table des rapports. */
     MAXLINE = 80,    /**< Longueur maximale des lignes d'un rapport. */
 } SccrollReport;
-
-/**
- * @name Coloration avec codes ANSI.
- * @{
- */
-
-/**
- * @enum SccrollColors
- * @since 0.1.0
- * @brief Couleur pour les codes ANSI.
- */
-typedef enum SccrollColors{
-    RED   = 1, /**< Rouge. */
-    GREEN = 2, /**< Vert. */
-    CYAN  = 6, /**< Cyan. */
-} SccrollColors;
-
-/**
- * @def COLSTRFMT
- * @since 0.1.0
- * @brief Ajoute les codes ANSI de coloration à une chaîne.
- * @param i Un code SccrollColors
- * @param s La chaîne à colorer
- */
-#define COLSTRFMT "\e[0;1;3%im%s\e[0m"
-/** @} */
-
-/**
- * @name Formats des rapports
- * @{
- */
 
 /**
  * @def BASEFMT
@@ -492,12 +483,6 @@ typedef enum SccrollColors{
  * @param s Description du code obtenu.
  */
 #define CODEFMT BASEFMT ": %s: expected %i (%s), got %i (%s)\n"
-/** @} */
-
-/**
- * @name Comparaison des effets obtenus et attendus
- * @{
- */
 
 /**
  * @since 0.1.0
@@ -547,7 +532,6 @@ typedef struct SccrollStrDiff {
  * SccrollStrDiff::expected et SccrollStrDiff::result différentes.
  */
 static void sccroll_pdiff(const SccrollStrDiff* restrict infos) __attribute__((nonnull));
-/** @} */
 
 /**
  * @since 0.1.0
@@ -562,7 +546,7 @@ static void sccroll_review(int report[REPORTMAX]) __attribute__((nonnull));
 /******************************************************************************
  * @}
  *
- * @addtogroup Clean Nettoyage
+ * @name Nettoyage post-tests
  * @{
  ******************************************************************************/
 // clang-format on
@@ -584,11 +568,10 @@ static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((
 
 /******************************************************************************
  * @}
- * @}
  *
- * Implémentation des fonctions.
+ * Implémentation
  *
- * Préparation, définition, enregistrement et exécution des tests.
+ * Interface
  ******************************************************************************/
 // clang-format on
 
@@ -597,6 +580,13 @@ weak_alias(sccroll_void, sccroll_clean);
 weak_alias(sccroll_void, sccroll_before);
 weak_alias(sccroll_void, sccroll_after);
 static void sccroll_void(void) {}
+
+// clang-format off
+
+/******************************************************************************
+ * Enregistrement
+ ******************************************************************************/
+// clang-format on
 
 strong_alias(sccroll_push, sccroll_register);
 static void sccroll_push(const SccrollEffects* restrict expected)
@@ -688,6 +678,13 @@ static void sccroll_fread(const char* restrict path, char buffer[SCCMAX+1], cons
     sccroll_err(!fread(buffer, sizeof(char), SCCMAX, file) && ferror(file), path, name);
     fclose(file);
 }
+
+// clang-format off
+
+/******************************************************************************
+ * Exécution
+ ******************************************************************************/
+// clang-format on
 
 weak_alias(sccroll_main, main);
 static int sccroll_main(void)
@@ -813,6 +810,13 @@ static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipe
     sccroll_err(status < 0, PIPEDESC[type], name);
 }
 
+// clang-format off
+
+/******************************************************************************
+ * Récolte
+ ******************************************************************************/
+// clang-format on
+
 static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status)
 {
     sccroll_pipes(PIPEREAD, result->name, pipefd, &result->codes[SCCERRNUM], sizeof(int));
@@ -836,6 +840,13 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
         result->std[i] = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
     }
 }
+
+// clang-format off
+
+/******************************************************************************
+ * Analyse et rapports
+ ******************************************************************************/
+// clang-format on
 
 static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
 {
@@ -944,9 +955,18 @@ static void sccroll_review(int report[REPORTMAX])
         "success rate", percent, passed, report[REPORTTOTAL]);
 }
 
+// clang-format off
+
+/******************************************************************************
+ * Nettoyage
+ ******************************************************************************/
+// clang-format on
+
 static void sccroll_free(const SccrollEffects* restrict effects)
 {
     for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i]);
     for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
     free((void*)effects);
 }
+
+/** @} @} **/

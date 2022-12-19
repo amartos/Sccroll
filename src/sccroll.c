@@ -269,16 +269,6 @@ static int sccroll_main(void);
 static int sccroll_test(void);
 
 /**
- * @var in_test
- * @since 0.1.0
- * @brief Indique si les tests sont en cours d'exécution.
- *
- * Cette variable sert à empêcher l'exécution de certaines fonctions
- * au cours des tests.
- */
-static bool in_test = false;
-
-/**
  * @since 0.1.0
  * @brief Retire le premier noeud de la liste de tests et renvoie le
  * pointeur du test qui y est stocké.
@@ -611,8 +601,6 @@ static void sccroll_void(void) {}
 strong_alias(sccroll_push, sccroll_register);
 static void sccroll_push(const SccrollEffects* restrict expected)
 {
-    assert(!in_test);
-
     SccrollNode* node = calloc(1, sizeof(SccrollNode));
     sccroll_err(!node, "test registration", expected->name);
 
@@ -709,10 +697,8 @@ static int sccroll_main(void)
 
 int sccroll_run(void)
 {
-    assert(!in_test);
     if (!tests) return 0;
 
-    in_test = true;
     int report[REPORTMAX] = { 0 };
     report[REPORTTOTAL]   = sccroll_nth(tests);
 
@@ -725,7 +711,6 @@ int sccroll_run(void)
     sccroll_review(report);
     sccroll_clean();
 
-    in_test = false;
     return report[REPORTFAIL];
 }
 

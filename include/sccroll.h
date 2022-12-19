@@ -218,8 +218,6 @@ typedef struct SccrollEffects {
  * sccroll_register() sera exécuté **deux** fois.
  * @param expected Les informations nécessaires pour l'exécution d'un
  * test et comparaison des résultats.
- * @throw SIGABRT si la fonction est exécutée au
- * sein d'une fonction de test.
  */
 void sccroll_register(const SccrollEffects* restrict expected)
     __attribute__((nonnull));
@@ -287,8 +285,6 @@ void sccroll_register(const SccrollEffects* restrict expected)
  * l'inverse, si aucun main n'est défini pour les tests, l'appel de
  * sccroll_run() est inutile.
  * @return le nombre de tests en échec.
- * @throw SIGABRT si la fonction est exécutée au
- * sein d'une fonction de test.
  */
 int sccroll_run(void);
 

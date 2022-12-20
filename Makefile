@@ -2,14 +2,14 @@
 # Informations sur le projet
 ###############################################################################
 
-PROJECT 	:= sccroll
-VERSION		:= 0.1.0
-LICENSEFILE	:= LICENSE
-BRIEF		:= $(shell head -n 1 $(LICENSEFILE))
-NAME		:= $(firstword $(BRIEF))
-LICENSE 	:= $(shell head -n 2 $(LICENSEFILE))
-LOGO		:=
-PROJECTLANG	:= French
+LICENSEFILE	= LICENSE
+LICENSE 	= $(shell head -n 2 $(LICENSEFILE) | tail -n 1)
+BRIEF		= $(shell head -n 1 $(LICENSEFILE))
+NAME		= $(firstword $(BRIEF))
+PROJECT 	= $(shell echo $(NAME) | tr "[:upper:]" "[:lower:]")
+VERSION		= $(shell find . -type f -name "$(PROJECT).[h|c]" | xargs grep version | awk '{print $$NF}')
+LOGO		=
+DOCSLANG	= French
 
 ###############################################################################
 # Environnement
@@ -148,7 +148,7 @@ coverage: unit-tests $(SHARED)/lib$(PROJECT).gcno
 	@$(COV) $(COVOPTS) $(COVXML) $(COVHTML) $(BUILD)
 	@$(PASS) $@
 
-export NAME VERSION BRIEF LOGO DOCS EXAMPLES PROJECTLANG SRCS INCLUDES TESTS
+export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
 
 # @brief Génère la documentation automatisée du projet
 docs: init html pdf

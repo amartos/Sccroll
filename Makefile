@@ -63,20 +63,27 @@ DEPFLAGS	:= -MMD -MP -MF
 
 
 ###############################################################################
-# Paramètres de tests
+# Paramètres de couverture de code
 ###############################################################################
 
-# Limites de couverture de code acceptées en %
-COVHIGH	:= 98
-COVLOW	:= 75
+vpath %.gcno $(BUILD)
 
-COV		:= gcovr
-COVOPTS	:= -r $(SRCS) -u --no-marker -e ".$(TESTSPTRN).c"
-COVXML		:= --cobertura-pretty --cobertura $(REPORTS)/coverage.xml
-COVHTML :=	--html-details $(REPORTS)/coverage.html \
-			--html-medium-threshold $(COVLOW) --html-high-threshold $(COVHIGH) \
-			--html-details-syntax-highlighting --html-theme blue \
-			--html-title "$(NAME) code coverage report"
+COVFILE		= $(REPORTS)/coverage
+COVXML		= $(COVFILE).xml
+COVHTML		= $(COVFILE).html
+# Limites de couverture de code acceptées en %
+COVHIGH		= 98
+COVLOW		= 75
+
+COV			= gcovr
+COVOPTS		= -r $(SRCS) -u --no-marker --exclude-directories "$(TESTS)"
+COVOPTSXML	= --cobertura-pretty --cobertura $(COVXML)
+COVOPTSHTML	= --html-details $(COVHTML) \
+				--html-medium-threshold $(COVLOW) \
+				--html-high-threshold $(COVHIGH) \
+				--html-details-syntax-highlighting \
+				--html-theme blue \
+				--html-title "$(NAME) code coverage report"
 
 
 ###############################################################################
@@ -151,10 +158,8 @@ unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(INFO) ok $@
 
 # @brief Génère un rapport sur la couverture de code des tests.
-coverage: unit-tests $(SHARED)/lib$(PROJECT).gcno
-	@rm -rf $(REPORTS)
-	@mkdir -p $(REPORTS)
-	@$(COV) $(COVOPTS) $(COVXML) $(COVHTML) $(BUILD)
+coverage: unit-tests
+	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
 	@$(INFO) ok $@
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS

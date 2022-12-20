@@ -9,7 +9,6 @@ NAME		= $(firstword $(BRIEF))
 PROJECT 	= $(shell echo $(NAME) | tr "[:upper:]" "[:lower:]")
 VERSION		= $(shell find . -type f -name "$(PROJECT).[h|c]" | xargs grep version | awk '{print $$NF}')
 LOGO		=
-DOCSLANG	= French
 
 
 ###############################################################################
@@ -31,17 +30,25 @@ DEPS		:= $(BUILD)/deps
 OBJS		:= $(BUILD)/objs
 SHARED		:= $(BUILD)/libs
 REPORTS	:= $(BUILD)/reports
-DOCS		:= docs
-EXAMPLES	:= $(DOCS)/examples
-DOXCONF		:= $(DOCS)/doxygen.conf
-HTML		:= $(DOCS)/html
-LATEX		:= $(DOCS)/latex
 
 vpath %.c  $(SRCS) $(TESTS)
 vpath %.h  $(INCLUDES)
 vpath %.o  $(OBJS)
 vpath %.so $(SHARED)
 vpath %.d  $(DEPS)
+
+
+###############################################################################
+# Environnement de documentation
+###############################################################################
+
+DOCS		= docs
+DOCSLANG	= French
+DOXCONF		= $(DOCS)/doxygen.conf
+EXAMPLES	= $(DOCS)/examples
+HTML		= $(DOCS)/html
+LATEX		= $(DOCS)/latex
+DOCSPDF		= $(LATEX)/refman.pdf
 
 
 ###############################################################################
@@ -153,24 +160,16 @@ coverage: unit-tests $(SHARED)/lib$(PROJECT).gcno
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
 
 # @brief Génère la documentation automatisée du projet
-docs: init html pdf
-	@(INFO) ok $@
-
-$(LATEX)/Makefile $(HTML)/index.html: $(DOXCONF)
+docs: init $(DOXCONF)
 	@doxygen -q $(DOXCONF)
-
-html: $(HTML)/index.html
-
-pdf: $(LATEX)/Makefile
-	@bash -c "make -C $(DOCS)/latex pdf" &>/dev/null
-	@mv $(DOCS)/latex/refman.pdf $(DOCS)
+	@bash -c "make -C $(LATEX) pdf" &>/dev/null
+	@mv $(DOCSPDF) $(DOCS)/
 	@$(INFO) ok $@
 
 # @brief Initialise la structure du projet
 init:
 	@mkdir -p $(SRCS) $(INCLUDES) $(TESTS) $(SCRIPTS)
 	@mkdir -p $(BUILD) $(BIN) $(OBJS) $(DEPS) $(SHARED) $(REPORTS)
-	@mkdir -p $(DOCS)
 
 # @brief Nettoyage post-compilation
 clean:

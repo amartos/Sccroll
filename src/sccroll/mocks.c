@@ -52,21 +52,18 @@ extern void __gcov_dump(void);
 weak_alias(sccroll_enone, sccroll_mockTrigger);
 static unsigned sccroll_enone(void) { return SCCENONE; }
 
+__attribute__((noreturn))
 SCCROLL_MOCK(void, abort, void)
 {
-    // On enregistre les fonctions avec atexit afin de permettre une
-    // couverture de code complète: puisque les fonctions sont
-    // appelées après exit, toutes les lignes de la fonction sont
-    // utilisées. L'ordre est important, car les fonctions sont
-    // appelée en ordre inverse de leur inscription.
-    //
+    __gcov_dump();
+    // Les lignes ci-dessous n'apparaîtront jamais dans les rapports
+    // de couverture.
     // La fonction doit quitter. Mais une erreur possible pour elle
     // est de quitter de la mauvaise manière: au lieu de s'arrêter
     // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
     // s'arrête avec exit et un status d'erreur.
-    atexit(sccroll_hasFlags(sccroll_mockTrigger(), SCCEABRT) ? NULL : __real_abort);
-    atexit(__gcov_dump);
-    exit(SIGABRT);
+    if (sccroll_hasFlags(sccroll_mockTrigger(), SCCEABRT)) exit(SIGABRT);
+    __real_abort();
 }
 
 /** @} @} */

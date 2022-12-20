@@ -24,9 +24,6 @@ _UNITS		:= $(wildcard $(TESTS)/$(TESTSPTRN).c)
 UNITS		:= $(_UNITS:$(TESTS)/%.c=%)
 TMP			:= /tmp/$(PROJECT)
 SCRIPTS		:= scripts
-ERROR	 	:= $(SCRIPTS)/pinfo error
-INFO		:= $(SCRIPTS)/pinfo info
-PASS		:= $(SCRIPTS)/pinfo ok
 BUILD		:= build
 BIN		:= $(BUILD)/bin
 DEPS		:= $(BUILD)/deps
@@ -52,7 +49,7 @@ vpath %.d  $(DEPS)
 
 CC		:= gcc
 STD		:= gnu99
-CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) $(shell $(SCRIPTS)/mocks.awk $(SRCS)/$(PROJECT).c) -c
+CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) $(shell $(MOCKS) $(SRCS)/$(PROJECT).c) -c
 LDLIBS	 	:= -L $(SHARED) -l $(PROJECT)
 DEPFLAGS	:= -MMD -MP -MF
 
@@ -78,6 +75,10 @@ COVHTML :=	--html-details $(REPORTS)/coverage.html \
 # Fonctions d'aide
 ###############################################################################
 
+MOCKS		= $(SCRIPTS)/mocks.awk
+INFO	 	= $(SCRIPTS)/pinfo
+PDOC		= $(SCRIPTS)/pdoc.awk
+
 # Cherche une chaîne dans un fichier et lève une erreur si elle n'est
 # pas trouvée.
 # $(1) Le nom du test.
@@ -85,7 +86,7 @@ COVHTML :=	--html-details $(REPORTS)/coverage.html \
 # $(3) Le nom du fichier.
 # $(4) Des commandes à effectuer avant la recherche.
 define assertLogHas =
-$(4) grep -q $(2) $(3) || $(ERROR) $(1) "Not found in log:" $(2)
+$(4) grep -q $(2) $(3) || $(INFO) error $(1) "Not found in log:" $(2)
 endef
 
 
@@ -118,12 +119,12 @@ all: $(PROJECT)
 
 # @brief Compile la librairie (cible par défaut)
 $(PROJECT): init lib$(PROJECT).so
-	@$(PASS) compilation
+	@$(INFO) ok $(TARGET) compiled
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 unit-tests: CFLAGS += --coverage -g -O0
 unit-tests: LDLIBS += --coverage -lgcov
-unit-tests: LDLIBS += $(shell $(SCRIPTS)/mocks.awk $(TESTS)/$*.c $(SRCS)/$(PROJECT).c)
+unit-tests: LDLIBS += $(shell $(MOCKS) $(TESTS)/$*.c $(SRCS)/$(PROJECT).c)
 unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
 unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
@@ -139,20 +140,20 @@ unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
 	@$(call assertLogHas,"asserts","l.",$(TMP)/$(PROJECT)_asserts_tests.log);
 	@$(call assertLogHas,"asserts","invisible line",$(TMP)/$(PROJECT)_asserts_tests.log, !);
 	@rm -r $(TMP)
-	@$(PASS) $@
+	@$(INFO) ok $@
 
 # @brief Génère un rapport sur la couverture de code des tests.
 coverage: unit-tests $(SHARED)/lib$(PROJECT).gcno
 	@rm -rf $(REPORTS)
 	@mkdir -p $(REPORTS)
 	@$(COV) $(COVOPTS) $(COVXML) $(COVHTML) $(BUILD)
-	@$(PASS) $@
+	@$(INFO) ok $@
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
 
 # @brief Génère la documentation automatisée du projet
 docs: init html pdf
-	@$(PASS) $@
+	@(INFO) ok $@
 
 $(LATEX)/Makefile $(HTML)/index.html: $(DOXCONF)
 	@doxygen -q $(DOXCONF)
@@ -162,6 +163,7 @@ html: $(HTML)/index.html
 pdf: $(LATEX)/Makefile
 	@bash -c "make -C $(DOCS)/latex pdf" &>/dev/null
 	@mv $(DOCS)/latex/refman.pdf $(DOCS)
+	@$(INFO) ok $@
 
 # @brief Initialise la structure du projet
 init:
@@ -172,12 +174,12 @@ init:
 # @brief Nettoyage post-compilation
 clean:
 	@git clean -q -d -f
-	@$(PASS) $@
+	@$(INFO) ok $@
 
 # @brief Affiche la documentation du Makefile
 help:
 	@head -n 5 $(LICENSEFILE)
 	@echo "Cibles disponibles:"
-	@$(SCRIPTS)/pdoc.awk Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
+	@$(PDOC) Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 
 -include $(wildcard $(DEPS)/*.d)

@@ -52,7 +52,6 @@ extern void __gcov_dump(void);
 weak_alias(sccroll_enone, sccroll_mockTrigger);
 static unsigned sccroll_enone(void) { return SCCENONE; }
 
-__attribute__((noreturn))
 SCCROLL_MOCK(void, abort, void)
 {
     // La fonction doit quitter. Mais une erreur possible pour elle

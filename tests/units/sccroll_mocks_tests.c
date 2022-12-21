@@ -76,16 +76,6 @@ SCCROLL_MOCK(void, sccroll_before, void)
     assert(false && "sccroll_before mocked, but should not be executed...");
 }
 
-// mock de printf malformé, qui ne devrait pas être possible d'utiliser.
-SCCROLL_MOCK(int, printf, int a, int b)
-{
-    assert(false && "broken printf mock successfully replacing the original...");
-    // to remove warnings about unused parameters.
-    a = b;
-    b = a;
-    return b;
-}
-
 // clang-format off
 
 /******************************************************************************
@@ -111,10 +101,6 @@ int main(void)
     // Un changement d'état du drapeau affichera un nouveau message.
     dummy_flag = 1;
     sccroll_run();
-
-    // Si le mock malformé de printf est exécuté, cet appel provoquera
-    // une erreur.
-    printf("printf not mocked: OK\n");
 
     return EXIT_SUCCESS;
 }

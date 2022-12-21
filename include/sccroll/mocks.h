@@ -85,6 +85,7 @@
  */
 #define SCCROLL_MOCK(retval, name, ...)         \
     extern __typeof__(name) __real_##name;      \
+    extern __typeof__(name) __wrap_##name;      \
     retval __wrap_##name(__VA_ARGS__)
 
 // clang-format off
@@ -127,21 +128,6 @@ typedef enum SccrollMockFlags {
     SCCENONE = 0, /**< Drapeau ne provoquant pas d'erreurs. */
     SCCEABRT = 2, /**< Drapeau de __wrap_abort(). */
 } SccrollMockFlags;
-
-/**
- * @since 0.1.0
- * @brief Simulacre de @c abort permettant de sauvegarder les données
- * de couverture de gcov.
- * @throw SIGABRT dans tous les cas.
- * @see #SCCEABRT
- * @note L'erreur provoquée par sccroll_mockTrigger() est de quitter
- * le programme avec @c exit(SIGABRT) (signal @c 0, status @c SIGABRT)
- * au lieu de @c __real_abort()
- * @note Ce simulacre permet de récupérer les données de @c gcov
- * perdues lors d'un appel à @c abort lors d'un @c fork.
- * (signal @c SIGABRT, status @c 0)
- */
-void __wrap_abort(void) __attribute__((noreturn));
 
 // clang-format off
 /******************************************************************************

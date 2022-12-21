@@ -6,7 +6,7 @@ pipeline {
     }
     stages {
         stage("Unit tests") {
-            steps { sh "make unit-tests" }
+            steps { sh "make tests" }
         }
         stage("Coverage reports") {
             steps {

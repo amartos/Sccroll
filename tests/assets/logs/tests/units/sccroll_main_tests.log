@@ -1,0 +1,9 @@
+[ [0;1;36mDIFF[0m ] test_print: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print: stderr
++ [0;1;32msccroll_main_tests: tests/units/sccroll_main_tests.c:30: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 0.00% [0/1]
+Main executed with 6 arguments: [ 0 1 2 3 4 5 ]

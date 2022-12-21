@@ -28,7 +28,11 @@ SCRIPTS		= scripts
 
 TARGET		= lib$(PROJECT).so
 CDEPS		= $(shell find $(SRCS) -type f -name "*.c")
-UNITS		= $(shell find $(TESTS) -type f -name "*.c")
+
+ASSETS		= $(TESTS)/assets
+TLOGS		= $(ASSETS)/logs
+UNITS		= $(TESTS)/units
+CUNITS		= $(shell find $(UNITS) -type f -name "*.c")
 
 BUILD		= build
 BIN			= $(BUILD)/bin
@@ -104,21 +108,12 @@ MOCKS		= $(SCRIPTS)/mocks.awk
 INFO	 	= $(SCRIPTS)/pinfo
 PDOC		= $(SCRIPTS)/pdoc.awk
 
-# Cherche une chaîne dans un fichier et lève une erreur si elle n'est
-# pas trouvée.
-# $(1) Le nom du test.
-# $(2) La chaîne recherchée.
-# $(3) Le nom du fichier.
-# $(4) Des commandes à effectuer avant la recherche.
-define assertLogHas =
-$(4) grep -q $(2) $(3) || $(INFO) error $(1) "Not found in log:" $(2)
-endef
-
 # Copie l'arbre de répertoires d'un dossier dans la cible
 # $(1) Le répertoire à copier
 # $(2) Le répertoire cible (final $(2)/$(1))
+# $(3) Des options supplémentaires pour rsync
 define copytree=
-rsync -a --include "*/" --exclude "*" $(1) $(2)/
+rsync -a $(3) --include "*/" --exclude "*" $(1) $(2)/
 endef
 
 
@@ -140,13 +135,16 @@ $(BIN)/%: $(OBJS)/%.o
 $(LOGS)/%.log: $(BIN)/%
 	@LD_LIBRARY_PATH=$(LIBS) $< $(ARGS) &> $@
 
+$(LOGS)/%.difflog: $(LOGS)/%.log
+	@git diff --no-index $< $(<:$(LOGS)/%=$(TLOGS)/%) &> $@
+
 
 ###############################################################################
 # Autres cibles
 ###############################################################################
 
-.PHONY: all $(PROJECT) unit-tests coverage docs init help
-.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so $(BIN)/%
+.PHONY: all $(PROJECT) tests unit-tests coverage docs init help
+.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so
 
 all: $(PROJECT)
 
@@ -156,28 +154,27 @@ $(PROJECT): init $(LIBS)/$(TARGET)
 	@$(INFO) ok $(TARGET) compiled
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
-unit-tests: CFLAGS += --coverage -g -O0
-unit-tests: SFLAGS += --coverage
-unit-tests: LDLIBS += --coverage $(shell $(MOCKS) $*.c)
-unit-tests: ARGS 	= $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
-unit-tests: $(LIBS)/$(TARGET) $(UNITS:%.c=$(LOGS)/%.log)
-	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(LOGS)/$(TESTS)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(LOGS)/$(TESTS)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(LOGS)/$(TESTS)/$(PROJECT)_main_tests.log)
-	@$(call assertLogHas,"mocks", "calloc mocked.",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks", "free mocked",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","sccroll_run mocked: nothing executed",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","printf not mocked: OK",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","Assertion",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log,!)
-	@$(call assertLogHas,"asserts","this test must fail successfully",$(LOGS)/$(TESTS)/$(PROJECT)_asserts_tests.log);
-	@$(call assertLogHas,"asserts","l.",$(LOGS)/$(TESTS)/$(PROJECT)_asserts_tests.log);
-	@$(call assertLogHas,"asserts","invisible line",$(LOGS)/$(TESTS)/$(PROJECT)_asserts_tests.log, !);
+tests: coverage
+	@find $(BUILD) -type d -empty -delete
 	@$(INFO) ok $@
 
-# @brief Génère un rapport sur la couverture de code des tests.
+# @brief Exécute les tests unitaires
+unit-tests: CFLAGS += -g -O0
+unit-tests: LDLIBS += $(shell $(MOCKS) $*.c $(CDEPS))
+unit-tests: ARGS    = 0 1 2 3 4 5
+unit-tests: tests-init $(LIBS)/$(TARGET) $(CUNITS:%.c=$(LOGS)/%.difflog)
+	@rm -rf $(BIN)/*
+	@find $(BUILD) -type f -name "*.log" -delete
+	@$(INFO) ok $@
+
+# @brief Calcule la couverture de code des tests unitaires
+coverage: CFLAGS += --coverage
+coverage: SFLAGS += --coverage
+coverage: LDLIBS += --coverage
 coverage: unit-tests
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
+	@find $(BUILD) -type f -name "*.gcno" -delete
+	@find $(BUILD) -type f -name "*.gcda" -delete
 	@$(INFO) ok $@
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
@@ -194,10 +191,13 @@ init:
 	@mkdir -p $(BUILDTREE)
 	@$(call copytree,$(SRCS),$(OBJS))
 	@$(call copytree,$(SRCS),$(DEPS))
-	@$(call copytree,$(TESTS),$(BIN))
-	@$(call copytree,$(TESTS),$(OBJS))
-	@$(call copytree,$(TESTS),$(DEPS))
-	@$(call copytree,$(TESTS),$(LOGS))
+
+# Initialise la structure de build des tests
+tests-init: init
+	@$(call copytree,$(TESTS),$(BIN),--exclude "$(ASSETS)/")
+	@$(call copytree,$(TESTS),$(OBJS),--exclude "$(ASSETS)/")
+	@$(call copytree,$(TESTS),$(DEPS),--exclude "$(ASSETS)/")
+	@$(call copytree,$(TESTS),$(LOGS),--exclude "$(ASSETS)/")
 
 # @brief Nettoyage post-compilation
 clean:

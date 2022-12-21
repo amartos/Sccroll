@@ -1,0 +1,6 @@
+sccroll_run mocked: nothing executed.
+free mocked
+sccroll_run mocked: flag seen.
+printf not mocked: OK
+free mocked
+free mocked

@@ -15,27 +15,26 @@ LOGO		=
 # Environnement
 ###############################################################################
 
-SHELL		:= /usr/bin/bash
-SRCS		:= src
-INCLUDES	:= include
-TESTS		:= tests
-TESTSPTRN	:= *_tests
-_UNITS		:= $(wildcard $(TESTS)/$(TESTSPTRN).c)
-UNITS		:= $(_UNITS:$(TESTS)/%.c=%)
-TMP			:= /tmp/$(PROJECT)
-SCRIPTS		:= scripts
-BUILD		:= build
-BIN		:= $(BUILD)/bin
-DEPS		:= $(BUILD)/deps
-OBJS		:= $(BUILD)/objs
-SHARED		:= $(BUILD)/libs
-REPORTS	:= $(BUILD)/reports
+SHELL		= /usr/bin/env bash
+SRCS		= src
+INCLUDES	= include
+TESTS		= tests
+SCRIPTS		= scripts
 
-vpath %.c  $(SRCS) $(TESTS)
-vpath %.h  $(INCLUDES)
-vpath %.o  $(OBJS)
-vpath %.so $(SHARED)
-vpath %.d  $(DEPS)
+
+###############################################################################
+# Environnement de build
+###############################################################################
+
+UNITS		= $(wildcard $(TESTS)/*.c)
+BUILD		= build
+BIN			= $(BUILD)/bin
+DEPS		= $(BUILD)/deps
+OBJS		= $(BUILD)/objs
+LIBS		= $(BUILD)/libs
+REPORTS		= $(BUILD)/reports
+LOGS		= $(BUILD)/logs
+BUILDTREE	= $(BUILD) $(BIN) $(DEPS) $(OBJS) $(LIBS) $(REPORTS) $(LOGS)
 
 
 ###############################################################################
@@ -55,11 +54,18 @@ DOCSPDF		= $(LATEX)/refman.pdf
 # Paramètres de compilation
 ###############################################################################
 
+vpath %.c  $(SRCS) $(TESTS)
+vpath %.h  $(INCLUDES)
+vpath %.o  $(OBJS)
+vpath %.so $(LIBS)
+vpath %.d  $(DEPS)
+vpath %.log  $(LOGS)
+
 CC		:= gcc
 STD		:= gnu99
 CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) $(shell $(MOCKS) $(SRCS)/$(PROJECT).c) -c
-LDLIBS	 	:= -L $(SHARED) -l $(PROJECT)
 DEPFLAGS	:= -MMD -MP -MF
+LDLIBS	 	= -L $(LIBS) -l $(PROJECT)
 
 
 ###############################################################################
@@ -113,14 +119,13 @@ endef
 	@$(CC) $(CFLAGS) $(DEPFLAGS) $(DEPS)/$*.d $< -o $(OBJS)/$@
 
 lib%.so: %.c
-	@$(CC) $(CFLAGS) -fpic -shared $(DEPFLAGS) $(DEPS)/$*.d $< -o $(SHARED)/$@
+	@$(CC) $(CFLAGS) -fpic -shared $(DEPFLAGS) $(DEPS)/$*.d $< -o $(LIBS)/$@
 
 $(BIN)/%: %.o
 	@$(CC) $(OBJS)/$*.o $(LDLIBS) -o $@
 
 %.log: $(BIN)/%
-	@mkdir -p $(TMP)
-	@LD_LIBRARY_PATH=$(SHARED) $< $(ARGS) &> $(TMP)/$@
+	@LD_LIBRARY_PATH=$(LIBS) $< $(ARGS) &> $(LOGS)/$@
 
 
 ###############################################################################
@@ -128,7 +133,7 @@ $(BIN)/%: %.o
 ###############################################################################
 
 .PHONY: all $(PROJECT) unit-tests coverage docs init help
-.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(SHARED)/%.so
+.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so
 
 all: $(PROJECT)
 
@@ -142,19 +147,18 @@ unit-tests: LDLIBS += --coverage -lgcov
 unit-tests: LDLIBS += $(shell $(MOCKS) $(TESTS)/$*.c $(SRCS)/$(PROJECT).c)
 unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
 unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
-	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(TMP)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(TMP)/$(PROJECT)_main_tests.log)
-	@$(call assertLogHas,"mocks", "calloc mocked.",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks", "free mocked",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","sccroll_run mocked: nothing executed",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","printf not mocked: OK",$(TMP)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","Assertion",$(TMP)/$(PROJECT)_mocks_tests.log,!)
-	@$(call assertLogHas,"asserts","this test must fail successfully",$(TMP)/$(PROJECT)_asserts_tests.log);
-	@$(call assertLogHas,"asserts","l.",$(TMP)/$(PROJECT)_asserts_tests.log);
-	@$(call assertLogHas,"asserts","invisible line",$(TMP)/$(PROJECT)_asserts_tests.log, !);
-	@rm -r $(TMP)
+	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(LOGS)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(LOGS)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(LOGS)/$(PROJECT)_main_tests.log)
+	@$(call assertLogHas,"mocks", "calloc mocked.",$(LOGS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks", "free mocked",$(LOGS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","sccroll_run mocked: nothing executed",$(LOGS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(LOGS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","printf not mocked: OK",$(LOGS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","Assertion",$(LOGS)/$(PROJECT)_mocks_tests.log,!)
+	@$(call assertLogHas,"asserts","this test must fail successfully",$(LOGS)/$(PROJECT)_asserts_tests.log);
+	@$(call assertLogHas,"asserts","l.",$(LOGS)/$(PROJECT)_asserts_tests.log);
+	@$(call assertLogHas,"asserts","invisible line",$(LOGS)/$(PROJECT)_asserts_tests.log, !);
 	@$(INFO) ok $@
 
 # @brief Génère un rapport sur la couverture de code des tests.
@@ -173,8 +177,7 @@ docs: init $(DOXCONF)
 
 # @brief Initialise la structure du projet
 init:
-	@mkdir -p $(SRCS) $(INCLUDES) $(TESTS) $(SCRIPTS)
-	@mkdir -p $(BUILD) $(BIN) $(OBJS) $(DEPS) $(SHARED) $(REPORTS)
+	@mkdir -p $(BUILDTREE)
 
 # @brief Nettoyage post-compilation
 clean:

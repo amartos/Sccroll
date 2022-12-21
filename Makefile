@@ -26,7 +26,10 @@ SCRIPTS		= scripts
 # Environnement de build
 ###############################################################################
 
-UNITS		= $(wildcard $(TESTS)/*.c)
+TARGET		= lib$(PROJECT).so
+CDEPS		= $(shell find $(SRCS) -type f -name "*.c")
+UNITS		= $(shell find $(TESTS) -type f -name "*.c")
+
 BUILD		= build
 BIN			= $(BUILD)/bin
 DEPS		= $(BUILD)/deps
@@ -61,10 +64,11 @@ vpath %.so $(LIBS)
 vpath %.d  $(DEPS)
 vpath %.log  $(LOGS)
 
-CC		:= gcc
-STD		:= gnu99
-CFLAGS		:= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) $(shell $(MOCKS) $(SRCS)/$(PROJECT).c) -c
-DEPFLAGS	:= -MMD -MP -MF
+CC			= gcc
+STD			= gnu99
+CFLAGS		= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) -fpic
+DFLAGS		= -MMD -MP -MF
+SFLAGS		= -shared
 LDLIBS	 	= -L $(LIBS) -l $(PROJECT)
 
 
@@ -110,22 +114,31 @@ define assertLogHas =
 $(4) grep -q $(2) $(3) || $(INFO) error $(1) "Not found in log:" $(2)
 endef
 
+# Copie l'arbre de répertoires d'un dossier dans la cible
+# $(1) Le répertoire à copier
+# $(2) Le répertoire cible (final $(2)/$(1))
+define copytree=
+rsync -a --include "*/" --exclude "*" $(1) $(2)/
+endef
+
 
 ###############################################################################
 # Cibles à patterns
 ###############################################################################
 
-%.o: %.c
-	@$(CC) $(CFLAGS) $(DEPFLAGS) $(DEPS)/$*.d $< -o $(OBJS)/$@
+$(OBJS)/%.o: %.c
+	@$(CC) $(CFLAGS) $(DFLAGS) $(DEPS)/$*.d -c $< -o $@
 
-lib%.so: %.c
-	@$(CC) $(CFLAGS) -fpic -shared $(DEPFLAGS) $(DEPS)/$*.d $< -o $(LIBS)/$@
+$(LIBS)/lib%.so: SFLAGS += $(shell $(MOCKS) $(CDEPS)),-soname,lib$*.so
+$(LIBS)/lib%.so: $(CDEPS:%.c=$(OBJS)/%.o)
+	@$(CC) $(SFLAGS) $^ -o $@.$(VERSION)
+	@ln -s $(@:$(LIBS)/%=%).$(VERSION) $@
 
-$(BIN)/%: %.o
-	@$(CC) $(OBJS)/$*.o $(LDLIBS) -o $@
+$(BIN)/%: $(OBJS)/%.o
+	@$(CC) $(LDLIBS) $< -o $@
 
-%.log: $(BIN)/%
-	@LD_LIBRARY_PATH=$(LIBS) $< $(ARGS) &> $(LOGS)/$@
+$(LOGS)/%.log: $(BIN)/%
+	@LD_LIBRARY_PATH=$(LIBS) $< $(ARGS) &> $@
 
 
 ###############################################################################
@@ -133,32 +146,33 @@ $(BIN)/%: %.o
 ###############################################################################
 
 .PHONY: all $(PROJECT) unit-tests coverage docs init help
-.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so
+.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so $(BIN)/%
 
 all: $(PROJECT)
 
-# @brief Compile la librairie (cible par défaut)
-$(PROJECT): init lib$(PROJECT).so
+# @brief Compile la cible principale du project (cible par défaut)
+$(PROJECT): CFLAGS += -O3
+$(PROJECT): init $(LIBS)/$(TARGET)
 	@$(INFO) ok $(TARGET) compiled
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 unit-tests: CFLAGS += --coverage -g -O0
-unit-tests: LDLIBS += --coverage -lgcov
-unit-tests: LDLIBS += $(shell $(MOCKS) $(TESTS)/$*.c $(SRCS)/$(PROJECT).c)
-unit-tests: ARGS := $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
-unit-tests: init $(PROJECT) $(UNITS:%=$(BIN)/%) $(UNITS:%=%.log)
-	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(LOGS)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(LOGS)/$(PROJECT)_basics_tests.log |)
-	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(LOGS)/$(PROJECT)_main_tests.log)
-	@$(call assertLogHas,"mocks", "calloc mocked.",$(LOGS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks", "free mocked",$(LOGS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","sccroll_run mocked: nothing executed",$(LOGS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(LOGS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","printf not mocked: OK",$(LOGS)/$(PROJECT)_mocks_tests.log)
-	@$(call assertLogHas,"mocks","Assertion",$(LOGS)/$(PROJECT)_mocks_tests.log,!)
-	@$(call assertLogHas,"asserts","this test must fail successfully",$(LOGS)/$(PROJECT)_asserts_tests.log);
-	@$(call assertLogHas,"asserts","l.",$(LOGS)/$(PROJECT)_asserts_tests.log);
-	@$(call assertLogHas,"asserts","invisible line",$(LOGS)/$(PROJECT)_asserts_tests.log, !);
+unit-tests: SFLAGS += --coverage
+unit-tests: LDLIBS += --coverage $(shell $(MOCKS) $*.c)
+unit-tests: ARGS 	= $(shell for ((n=0; $$n<($$RANDOM % 100); n = ($$n+1))); do echo -e $$n; done)
+unit-tests: $(LIBS)/$(TARGET) $(UNITS:%.c=$(LOGS)/%.log)
+	@$(call assertLogHas,"basics", ">>>>>> First line of tests.",,head -n 1 $(LOGS)/$(TESTS)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"basics", ">>>>>> Last line of tests.",,tail -n 1 $(LOGS)/$(TESTS)/$(PROJECT)_basics_tests.log |)
+	@$(call assertLogHas,"main", "Main executed with $(words $(ARGS)) arguments: \[ $(ARGS) \]",$(LOGS)/$(TESTS)/$(PROJECT)_main_tests.log)
+	@$(call assertLogHas,"mocks", "calloc mocked.",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks", "free mocked",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","sccroll_run mocked: nothing executed",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","sccroll_run mocked: flag seen.",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","printf not mocked: OK",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log)
+	@$(call assertLogHas,"mocks","Assertion",$(LOGS)/$(TESTS)/$(PROJECT)_mocks_tests.log,!)
+	@$(call assertLogHas,"asserts","this test must fail successfully",$(LOGS)/$(TESTS)/$(PROJECT)_asserts_tests.log);
+	@$(call assertLogHas,"asserts","l.",$(LOGS)/$(TESTS)/$(PROJECT)_asserts_tests.log);
+	@$(call assertLogHas,"asserts","invisible line",$(LOGS)/$(TESTS)/$(PROJECT)_asserts_tests.log, !);
 	@$(INFO) ok $@
 
 # @brief Génère un rapport sur la couverture de code des tests.
@@ -178,6 +192,12 @@ docs: init $(DOXCONF)
 # @brief Initialise la structure du projet
 init:
 	@mkdir -p $(BUILDTREE)
+	@$(call copytree,$(SRCS),$(OBJS))
+	@$(call copytree,$(SRCS),$(DEPS))
+	@$(call copytree,$(TESTS),$(BIN))
+	@$(call copytree,$(TESTS),$(OBJS))
+	@$(call copytree,$(TESTS),$(DEPS))
+	@$(call copytree,$(TESTS),$(LOGS))
 
 # @brief Nettoyage post-compilation
 clean:
@@ -190,4 +210,4 @@ help:
 	@echo "Cibles disponibles:"
 	@$(PDOC) Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 
--include $(wildcard $(DEPS)/*.d)
+-include $(wildcard $(DEPS)/*/*.d)

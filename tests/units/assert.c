@@ -1,15 +1,18 @@
 /**
- * @file        sccroll_asserts_tests.c
+ * @file        assert.c
  * @version     0.1.0
  * @brief       Tests unitaires des assertions.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
  * @compilation
- * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -I include \
- *     -L build/libs -l scroll -Wl,--wrap,abort \
- *     tests/sccroll_asserts_tests.c -o build/bin/sccroll_asserts_tests
+ * @see sccroll.h pour la compilation de libsccroll.so
+ * @code{.c}
+ * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
+ *     tests/units/assert.c -o build/objs/tests/units/assert.o
+ * gcc -L build/libs -lsccroll build/objs/tests/units/assert.o \
+ *     $(scripts/mocks.awk src/sccroll/mocks.c) \
+ *     -o build/bin/tests/assert
  * @endcode
  */
 

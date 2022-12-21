@@ -30,6 +30,7 @@
 
 #include "sccroll/helpers.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <signal.h>
 
@@ -106,28 +107,28 @@
 // clang-format on
 
 /**
- * @since 0.1.0
- * @brief Fonction utilisée pour provoquer une erreur dans les
- * simulacres fournis par la bibliothèque.
- * @attention Cette fonction de provoque pas d'erreur par défaut. Elle
- * peut cependant être redéfinie sans problèmes par l'utilisateur afin
- * de provoquer les erreurs voulues selon les conditions voulues.
- * @see sccroll_hasFlags
- * @return Un ensemble de SccrollMockFlags combinés avec OR; tous les
- * simulacres correspondants aux drapeaux entreront en erreur.
- */
-unsigned sccroll_mockTrigger(void);
-
-/**
  * @enum SccrollMockFlags
  * @since 0.1.0
  * @brief Drapeaux utilisables par sccroll_mockTrigger() pour indiquer
  * quel simulacre pré-fourni doit être en erreur.
  */
 typedef enum SccrollMockFlags {
-    SCCENONE = 0, /**< Drapeau ne provoquant pas d'erreurs. */
-    SCCEABRT = 2, /**< Drapeau de __wrap_abort(). */
+    SCCENONE   = 0,   /**< Drapeau ne provoquant pas d'erreurs. */
+    SCCEABORT  = 2,   /**< Drapeau de abort(). */
 } SccrollMockFlags;
+
+/**
+ * @since 0.1.0
+ * @brief Fonction utilisée pour provoquer une erreur dans les
+ * simulacres fournis par la bibliothèque.
+ * @attention Cette fonction de provoque pas d'erreur par défaut. Elle
+ * peut cependant être redéfinie sans problèmes par l'utilisateur afin
+ * de provoquer les erreurs voulues selon les conditions voulues.
+ * @param mock L'identifiant SccrollMockFlags du mock.
+ * @return @c true si le simulacre correspondant à l'identifiant
+ * @p mock doit lever une erreur, sinon @c false.
+ */
+bool sccroll_mockTrigger(SccrollMockFlags mock);
 
 // clang-format off
 /******************************************************************************

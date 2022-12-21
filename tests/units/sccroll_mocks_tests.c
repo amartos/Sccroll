@@ -34,7 +34,12 @@
 // clang-format on
 
 // Variable utilisée comme drapeau pour certains mocks.
-static int dummy_flag = 0;
+static unsigned dummy_flag = SCCENONE;
+
+// Drapeaux des mocks du test.
+enum {
+    SCCESCCRUN = 2,
+};
 
 // Test échouant à coup sûr.
 SCCROLL_TEST(test_fail) { assert(false); }
@@ -45,6 +50,12 @@ SCCROLL_TEST(test_fail) { assert(false); }
  * Tests unitaires.
  ******************************************************************************/
 // clang-format on
+
+// Redéfinition prévue par l'API.
+bool sccroll_mockTrigger(SccrollMockFlags mock)
+{
+    return sccroll_hasFlags(dummy_flag, mock);
+}
 
 // mock de calloc, mais n'interférant pas avec la fonction.
 SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
@@ -65,8 +76,9 @@ SCCROLL_MOCK(void, free, void* ptr)
 // #dummy_flag est défini.
 SCCROLL_MOCK(int, sccroll_run, void)
 {
-    if (dummy_flag) puts("sccroll_run mocked: flag seen.");
-    else puts("sccroll_run mocked: nothing executed.");
+    sccroll_hasFlags(dummy_flag, SCCESCCRUN)
+        ? puts("sccroll_run mocked: flag seen.")
+        : puts("sccroll_run mocked: nothing executed.");
     return 0;
 }
 
@@ -86,12 +98,24 @@ SCCROLL_MOCK(void, sccroll_before, void)
 int main(void)
 {
     // calloc est appelée avant la fonction main par SCCROLL_TEST.
+    dummy_flag = SCCENONE;
+    assert(!sccroll_mockTrigger(SCCEABORT));
+    assert(dummy_flag == SCCENONE);
+    assert(sccroll_mockTrigger(SCCENONE));
+    assert(dummy_flag == SCCENONE);
+
+    dummy_flag = SCCEABORT;
+    assert(sccroll_mockTrigger(SCCEABORT));
+    assert(dummy_flag == SCCEABORT);
+    assert(!sccroll_mockTrigger(SCCENONE));
+    assert(dummy_flag == SCCEABORT);
 
     // Les fonctions mockées doivent afficher un message si le mock
     // est réussi. Sinon, sccroll_run() provoquera une erreur en
     // appelant sccroll_before(), et l'assert assure un second niveau
     // de vérification (puisque le seul test enregistré est en échec,
     // et non en réussite comme testé ici).
+    dummy_flag = SCCENONE;
     assert(!sccroll_run());
 
     // On s'assure que les fonctions mockées peuvent être appelées
@@ -99,7 +123,7 @@ int main(void)
     free(strdup("test"));
 
     // Un changement d'état du drapeau affichera un nouveau message.
-    dummy_flag = 1;
+    dummy_flag = SCCESCCRUN;
     sccroll_run();
 
     return EXIT_SUCCESS;

@@ -32,9 +32,10 @@
  * @since 0.1.0
  * @brief Fonction renvoyant toujours #SCCENONE.
  * @note est utilisée comme alias faible de sccroll_mockTrigger().
- * @return #SCCENONE.
+ * @param mock Paramètre inutilisé.
+ * @return @c false.
  */
-static unsigned sccroll_enone(void);
+static bool sccroll_enone(SccrollMockFlags mock) __attribute__((unused));
 
 /**
  * @since 0.1.0
@@ -50,7 +51,11 @@ extern void __gcov_dump(void);
 // clang-format on
 
 weak_alias(sccroll_enone, sccroll_mockTrigger);
-static unsigned sccroll_enone(void) { return SCCENONE; }
+static bool sccroll_enone(SccrollMockFlags mock)
+{
+    sccroll_unused(mock);
+    return false;
+}
 
 SCCROLL_MOCK(void, abort, void)
 {
@@ -58,7 +63,7 @@ SCCROLL_MOCK(void, abort, void)
     // est de quitter de la mauvaise manière: au lieu de s'arrêter
     // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
     // s'arrête avec exit et un status d'erreur.
-    sccroll_hasFlags(sccroll_mockTrigger(), SCCEABRT)
+    sccroll_mockTrigger(SCCEABORT)
         ? (__gcov_dump(), exit(SIGABRT))
         : (__gcov_dump(), __real_abort());
 }

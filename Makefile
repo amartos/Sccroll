@@ -202,7 +202,6 @@ tests-init: init
 # @brief Nettoyage post-compilation
 clean:
 	@git clean -q -d -f
-	@$(INFO) ok $@
 
 # @brief Affiche la documentation du Makefile
 help:

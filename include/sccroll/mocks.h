@@ -33,6 +33,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 
 // clang-format off
 
@@ -115,6 +116,14 @@
 typedef enum SccrollMockFlags {
     SCCENONE   = 0,   /**< Drapeau ne provoquant pas d'erreurs. */
     SCCEABORT  = 2,   /**< Drapeau de abort(). */
+    SCCECALLOC = 4,   /**< Drapeau de calloc(). */
+    SCCEPIPE   = 8,   /**< Drapeau de pipe(). */
+    SCCEFORK   = 16,  /**< Drapeau de fork(). */
+    SCCEDUP2   = 32,  /**< Drapeau de dup2(). */
+    SCCECLOSE  = 64,  /**< Drapeau de close(). */
+    SCCEREAD   = 128, /**< Drapeau de read(). */
+    SCCEWRITE  = 256, /**< Drapeau de write(). */
+    SCCEMAX    = 512, /**< Valeur maximale de SccrollMockFlags. */
 } SccrollMockFlags;
 
 /**
@@ -129,6 +138,32 @@ typedef enum SccrollMockFlags {
  * @p mock doit lever une erreur, sinon @c false.
  */
 bool sccroll_mockTrigger(SccrollMockFlags mock);
+
+/**
+ * @since 0.1.0
+ * @brief Donne le nom de la fonction originale correspondant au
+ * simulacre identifié par @p mock.
+ * @return Le nom de la fonction originale correspondant à @p mock. La
+ * chaîne renvoyée n'est pas allouée avec malloc, elle ne doit pas
+ * être libérée.
+ */
+const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnull));
+
+/**
+ * @def sccroll_mockError
+ * @since 0.1.0
+ * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger() renvoie
+ * @c true, sinon renvoie la valeur de @c __real_name(...).
+ * @param name Le nom de la fonction originale.
+ * @param errtrig Le code SccrollMockFlags du simulacre.
+ * @param errval La valeur à renvoyer pour simuler l'erreur de @p name.
+ * @param ... Les arguments pour la fonction originale (vide pour
+ * "sans arguments").
+ * @return @p errval sccroll_mockTrigger() renvoie @p true, sinon la
+ * valeur renvoyée par @p __real_name(...).
+ */
+#define sccroll_mockError(name, errtrig, errval,...)                    \
+    sccroll_mockTrigger(errtrig) ? errval : __real_##name(__VA_ARGS__)
 
 // clang-format off
 /******************************************************************************

@@ -50,6 +50,22 @@ extern void __gcov_dump(void);
  ******************************************************************************/
 // clang-format on
 
+const char* sccroll_mockName(SccrollMockFlags mock)
+{
+    switch(mock)
+    {
+    default:         return "none";
+    case SCCEABORT:  return "abort";
+    case SCCECALLOC: return "calloc";
+    case SCCEPIPE:   return "pipe";
+    case SCCEFORK:   return "fork";
+    case SCCEDUP2:   return "dup2";
+    case SCCECLOSE:  return "close";
+    case SCCEREAD:   return "read";
+    case SCCEWRITE:  return "write";
+    }
+}
+
 weak_alias(sccroll_enone, sccroll_mockTrigger);
 static bool sccroll_enone(SccrollMockFlags mock)
 {
@@ -66,6 +82,41 @@ SCCROLL_MOCK(void, abort, void)
     sccroll_mockTrigger(SCCEABORT)
         ? (__gcov_dump(), exit(SIGABRT))
         : (__gcov_dump(), __real_abort());
+}
+
+SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
+{
+    return sccroll_mockError(calloc, SCCECALLOC, NULL, nmemb, size);
+}
+
+SCCROLL_MOCK(int, pipe, int pipefd[2])
+{
+    return sccroll_mockError(pipe, SCCEPIPE, -1, pipefd);
+}
+
+SCCROLL_MOCK(pid_t, fork, void)
+{
+    return sccroll_mockError(fork, SCCEFORK, -1,);
+}
+
+SCCROLL_MOCK(int, dup2, int oldfd, int newfd)
+{
+    return sccroll_mockError(dup2, SCCEDUP2, -1, oldfd, newfd);
+}
+
+SCCROLL_MOCK(int, close, int fd)
+{
+    return sccroll_mockError(close, SCCECLOSE, -1, fd);
+}
+
+SCCROLL_MOCK(ssize_t, read, int fd, void* buf, size_t count)
+{
+    return sccroll_mockError(read, SCCEREAD, -1, fd, buf, count);
+}
+
+SCCROLL_MOCK(ssize_t, write, int fd, const void* buf, size_t count)
+{
+    return sccroll_mockError(write, SCCEWRITE, -1, fd, buf, count);
 }
 
 /** @} @} */

@@ -55,15 +55,13 @@ static unsigned sccroll_enone(void) { return SCCENONE; }
 __attribute__((noreturn))
 SCCROLL_MOCK(void, abort, void)
 {
-    __gcov_dump();
-    // Les lignes ci-dessous n'apparaîtront jamais dans les rapports
-    // de couverture.
     // La fonction doit quitter. Mais une erreur possible pour elle
     // est de quitter de la mauvaise manière: au lieu de s'arrêter
     // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
     // s'arrête avec exit et un status d'erreur.
-    if (sccroll_hasFlags(sccroll_mockTrigger(), SCCEABRT)) exit(SIGABRT);
-    __real_abort();
+    sccroll_hasFlags(sccroll_mockTrigger(), SCCEABRT)
+        ? (__gcov_dump(), exit(SIGABRT))
+        : (__gcov_dump(), __real_abort());
 }
 
 /** @} @} */

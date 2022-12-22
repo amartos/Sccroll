@@ -112,6 +112,8 @@
  * @since 0.1.0
  * @brief Drapeaux utilisables par sccroll_mockTrigger() pour indiquer
  * quel simulacre pré-fourni doit être en erreur.
+ * @todo
+ * - TODO: contourner l'incompatibilité des drapeaux.
  */
 typedef enum SccrollMockFlags {
     SCCENONE   = 0,   /**< Drapeau ne provoquant pas d'erreurs. */
@@ -123,7 +125,9 @@ typedef enum SccrollMockFlags {
     SCCECLOSE  = 64,  /**< Drapeau de close(). */
     SCCEREAD   = 128, /**< Drapeau de read(). */
     SCCEWRITE  = 256, /**< Drapeau de write(). */
-    SCCEMAX    = 512, /**< Valeur maximale de SccrollMockFlags. */
+    SCCEMALLOC = 512, /**< Drapeau de malloc() (**incompatible avec #SCCEABORT**). */
+    SCCEMAX    = 1024,/**< Valeur maximale des mocks individuels. */
+    SCCEALLOC  = SCCECALLOC | SCCEMALLOC, /**< Drapeaux de tous les mocks type *alloc. */
 } SccrollMockFlags;
 
 /**
@@ -148,22 +152,6 @@ bool sccroll_mockTrigger(SccrollMockFlags mock);
  * être libérée.
  */
 const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnull));
-
-/**
- * @def sccroll_mockError
- * @since 0.1.0
- * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger() renvoie
- * @c true, sinon renvoie la valeur de @c __real_name(...).
- * @param name Le nom de la fonction originale.
- * @param errtrig Le code SccrollMockFlags du simulacre.
- * @param errval La valeur à renvoyer pour simuler l'erreur de @p name.
- * @param ... Les arguments pour la fonction originale (vide pour
- * "sans arguments").
- * @return @p errval sccroll_mockTrigger() renvoie @p true, sinon la
- * valeur renvoyée par @p __real_name(...).
- */
-#define sccroll_mockError(name, errtrig, errval,...)                    \
-    sccroll_mockTrigger(errtrig) ? errval : __real_##name(__VA_ARGS__)
 
 // clang-format off
 /******************************************************************************

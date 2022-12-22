@@ -98,6 +98,9 @@ void test_predefined_mocks(void)
     assert((dummy=calloc(1,sizeof(char))));
     __real_free(dummy);
 
+    assert((dummy=malloc(1)));
+    __real_free(dummy);
+
     assert(pipe(pipefd) >= 0);
     pid = fork();
     if (pid == 0) {
@@ -118,6 +121,17 @@ void test_predefined_mocks(void)
     // Erreurs individuelles.
     dummy_flag = SCCECALLOC;
     assert(calloc(1, sizeof(char)) == NULL);
+    assert((dummy=malloc(1)));
+    __real_free(dummy);
+
+    dummy_flag = SCCEMALLOC;
+    assert(malloc(1) == NULL);
+    assert((dummy=calloc(1,sizeof(char))));
+    __real_free(dummy);
+
+    dummy_flag = SCCEALLOC;
+    assert(calloc(1, sizeof(char)) == NULL);
+    assert(malloc(1) == NULL);
 
     dummy_flag = SCCEPIPE;
     assert(pipe(pipefd) < 0);
@@ -171,6 +185,20 @@ void test_predefined_mocks(void)
     assert(close(pipefd[1]) < 0);
     assert(read(pipefd[0], buf, lenstr) < 0);
 
+    pid = __real_fork();
+    if (pid == 0) abort();
+    assert(pid > 0);
+    wait(&status);
+    assert(WEXITSTATUS(status) == SIGABRT);
+    assert(WTERMSIG(status) == 0);
+
+    // tests des incompatibilités
+
+    dummy_flag = SCCEABORT | SCCEMALLOC;
+    // Malloc est appelé si abort est en erreur. Si les deux le sont,
+    // le résultat n'est pas celui attendu.
+    assert((dummy = malloc(1)));
+    __real_free(dummy);
     pid = __real_fork();
     if (pid == 0) abort();
     assert(pid > 0);

@@ -93,7 +93,6 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEREAD:   return "read";
     case SCCEWRITE:  return "write";
     case SCCEMALLOC: return "malloc";
-    case SCCEALLOC:  return "*alloc";
     }
 }
 

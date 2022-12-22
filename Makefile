@@ -144,7 +144,7 @@ $(LOGS)/%.difflog: $(LOGS)/%.log
 ###############################################################################
 
 .PHONY: all $(PROJECT) tests unit-tests coverage docs init help
-.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so
+.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so $(BIN)/%
 
 all: $(PROJECT)
 

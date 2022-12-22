@@ -93,17 +93,5 @@ int main(void)
     // toutes deux une fois par test.
     assert(before == after && before == repeats);
 
-    // Autres fonctions.
-
-    // On s'assure que sccroll_monkey fonctionne.
-    int zero = 0;
-    sccroll_monkey(&zero, sizeof(int));
-
-    // sccroll_monkey() remplit de manière aléatoire. Il y a donc une
-    // (infime) chance que l'assertion échoue, et il n'est pas
-    // possible de tester le nombre exact (seulement qu'il n'est plus
-    // identique au précédent).
-    assert(zero);
-
     return EXIT_SUCCESS;
 }

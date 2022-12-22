@@ -33,6 +33,9 @@
 // l'originale et non le mock prédéfini.
 extern __typeof__(fork) __real_fork;
 
+// On s'assure d'utiliser la version originale de abort.
+extern __typeof__((abort)) __real_abort;
+
 // Le mock testé courant.
 static SccrollMockFlags errnum = SCCENONE;
 
@@ -56,8 +59,6 @@ bool sccroll_mockTrigger(SccrollMockFlags mock)
 
 // Fonction de test réussit quelles que soient les conditions.
 void test_success(void) {};
-
-extern __typeof__((abort)) __real_abort;
 
 // Effectue un test unitaire de ftest dans un fork (la fonction
 // originale), et vérifie qu'une erreur est bien levée par

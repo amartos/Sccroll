@@ -10,7 +10,7 @@
  * @code{.c}
  * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
  *     tests/units/mocks.c -o build/objs/tests/units/mocks.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/mocks \
+ * gcc -L build/libs -lsccroll build/objs/tests/units/mocks.o \
  *     $(scripts/mocks.awk src/sccroll/mocks.c test/units/mocks.c) \
  *     -o build/bin/tests/mocks
  * @endcode

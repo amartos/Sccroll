@@ -5,10 +5,7 @@ pipeline {
         skipStagesAfterUnstable()
     }
     stages {
-        stage("Unit tests") {
-            steps { sh "make tests" }
-        }
-        stage("Coverage reports") {
+        stage("Tests reports") {
             steps {
                 sh "make coverage"
                 publishHTML([

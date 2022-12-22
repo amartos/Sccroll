@@ -30,7 +30,7 @@
 // clang-format on
 
 // Variable utilisée comme drapeau pour certains mocks.
-static int dummy_flag = SCCENONE;
+static unsigned dummy_flag = SCCENONE;
 
 // Drapeaux des mocks du test.
 enum {

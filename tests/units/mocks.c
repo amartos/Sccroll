@@ -51,6 +51,7 @@ extern __typeof__(fork) __real_fork;
 // Redéfinition prévue par l'API.
 bool sccroll_mockTrigger(SccrollMockFlags mock)
 {
+    fprintf(stderr, "dummy %-4i called: %s\n", mock, sccroll_mockName(mock));
     return sccroll_hasFlags(dummy_flag, mock);
 }
 

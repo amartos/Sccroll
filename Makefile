@@ -158,7 +158,7 @@ tests: coverage
 	@find $(BUILD) -type d -empty -delete
 	@$(INFO) ok $@
 
-# @brief Exécute les tests unitaires
+# Compile, exécute et vérifie les tests unitaires
 unit-tests: CFLAGS += -g -O0
 unit-tests: LDLIBS += $(shell $(MOCKS) $*.c $(CDEPS))
 unit-tests: ARGS    = 0 1 2 3 4 5
@@ -167,7 +167,7 @@ unit-tests: tests-init $(LIBS)/$(TARGET) $(CUNITS:%.c=$(LOGS)/%.difflog)
 	@find $(BUILD) -type f -name "*.log" -delete
 	@$(INFO) ok $@
 
-# @brief Calcule la couverture de code des tests unitaires
+# Calcule la couverture de code des tests unitaires
 coverage: CFLAGS += --coverage
 coverage: SFLAGS += --coverage
 coverage: LDLIBS += --coverage

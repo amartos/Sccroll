@@ -176,9 +176,10 @@ void test_predefined_mocks(void)
     dummy_flag = SCCENONE |                     \
         SCCEABORT | SCCECALLOC | SCCEPIPE  |    \
         SCCEFORK  | SCCEDUP2   | SCCECLOSE |    \
-        SCCEREAD  | SCCEWRITE;
+        SCCEREAD  | SCCEWRITE  | SCCEMALLOC;
 
     assert(calloc(1, sizeof(char)) == NULL);
+    assert(malloc(1) == NULL);
     assert(pipe(pipefd) < 0);
     assert(fork() < 0);
     assert(dup2(STDERR_FILENO, STDOUT_FILENO) < 0);
@@ -193,24 +194,9 @@ void test_predefined_mocks(void)
     assert(WEXITSTATUS(status) == SIGABRT);
     assert(WTERMSIG(status) == 0);
 
-    // tests des incompatibilités
-    dummy_flag = SCCEABORT | SCCEMALLOC;
-    // Malloc est appelé si abort est en erreur. Si les deux le sont,
-    // le résultat n'est pas celui attendu.
-    assert((dummy = malloc(1)));
-    __real_free(dummy);
-
-    pid = __real_fork();
-    if (pid == 0) abort();
-    assert(pid > 0);
-    wait(&status);
-    assert(WEXITSTATUS(status) == SIGABRT);
-    assert(WTERMSIG(status) == 0);
-
     dummy_flag = SCCEALL;
     assert(calloc(1, sizeof(char)) == NULL);
-    assert((dummy = malloc(1)));
-    __real_free(dummy);
+    assert(malloc(1) == NULL);
     assert(pipe(pipefd) < 0);
     assert(fork() < 0);
     assert(dup2(STDERR_FILENO, STDOUT_FILENO) < 0);

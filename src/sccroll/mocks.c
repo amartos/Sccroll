@@ -29,6 +29,13 @@
 // clang-format on
 
 /**
+ * @var disabled
+ * @since 0.1.0
+ * @brief Drapeau désactivant les erreurs de simulacres si @c true.
+ */
+static bool disabled = false;
+
+/**
  * @def sccroll_mockError
  * @since 0.1.0
  * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger() renvoie
@@ -43,19 +50,9 @@
  * par @p __real_name(...).
  */
 #define sccroll_mockError(name, errtrig, errval,...)                    \
-    sccroll_mockTrigger(errtrig) && !sccroll_mockAreIncompats(errtrig)  \
+    sccroll_mockTrigger(errtrig) && !disabled                           \
         ? errval                                                        \
         : __real_##name(__VA_ARGS__)
-
-/**
- * @since 0.1.0
- * @brief Détermine si d'autre drapeaux incompatibles ont été donné
- * avec celui du simulacre.
- * @param mock Le drapeau du simulacre concerné.
- * @return @c true si d'autres drapeaux incompatibles ont été donné,
- * sinon @c false.
- */
-static bool sccroll_mockAreIncompats(SccrollMockFlags mock);
 
 /**
  * @since 0.1.0
@@ -96,15 +93,6 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     }
 }
 
-static bool sccroll_mockAreIncompats(SccrollMockFlags mock)
-{
-    switch(mock)
-    {
-    default: return false;
-    case SCCEMALLOC: return sccroll_mockTrigger(SCCEABORT);
-    }
-}
-
 weak_alias(sccroll_enone, sccroll_mockTrigger);
 static bool sccroll_enone(SccrollMockFlags mock)
 {
@@ -118,8 +106,10 @@ SCCROLL_MOCK(void, abort, void)
     // est de quitter de la mauvaise manière: au lieu de s'arrêter
     // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
     // s'arrête avec exit et un status d'erreur.
+    // On désactive les mocks pour éviter une erreur provoquées dans
+    // des fonctions qui ne devraient pas échouer.
+    disabled = true;
     sccroll_mockTrigger(SCCEABORT)
-        && !sccroll_mockAreIncompats(SCCEABORT)
         ? (__gcov_dump(), exit(SIGABRT))
         : (__gcov_dump(), __real_abort());
 }

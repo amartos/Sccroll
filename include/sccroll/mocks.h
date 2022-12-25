@@ -112,8 +112,6 @@
  * @since 0.1.0
  * @brief Drapeaux utilisables par sccroll_mockTrigger() pour indiquer
  * quel simulacre pré-fourni doit être en erreur.
- * @todo
- * - TODO: contourner l'incompatibilité des drapeaux.
  */
 typedef enum SccrollMockFlags {
     SCCENONE   = 0,   /**< Drapeau ne provoquant pas d'erreurs. */

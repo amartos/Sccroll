@@ -52,9 +52,8 @@ static bool called = false;
 // Redéfinition prévue par l'API.
 bool sccroll_mockTrigger(SccrollMockFlags mock)
 {
-    if (sccroll_hasFlags(errnum, mock))
-        called = delay < 1 ? true : (--delay, false);
-    return called;
+    if (called) return false;
+    return (called = sccroll_hasFlags(errnum, mock) && delay-- == 0);
 }
 
 // Fonction de test réussit quelles que soient les conditions.

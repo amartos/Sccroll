@@ -1,15 +1,18 @@
 /**
- * @file        sccroll_prepfunc_tests.c
+ * @file        preparation.c
  * @version     0.1.0
  * @brief       Tests unitaires des fonctions de préparation.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
  * @compilation
- * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -I include \
- *     -L build/libs -l scroll -Wl,--wrap,abort \
- *     tests/sccroll_prepfunc_tests.c -o build/bin/sccroll_prepfunc_tests
+ * @see sccroll.h pour la compilation de libsccroll.so
+ * @code{.c}
+ * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
+ *     tests/units/core/preparation.c -o build/objs/tests/units/core/preparation.o
+ * gcc -L build/libs -lsccroll build/objs/tests/units/core/preparation.o \
+ *     $(scripts/mocks.awk src/sccroll/mocks.c) \
+ *     -o build/bin/tests/core/preparation
  * @endcode
  */
 

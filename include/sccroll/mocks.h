@@ -128,6 +128,7 @@ typedef enum SccrollMockFlags {
     SCCEMALLOC = 512, /**< Drapeau de malloc() (**incompatible avec #SCCEABORT**). */
     SCCEMAX    = 1024,/**< Valeur maximale des mocks individuels. */
     SCCEALLOC  = SCCECALLOC | SCCEMALLOC, /**< Drapeaux de tous les mocks type *alloc. */
+    SCCEALL    = SCCEMAX-1,               /**< Tous les drapeaux de simulacres individuels. */
 } SccrollMockFlags;
 
 /**

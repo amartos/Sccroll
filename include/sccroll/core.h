@@ -193,7 +193,7 @@ typedef struct SccrollEffects {
     SccrollFile files[SCCMAX];  /**< Vérification du  contenu de fichiers. */
     SccrollFile std[SCCMAXSTD]; /**< I/O des sorties standard. */
     int codes[SCCMAXSIG]; /**< Vérification des codes d'erreur, signal et status. */
-    unsigned flags;       /**< Drapeaux d'options SccrollFlags. */
+    SccrollFlags flags;   /**< Drapeaux d'options SccrollFlags. */
     SccrollFunc wrapper;  /**< La fonction de test unitaire. */
     const char* name;     /**< Nom descriptif du test. */
 } SccrollEffects;

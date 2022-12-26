@@ -712,7 +712,7 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
         sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 
         for (int i = STDIN_FILENO, p = PIPEREAD; i < SCCMAXSTD; ++i, p = PIPEWRTE) {
-            sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
+            if (!dofork) sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
             sccroll_pipes(PIPECLOSE, result->name, pipefd[i], p);
         }
 

@@ -1,0 +1,76 @@
+[ [0;1;36mDIFF[0m ] cutom test name: 9: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 9: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 9
+
+[ [0;1;36mDIFF[0m ] cutom test name: 8: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 8: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 8
+
+[ [0;1;36mDIFF[0m ] cutom test name: 7: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 7: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 7
+
+[ [0;1;36mDIFF[0m ] cutom test name: 6: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 6: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 6
+
+[ [0;1;36mDIFF[0m ] cutom test name: 5: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 5: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 5
+
+[ [0;1;36mDIFF[0m ] cutom test name: 4: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 4: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 4
+
+[ [0;1;36mDIFF[0m ] cutom test name: 3: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 3: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 3
+
+[ [0;1;36mDIFF[0m ] cutom test name: 2: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 2: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 2
+
+[ [0;1;36mDIFF[0m ] cutom test name: 1: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 1: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 1
+
+[ [0;1;36mDIFF[0m ] cutom test name: 0: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] cutom test name: 0: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:43: test_fail_manual: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] cutom test name: 0
+
+[ [0;1;36mDIFF[0m ] test_fail_auto manually registered: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_fail_auto manually registered: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:41: test_fail_auto: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] test_fail_auto manually registered
+
+[ [0;1;36mDIFF[0m ] test_fail_auto: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_fail_auto: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mregistration: tests/units/core/registration.c:41: test_fail_auto: Assertion `false' failed.[0m
+[ [0;1;31mFAIL[0m ] test_fail_auto
+
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 7.69% [1/13]

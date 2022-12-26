@@ -1,0 +1,64 @@
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+[ [0;1;36mDIFF[0m ] test_print_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
+[ [0;1;36mDIFF[0m ] test_print_fail: stderr
+exp: [0;0;32m[0m
+res: [0;0;31mrun: tests/units/core/execution/run.c:39: test_print: Assertion `false && "Test executed."' failed.[0m
+[ [0;1;31mFAIL[0m ] test_print_fail
+
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 80.77% [42/52]

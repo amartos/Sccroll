@@ -24,6 +24,20 @@
 // clang-format on
 
 /**
+ * @enum SccrollFonts
+ * @since 0.1.0
+ * @brief Styles des caractères pour les codes ANSI.
+ */
+typedef enum SccrollFonts {
+    NORMAL     = 0,      /**< Style par défaut du terminal. */
+    RESET      = NORMAL, /**< Style par défaut du terminal (alias). */
+    BOLD       = 1,      /**< Caractères en gras. */
+    DIM        = 2,      /**< Caractères assombris. */
+    ITALIC     = 3,      /**< Caractères en italique. */
+    UNDERSCORE = 4,      /**< Caractères soulignés. */
+}SccrollFonts;
+
+/**
  * @enum SccrollColors
  * @since 0.1.0
  * @brief Couleur pour les codes ANSI.
@@ -38,10 +52,11 @@ typedef enum SccrollColors{
  * @def COLSTRFMT
  * @since 0.1.0
  * @brief Ajoute les codes ANSI de coloration à une chaîne.
- * @param i Un code SccrollColors
+ * @param i Un code SccrollFonts pour l'apparence du texte
+ * @param i Un code SccrollColors pour la couleur du texte
  * @param s La chaîne à colorer
  */
-#define COLSTRFMT "\e[0;1;3%im%s\e[0m"
+#define COLSTRFMT "\e[0;%i;3%im%s\e[0m"
 
 // clang-format off
 
@@ -447,7 +462,7 @@ static const char* SCCSEP = NULL;
  * @param i Nombre de tests réussis.
  * @param i Nombre total de tests.
  */
-#define REPORTFMT "\n%s\n\n" BASEFMT ": %.2f%% [%i/%i]\n", SCCSEP
+#define REPORTFMT "\n%s\n\n" BASEFMT ": %.2f%% [%i/%i]\n", SCCSEP, BOLD
 
 /**
  * @def DIFFFMT
@@ -456,7 +471,7 @@ static const char* SCCSEP = NULL;
  * @param name Nom du test
  * @param s Description de la différence.
  */
-#define DIFFFMT BASEFMT ": %s\n", CYAN, "DIFF"
+#define DIFFFMT BASEFMT ": %s\n", BOLD, CYAN, "DIFF"
 
 /**
  * @def CODEFMT
@@ -470,7 +485,7 @@ static const char* SCCSEP = NULL;
  * @param i Code obtenu.
  * @param s Description du code obtenu.
  */
-#define CODEFMT BASEFMT ": %s: expected %i (%s), got %i (%s)\n", CYAN, "DIFF"
+#define CODEFMT BASEFMT ": %s: expected %i (%s), got %i (%s)\n", BOLD, CYAN, "DIFF"
 
 /**
  * @since 0.1.0
@@ -697,7 +712,10 @@ static int sccroll_test(void)
     const SccrollEffects* expected = sccroll_pop();
     const SccrollEffects* result   = sccroll_exe(sccroll_dup(expected));
     int failed = sccroll_diff(expected, result);
-    if (failed) fprintf(stderr, BASEFMT "\n", RED, "FAIL", expected->name);
+    if (failed) {
+        fprintf(stderr, BASEFMT "\n", BOLD, RED, "FAIL", expected->name);
+        if (!sccroll_hasFlags(expected->flags, NODIFF)) fprintf(stderr, "\n");
+    }
     sccroll_free(expected);
     sccroll_free(result);
     return failed;
@@ -920,8 +938,8 @@ static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
         )
         if (((bool)expn ^ (bool)resn) || (expn && strcmp(expn, resn)))
         {
-            if (expn) fprintf(stderr, "- " COLSTRFMT "\n", RED, expn);
-            if (resn) fprintf(stderr, "+ " COLSTRFMT "\n", GREEN, resn);
+            fprintf(stderr, "exp: " COLSTRFMT "\n", NORMAL, GREEN, expn ? expn : "");
+            fprintf(stderr, "res: " COLSTRFMT "\n", NORMAL, RED, resn ? resn : "");
         }
 
     free(expz);

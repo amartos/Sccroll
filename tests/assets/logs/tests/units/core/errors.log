@@ -6,44 +6,44 @@
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors_handling: test registration failed for calloc: Success
-errors_handling: alloc failed for SccrollEffects: Success
-errors_handling: alloc failed for SccrollEffects: Success
+errors: test registration failed for calloc: Success
+errors: alloc failed for SccrollEffects: Success
+errors: alloc failed for SccrollEffects: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors_handling: open pipe failed for pipe: Success
-errors_handling: open pipe failed for pipe: Success
-errors_handling: open pipe failed for pipe: Success
-errors_handling: open pipe failed for pipe: Success
+errors: open pipe failed for pipe: Success
+errors: open pipe failed for pipe: Success
+errors: open pipe failed for pipe: Success
+errors: open pipe failed for pipe: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors_handling: fork failed for fork: Success
+errors: fork failed for fork: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors_handling: duplicate pipe failed for dup2: Success
-errors_handling: duplicate pipe failed for dup2: Success
-errors_handling: duplicate pipe failed for dup2: Success
+errors: duplicate pipe failed for dup2: Success
+errors: duplicate pipe failed for dup2: Success
+errors: duplicate pipe failed for dup2: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors_handling: close pipe failed for close: Success
-errors_handling: close pipe failed for close: Success
-errors_handling: close pipe failed for close: Success
-errors_handling: close pipe failed for close: Success
+errors: close pipe failed for close: Success
+errors: close pipe failed for close: Success
+errors: close pipe failed for close: Success
+errors: close pipe failed for close: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors_handling: read pipe failed for read: Success
-errors_handling: read pipe failed for read: Success
-errors_handling: read pipe failed for read: Success
+errors: read pipe failed for read: Success
+errors: read pipe failed for read: Success
+errors: read pipe failed for read: Success
 
 --------------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 /**
- * @file        errors_handling.c
+ * @file        errors.c
  * @version     0.1.0
- * @brief       Test unitaire des gestions d'erreurs.
+ * @brief       Test unitaire des gestions d'erreurs de la librairie.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
@@ -9,10 +9,10 @@
  * @see sccroll.h pour la compilation de libsccroll.so
  * @code{.c}
  * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/errors_handling.c -o build/objs/tests/units/errors_handling.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/errors_handling.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c test/units/errors_handling.c) \
- *     -o build/bin/tests/errors_handling
+ *     tests/units/core/errors.c -o build/objs/tests/units/core/errors.o
+ * gcc -L build/libs -lsccroll build/objs/tests/units/core/errors.o \
+ *     $(scripts/mocks.awk src/sccroll/mocks.c test/units/core/errors.c) \
+ *     -o build/bin/tests/core/errors
  * @endcode
  */
 

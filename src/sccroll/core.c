@@ -76,10 +76,16 @@ typedef enum SccrollColors{
 /******************************************************************************
  * @}
  *
- * @name Interfaces utilisateur
+ * @name Préparation
  * @{
  ******************************************************************************/
 // clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief Exécute des préparatifs pour la librairie.
+ */
+static void sccroll_atrun(void) __attribute__((constructor));
 
 /**
  * @since 0.1.0
@@ -424,10 +430,16 @@ typedef enum SccrollReport {
 #define BASEFMT "[ " COLSTRFMT " ] %s"
 
 /**
+ * @var SCCSEP
+ * @since 0.1.0
+ * @brief Ligne de séparation de texte.
+ */
+static const char* SCCSEP = NULL;
+
+/**
  * @def REPORTFMT
  * @since 0.1.0
  * @brief Format du rapport final.
- * @param s Ligne de séparation
  * @param i Un code SccrollColors.
  * @param s Status.
  * @param s Nom du test.
@@ -435,7 +447,7 @@ typedef enum SccrollReport {
  * @param i Nombre de tests réussis.
  * @param i Nombre total de tests.
  */
-#define REPORTFMT "\n%s\n\n" BASEFMT ": %.2f%% [%i/%i]\n"
+#define REPORTFMT "\n%s\n\n" BASEFMT ": %.2f%% [%i/%i]\n", SCCSEP
 
 /**
  * @def DIFFFMT
@@ -444,15 +456,13 @@ typedef enum SccrollReport {
  * @param name Nom du test
  * @param s Description de la différence.
  */
-#define DIFFFMT BASEFMT ": %s\n"
+#define DIFFFMT BASEFMT ": %s\n", CYAN, "DIFF"
 
 /**
  * @def CODEFMT
  * @since 0.1.0
  * @brief Format d'affichage d'erreurs concernant les codes d'erreur et
  * sortie attendus.
- * @param i Un chiffre SccrollColors.
- * @param s Status.
  * @param s Nom du test.
  * @param s Description du test.
  * @param i Code attendu.
@@ -460,7 +470,7 @@ typedef enum SccrollReport {
  * @param i Code obtenu.
  * @param s Description du code obtenu.
  */
-#define CODEFMT BASEFMT ": %s: expected %i (%s), got %i (%s)\n"
+#define CODEFMT BASEFMT ": %s: expected %i (%s), got %i (%s)\n", CYAN, "DIFF"
 
 /**
  * @since 0.1.0
@@ -542,6 +552,12 @@ static void sccroll_review(int report[REPORTMAX]) __attribute__((nonnull));
  */
 static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((nonnull));
 
+/**
+ * @since 0.1.0
+ * @brief Effectue des nettoyages pour la librairie.
+ */
+static void sccroll_atexit(void) __attribute__((destructor));
+
 // clang-format off
 
 /******************************************************************************
@@ -549,9 +565,17 @@ static void sccroll_free(const SccrollEffects* restrict effects) __attribute__((
  *
  * Implémentation
  *
- * Interface
+ * Préparation
  ******************************************************************************/
 // clang-format on
+
+static void sccroll_atrun(void)
+{
+    // Ligne de séparation des rapports.
+    char sep[MAXLINE+1] = { 0 };
+    memset(sep, '-', MAXLINE);
+    SCCSEP = strdup(sep);
+}
 
 weak_alias(sccroll_void, sccroll_init);
 weak_alias(sccroll_void, sccroll_clean);
@@ -876,7 +900,7 @@ static void sccroll_pcodes(const char* restrict name, int code, int exp, int res
         break;
     default: break;
     }
-    fprintf(stderr, CODEFMT, CYAN, "DIFF", name, desc, exp, expdesc, res, resdesc);
+    fprintf(stderr, CODEFMT, name, desc, exp, expdesc, res, resdesc);
 }
 
 static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
@@ -888,7 +912,7 @@ static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
     sccroll_err(argz_create_sep(infos->expected, '\n', &expz, &expc), infos->desc, infos->name);
     sccroll_err(argz_create_sep(infos->result, '\n', &resz, &resc), infos->desc, infos->name);
 
-    fprintf(stderr, DIFFFMT, CYAN, "DIFF", infos->name, infos->desc);
+    fprintf(stderr, DIFFFMT, infos->name, infos->desc);
     for (
         expn = argz_next(expz, expc, expn), resn=argz_next(resz, resc, resn);
         expn || resn;
@@ -908,11 +932,7 @@ static void sccroll_review(int report[REPORTMAX])
 {
     int passed    = report[REPORTTOTAL] - report[REPORTFAIL];
     float percent = 100.0 * passed / report[REPORTTOTAL];
-
-    char separator[MAXLINE + 1] = { 0 };
-    memset(separator, '-', MAXLINE);
     fprintf(stderr, REPORTFMT,
-        separator,
         report[REPORTFAIL] ? RED : GREEN,
         report[REPORTFAIL] ? "FAIL" : "PASS",
         "success rate", percent, passed, report[REPORTTOTAL]);
@@ -930,6 +950,12 @@ static void sccroll_free(const SccrollEffects* restrict effects)
     for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i].content);
     for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
     free((void*)effects);
+}
+
+static void sccroll_atexit(void)
+{
+    // Ligne de séparation des rapports.
+    free((void*)SCCSEP);
 }
 
 /** @} @} **/

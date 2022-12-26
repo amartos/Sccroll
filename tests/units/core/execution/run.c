@@ -58,5 +58,7 @@ int main(void)
     for (int i = 0; i < MAXF; ++i) sccroll_register(&testf);
     for (int i = 0; i < MAXS; ++i) sccroll_register(&tests);
     assert(sccroll_run() == MAXF);
+    // Pas (plus) de tests.
+    assert(sccroll_run() == 0);
     return EXIT_SUCCESS;
 }

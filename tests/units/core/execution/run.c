@@ -35,8 +35,11 @@ enum {
     MAXS = 42,
 };
 
+// Variable qui ne doit pas être modifiée dans les forks.
+int zero = 0;
+
 // Test simple, affiche un message sur stdout si le test est exécuté.
-void test_print(void) { assert(false && "Test executed."); }
+void test_print(void) { (zero = 42, assert(false && "Test executed.")); }
 
 // clang-format off
 
@@ -52,7 +55,7 @@ int main(void)
         .wrapper = test_print,
         .name = "test_print_success",
         .std[STDERR_FILENO].content =
-        "run: tests/units/core/execution/run.c:39: test_print: Assertion `false && \"Test executed.\"' failed.",
+        "run: tests/units/core/execution/run.c:42: test_print: Assertion `false && \"Test executed.\"' failed.",
         .code = { .type = SCCSIGNAL, .value = SIGABRT },
     };
     for (int i = 0; i < MAXF; ++i) sccroll_register(&testf);
@@ -60,5 +63,8 @@ int main(void)
     assert(sccroll_run() == MAXF);
     // Pas (plus) de tests.
     assert(sccroll_run() == 0);
+    // La variable a été modifiée dans des fork, et donc ne doit pas
+    // être affectée.
+    assert(!zero);
     return EXIT_SUCCESS;
 }

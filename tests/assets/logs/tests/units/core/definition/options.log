@@ -1,0 +1,39 @@
+
+--------------------------------------------------------------------------------
+
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+[ [0;1;36mDIFF[0m ] test_nofork: stdout
+exp: [0;0;32mdifference observed.[0m
+res: [0;0;31mThis text is surrounded with spaces.[0m
+exp: [0;0;32mother line[0m
+res: [0;0;31m[0m
+exp: [0;0;32manother line[0m
+res: [0;0;31m[0m
+[ [0;1;31mFAIL[0m ] test_nofork
+
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+[ [0;1;31mFAIL[0m ] test_nodiff
+[ [0;1;36mDIFF[0m ] test_nodiff: stdout
+exp: [0;0;32mdifference observed.[0m
+res: [0;0;31mThis text is surrounded with spaces.[0m
+exp: [0;0;32mother line[0m
+res: [0;0;31m[0m
+exp: [0;0;32manother line[0m
+res: [0;0;31m[0m
+[ [0;1;36mDIFF[0m ] test_nodiff: stderr
+exp: [0;0;32mThis text is surrounded with spaces.[0m
+res: [0;0;31mThe left side is trimmed.        But not the center.[0m
+[ [0;1;31mFAIL[0m ] test_nodiff
+
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 0.00% [0/2]
+[ [0;1;31mFAIL[0m ] test_all
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 0.00% [0/1]

@@ -633,9 +633,6 @@ static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
         prepared->std[i].content = string;
     }
 
-    for (int i = 0; i < SCCMAX && prepared->files[i].path; ++i)
-        prepared->files[i].content = sccroll_fread(prepared->files[i].path, prepared->name);
-
     return prepared;
 }
 

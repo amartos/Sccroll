@@ -107,10 +107,6 @@ typedef void (*SccrollFunc)(void);
  * @brief Index des tables de SccrollEffects.
  */
 typedef enum SccrollIndexes {
-    SCCERRNUM = 0,                 /**< Index du code errno. */
-    SCCSIGNAL = 1,                 /**< Index du code de signal. */
-    SCCSTATUS = 2,                 /**< Index du code de status/exit. */
-    SCCMAXSIG = 3,                 /**< Index maximal de SccrollEffects::codes. */
     SCCMAXSTD = STDERR_FILENO + 1, /**< Index maximal de SccrollEffects::std. */
     SCCMAX    = BUFSIZ,            /**< Index maximal de SccrollEffects::files. */
 } SccrollIndexes;
@@ -139,6 +135,28 @@ typedef struct SccrollFile {
 } SccrollFile;
 
 /**
+ * @enum SccrollCodeType
+ * @since 0.1.0
+ * @brief Types de codes d'erreur pouvant être récoltés durant les
+ * tests.
+ */
+typedef enum SccrollCodeType {
+    SCCSIGNAL, /**< Code de signal. */
+    SCCSTATUS, /**< Code de status/exit. */
+    SCCERRNUM, /**< Code errno. */
+} SccrollCodeType;
+
+/**
+ * @struct SccrollCode
+ * @since 0.1.0
+ * @brief Structure de stockage du code d'erreur.
+ */
+typedef struct SccrollCode {
+    SccrollCodeType type;
+    int value;
+} SccrollCode;
+
+/**
  * @struct SccrollEffects
  * @since 0.1.0
  * @brief Gère les informations sur les effets secondaires de
@@ -165,12 +183,10 @@ typedef struct SccrollFile {
  * Une entrée *via* stdin peut être simulée en passant une chaîne de
  * caractères à SccrollEffects::std[STDIN_FILENO].
  *
- * Les codes SccrollEffects::codes ne sont pas tous comparables en
- * même temps; SccrollEffects::codes[SCCERRNUM] ne peut être récupérée
- * que si la fonction de test ne termine pas le programme; à
- * l'inverse, les codes SccrollEffects::codes[SCCSIGNAL] et
- * SccrollEffects::codes[SCCSTATUS] ne seront récupérables que si la
- * fonction termine le programme.
+ * La structure ne peut stocker qu'un seul code d'erreur à la fois
+ * dans SccrollEffects::code, étant donné que la valeur de errno n'est
+ * pas récupérable si la fonction provoque un arrêt, et que les
+ * signaux provoquent normalement un code de status de 0.
  *
  * Si le contenu de fichiers doit être testé, leur chemin doit être
  * passé à SccrollEffects::files::path. L'analyse s'arrête à la
@@ -192,7 +208,7 @@ typedef struct SccrollFile {
 typedef struct SccrollEffects {
     SccrollFile files[SCCMAX];  /**< Vérification du  contenu de fichiers. */
     SccrollFile std[SCCMAXSTD]; /**< I/O des sorties standard. */
-    int codes[SCCMAXSIG]; /**< Vérification des codes d'erreur, signal et status. */
+    SccrollCode code;     /**< Vérification des codes d'erreur, signal ou status. */
     SccrollFlags flags;   /**< Drapeaux d'options SccrollFlags. */
     SccrollFunc wrapper;  /**< La fonction de test unitaire. */
     const char* name;     /**< Nom descriptif du test. */

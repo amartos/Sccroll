@@ -53,7 +53,7 @@ int main(void)
         .name = "test_print_success",
         .std[STDERR_FILENO].content =
         "run: tests/units/core/execution/run.c:39: test_print: Assertion `false && \"Test executed.\"' failed.",
-        .codes = { [SCCSIGNAL] = SIGABRT, },
+        .code = { .type = SCCSIGNAL, .value = SIGABRT },
     };
     for (int i = 0; i < MAXF; ++i) sccroll_register(&testf);
     for (int i = 0; i < MAXS; ++i) sccroll_register(&tests);

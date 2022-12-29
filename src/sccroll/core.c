@@ -382,8 +382,8 @@ static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipe
 
 /**
  * @since 0.1.0
- * @brief Lis les différents codes de status obtenus au cours de
- * l'exécution d'un test et les stocke dans SccrollEffects::codes.
+ * @brief Lis le code d'erreur recherché obtenu au cours de
+ * l'exécution d'un test et le stocke dans SccrollEffects::code.
  * @param result La structure SccrollEffects de destination.
  * @param pipefd Le pipe contenant la valeur de errno obtenu dans le
  * fork du test.
@@ -507,12 +507,11 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
  * @since 0.1.0
  * @brief Affiche un message d'erreur décrivant la différence entre
  * @p exp et @p res.
- * @param name Le nom du test.
- * @param code Le type de code (voir SccrollIndexes).
- * @param exp La valeur du code attendu.
- * @param res La valeur du code obtenu.
+ * @param expected Les effets attendus.
+ * @param result Les effets obtenus.
  */
-static void sccroll_pcodes(const char* restrict name, int code, int exp, int res) __attribute__((nonnull(1)));
+static void sccroll_pcodes(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+    __attribute__((nonnull));
 
 /**
  * @typedef SccrollStrDiff
@@ -818,12 +817,21 @@ static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipe
 
 static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int status)
 {
-    sccroll_pipes(PIPEREAD, result->name, pipefd, &result->codes[SCCERRNUM], sizeof(int));
-    result->codes[SCCSTATUS] = status;
-    result->codes[SCCSIGNAL] = status;
-    if (!sccroll_hasFlags(result->flags, NOFORK)) {
-        result->codes[SCCSTATUS] = WEXITSTATUS(status);
-        result->codes[SCCSIGNAL] = WIFSIGNALED(status) ? WTERMSIG(status) : 0;
+    switch(result->code.type)
+    {
+    case SCCERRNUM:
+        sccroll_pipes(PIPEREAD, result->name, pipefd, &result->code.value, sizeof(int));
+        break;
+    case SCCSTATUS:
+        result->code.value = sccroll_hasFlags(result->flags, NOFORK)
+            ? status
+            : WEXITSTATUS(status);
+        break;
+    default: // SCCSIGNAL
+        result->code.value = sccroll_hasFlags(result->flags, NOFORK)
+            ? status
+            : WTERMSIG(status);
+        break;
     }
 }
 
@@ -858,12 +866,11 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
     bool diff            = false;
     SccrollStrDiff infos = { .name = expected->name };
 
-    for (int i = SCCERRNUM; i < SCCMAXSIG; ++i)
-        if (expected->codes[i] != result->codes[i]) {
-            diff = true;
-            if(!sccroll_hasFlags(expected->flags, NODIFF))
-                sccroll_pcodes(expected->name, i, expected->codes[i], result->codes[i]);
-        }
+    if (expected->code.value != result->code.value) {
+        diff = true;
+        if(!sccroll_hasFlags(expected->flags, NODIFF))
+            sccroll_pcodes(expected, result);
+    }
 
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
         if (strcmp(expected->std[i].content, result->std[i].content)) {
@@ -889,20 +896,26 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
     return diff;
 }
 
-static void sccroll_pcodes(const char* restrict name, int code, int exp, int res)
+static void sccroll_pcodes(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
 {
+    int exp = expected->code.value, res = result->code.value;
     char expdesc[MAXLINE] = { 0 };
     char resdesc[MAXLINE] = { 0 };
     char* desc = NULL;
 
-    switch(code)
+    switch(expected->code.type)
     {
     case SCCERRNUM:
         desc = "errno";
         sprintf(expdesc, "%s", strerrorname_np(exp));
         sprintf(resdesc, "%s", strerrorname_np(res));
         break;
-    case SCCSIGNAL:
+    case SCCSTATUS:
+        desc = "status";
+        sprintf(expdesc, exp ? "error" : "no error");
+        sprintf(resdesc, res ? "error" : "no error");
+        break;
+    default: // SCCSIGNAL
         desc = "signal";
         exp
             ? sprintf(expdesc, "SIG%s", sigabbrev_np(exp))
@@ -911,14 +924,8 @@ static void sccroll_pcodes(const char* restrict name, int code, int exp, int res
             ? sprintf(resdesc, "SIG%s", sigabbrev_np(res))
             : sprintf(resdesc, "no signal");
         break;
-    case SCCSTATUS:
-        desc = "status";
-        sprintf(expdesc, exp ? "error" : "no error");
-        sprintf(resdesc, res ? "error" : "no error");
-        break;
-    default: break;
     }
-    fprintf(stderr, CODEFMT, name, desc, exp, expdesc, res, resdesc);
+    fprintf(stderr, CODEFMT, expected->name, desc, exp, expdesc, res, resdesc);
 }
 
 static void sccroll_pdiff(const SccrollStrDiff* restrict infos)

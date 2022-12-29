@@ -734,6 +734,7 @@ static const SccrollEffects* sccroll_pop(void)
 static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
 {
     bool dofork              = !sccroll_hasFlags(result->flags, NOFORK);
+    size_t length            = 0;
     int status               = 0;
     int origstd[SCCMAXSTD]   = { 0 };
     int pipefd[PIPEMAXFD][2] = { 0 };
@@ -750,7 +751,8 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
         }
 
         errno = 0;
-        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO].content);
+        length = sizeof(char)*strlen(result->std[STDIN_FILENO].content);
+        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO].content, length);
         result->wrapper();
         sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 

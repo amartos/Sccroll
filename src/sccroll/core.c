@@ -943,7 +943,8 @@ static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
     for (
         expn = argz_next(expz, expc, expn), resn=argz_next(resz, resc, resn);
         expn || resn;
-        expn = argz_next(expz, expc, expn), resn=argz_next(resz, resc, resn)
+        expn = expn ? argz_next(expz, expc, expn) : expn,
+        resn = resn ? argz_next(resz, resc, resn) : resn
         )
         if (((bool)expn ^ (bool)resn) || (expn && strcmp(expn, resn)))
         {

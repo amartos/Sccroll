@@ -70,8 +70,11 @@ void test_errstat(int t, const char* name)
 {
     int i;
     type = t;
+    char buffer[BUFSIZ] = { 0 };
+    sprintf(buffer, "%s fail", name);
     SccrollEffects test_success = { .wrapper = test_signals, .name = name, .code.type = t };
     SccrollEffects test_fail = test_success;
+    test_fail.name = strdup(buffer);
 
     for (i = 0, set_code(i); (issig() && code) || (!issig() && i < MAX); set_code(++i))
     {
@@ -81,6 +84,7 @@ void test_errstat(int t, const char* name)
         sccroll_register(&test_fail);
         assert(sccroll_run() == 1);
     }
+    free((void*)test_fail.name);
 }
 
 // clang-format off

@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage("Tests reports") {
             steps {
-                sh "make coverage"
+                sh "make tests"
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: false,

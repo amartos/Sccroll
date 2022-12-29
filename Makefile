@@ -136,7 +136,7 @@ $(LOGS)/%.log: $(BIN)/%
 	@LD_LIBRARY_PATH=$(LIBS) $< $(ARGS) &> $@
 
 $(LOGS)/%.difflog: $(LOGS)/%.log
-	@git diff --no-index $< $(<:$(LOGS)/%=$(TLOGS)/%) &> $@
+	@git diff --no-index $(<:$(LOGS)/%=$(TLOGS)/%) $< &> $@
 
 
 ###############################################################################

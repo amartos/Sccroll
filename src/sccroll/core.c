@@ -691,6 +691,8 @@ int sccroll_run(void)
 {
     if (!tests) return 0;
 
+    setbuf(stdout, NULL);
+
     int report[REPORTMAX] = { 0 };
     report[REPORTTOTAL]   = sccroll_nth(tests);
 

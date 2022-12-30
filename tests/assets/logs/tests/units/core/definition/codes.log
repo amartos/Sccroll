@@ -3589,13 +3589,6 @@
 --------------------------------------------------------------------------------
 
 [ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
-[ [0;1;36mDIFF[0m ] test signal fail: signal: expected 0 (no signal), got 2 (SIGINT)
-[ [0;1;31mFAIL[0m ] test signal fail
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
 [ [0;1;36mDIFF[0m ] test signal fail: signal: expected 0 (no signal), got 9 (SIGKILL)
 [ [0;1;31mFAIL[0m ] test signal fail
 

@@ -36,8 +36,11 @@ static int code = 0;
 static int type = 0;
 
 // Signaux d'arrêt testés.
+// On ne teste pas SIGINT car Jenkins a tendance a capturer ce signal
+// et mettre le build entier en échec, même si c'est un enfant qui le
+// lève et que le parent ignore l'erreur...
 static const int sigs[] = {
-    SIGTERM, SIGINT, SIGKILL, SIGABRT, 0,
+    SIGTERM, SIGKILL, SIGABRT, 0,
 };
 
 // Constantes numériques des tests.

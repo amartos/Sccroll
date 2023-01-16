@@ -81,9 +81,7 @@ int main(void)
         .wrapper = test_prepfuncs,
     };
 
-    // 10 à MAX_PREP tests (nombre aléatoire).
-    int repeats = 10 + random() % MAX_PREP;
-    for (int i=0; i<repeats; ++i) sccroll_register(&test);
+    for (int i = 0; i < MAX_PREP; ++i) sccroll_register(&test);
 
     // On vérifie que les tests faits en cours d'exécution ont réussi.
     assert(!sccroll_run());
@@ -94,7 +92,7 @@ int main(void)
 
     // sccroll_before() et sccroll_after() doivent être exécutées
     // toutes deux une fois par test.
-    assert(before == after && before == repeats);
+    assert(before == after && before == MAX_PREP);
 
     return EXIT_SUCCESS;
 }

@@ -43,6 +43,9 @@ void sccroll_monkey(void* blob, size_t size) __attribute__((leaf, nothrow, nonnu
  * @attention Utilise malloc.
  * @attention Cette fonction **ne vérifie pas** que le dernier octet
  * d'une chaîne de caractères est bien nul.
+ * @attention Si @p size vaut 0, la fonction renvoie un pointeur
+ * unique qui peut être passé à @c free (comportement identique à
+ * @c malloc).
  * @param nmemb Le nombre d'éléments de la zone de mémoire.
  * @param size Le nombre d'octets d'un élément.
  * @return Une zone mémoire de @p nmemb éléments de @p size octets

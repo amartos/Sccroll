@@ -16,7 +16,10 @@
 #ifndef SCCROLL_DATA_H_
 #define SCCROLL_DATA_H_
 
+#include "sccroll/helpers.h"
+
 #include <stdlib.h>
+#include <time.h>
 
 // clang-format off
 
@@ -27,13 +30,12 @@
 // clang-format on
 
 /**
- * @def sccroll_monkey
  * @since 0.1.0
  * @brief Rempli un espace mémoire de données aléatoires.
  * @param blob Un espace mémoire à remplir.
  * @param size Le nombre d'octets à remplir.
  */
-#define sccroll_monkey arc4random_buf
+void sccroll_monkey(void* blob, size_t size) __attribute__((leaf, nothrow, nonnull (1)));
 
 /**
  * @since 0.1.0

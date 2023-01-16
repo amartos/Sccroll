@@ -21,12 +21,29 @@
 
 #include "sccroll.h"
 
+#include <math.h>
+
 // clang-format off
 
 /******************************************************************************
  * Préparation des tests.
  ******************************************************************************/
 // clang-format on
+
+// Constantes des tests.
+enum {
+    // Nombre de tests de sccroll_monkey
+    MAX = 10,
+    // Taille max-1 de l'espace mémoire utilisé pour un test de
+    // sccroll_monkey (en octets).
+    MAXSIZE = 255,
+};
+
+// Marge d'erreur acceptée pour les fonctions aléatoires.
+const float sigma = 0.05f;
+
+// ratio de bits 0/1 attendu pour un nombre aléatoire.
+const float expected = 0.50f;
 
 // Variable utilisée pour provoquer des erreurs des mocks.
 static unsigned errnum = SCCENONE;
@@ -35,6 +52,21 @@ static unsigned errnum = SCCENONE;
 bool sccroll_mockTrigger(SccrollMockFlags mock)
 {
     return sccroll_hasFlags(errnum, mock);
+}
+
+// Cette fonction calcule le ratio de bits 1 et 0 de l'espace mémoire
+// blob de size octets.
+__attribute__((nonnull(1)))
+static float bitratio(const void* blob, size_t size)
+{
+    float ones = 0.0f;
+    if (!size) return ones;
+
+    for (size_t byte = 0; byte < size; ++byte, ++blob)
+        for (unsigned char mask = 1; mask <= 0x80; mask = mask >= 0x80 ? mask + 1 : mask << 1)
+            ones += *((unsigned char*) blob) & mask ? 1.0f : 0.0f;
+
+    return ones/(size*8);
 }
 
 // clang-format off
@@ -46,24 +78,30 @@ bool sccroll_mockTrigger(SccrollMockFlags mock)
 
 int main(void)
 {
-    // On s'assure que sccroll_monkey fonctionne. On ne teste pas le
-    // côté aléatoire, car la fonction utilisée (arc4random_buf) est
-    // fournie par la librairie (et on présuppose qu'elle est déjà
-    // testée).
-    int zero = 0;
-    sccroll_monkey(&zero, sizeof(int));
+    // Tester la fonction sccroll_rndalloc revient à tester également
+    // sccroll_monkey.
 
-    // sccroll_monkey() remplit de manière aléatoire. Il y a donc une
-    // (infime) chance que l'assertion échoue, et il n'est pas
-    // possible de tester le nombre exact (seulement qu'il n'est plus
-    // identique au précédent).
-    assert(zero && "If this fails, retry at least once");
+    // On teste le ratio de bits 0/1 obtenu avec la fonction
+    // sccroll_monkey, du fait qu'elle génère des bits
+    // aléatoires. Puisque chacun a 50% de chances d'apparaître pour
+    // des espace mémoire assez grands, le ratio devrait être proche
+    // de 0.5. Les rares cas où le ratio serait +/- élevé sont trop
+    // rares pour êtres pris en compte (surtout que deux cas rares sur
+    // deux tests d'affilées est exceptionnel, et donc indiquerait
+    // plus un bug qu'une malchance).
+    void* data = NULL;
+    int i;
+    size_t size;
+    float ratio = 0.0f;
+    for (i = 0, size = (random() & MAXSIZE)+1; i < MAX; ++i, size = (random() & MAXSIZE)+1) {
+        data = sccroll_rndalloc(1, size);
+        assert(data);
+        ratio += bitratio(data, size);
+        free(data);
+    }
+    ratio /= MAX;
+    assert(fabs(ratio - expected) < sigma);
 
-    int* data = sccroll_rndalloc(1, sizeof(int));
-    assert(data);
-    // Même remarque que pour le test de sccroll_monkey.
-    assert(*data && "If this fails, retry at least once");
-    free(data);
     // sccroll_rndalloc ne gère pas les erreurs.
     errnum = SCCEMALLOC;
     data = sccroll_rndalloc(1, sizeof(int));

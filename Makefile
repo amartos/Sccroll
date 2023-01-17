@@ -90,13 +90,11 @@ COVHIGH		= 98
 COVLOW		= 75
 
 COV			= gcovr
-COVOPTS		= -r $(SRCS) -u --no-marker --exclude-directories "$(TESTS)"
-COVOPTSXML	= --cobertura-pretty --cobertura $(COVXML)
+COVOPTS		= -r $(SRCS) -u --exclude-directories "$(TESTS)"
+COVOPTSXML	= --xml-pretty --xml $(COVXML)
 COVOPTSHTML	= --html-details $(COVHTML) \
 				--html-medium-threshold $(COVLOW) \
 				--html-high-threshold $(COVHIGH) \
-				--html-details-syntax-highlighting \
-				--html-theme blue \
 				--html-title "$(NAME) code coverage report"
 
 

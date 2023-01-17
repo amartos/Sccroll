@@ -29,10 +29,11 @@
  ******************************************************************************/
 // clang-format on
 
-// Variable utilisée comme drapeau pour certains mocks.
+// Variable utilisée comme drapeau pour déclencher les erreurs de
+// mocks.
 static unsigned dummy_flag = SCCENONE;
 
-// Drapeaux des mocks du test.
+// Drapeaux des mocks internes du test.
 enum {
     SCCESCCRUN = 2,
 };
@@ -52,7 +53,7 @@ extern __typeof__(fork) __real_fork;
 bool sccroll_mockTrigger(SccrollMockFlags mock)
 {
     fprintf(stderr, "dummy %-4i called: %s\n", mock, sccroll_mockName(mock));
-    return sccroll_hasFlags(dummy_flag, mock);
+    return dummy_flag == mock;
 }
 
 // simulacre de free n'interférant pas avec la fonction.
@@ -130,10 +131,6 @@ void test_predefined_mocks(void)
     assert((dummy=calloc(1,sizeof(char))));
     __real_free(dummy);
 
-    dummy_flag = SCCEALLOC;
-    assert(calloc(1, sizeof(char)) == NULL);
-    assert(malloc(1) == NULL);
-
     dummy_flag = SCCEPIPE;
     assert(pipe(pipefd) < 0);
 
@@ -165,45 +162,6 @@ void test_predefined_mocks(void)
     assert(close(pipefd[0]) >= 0);
 
     dummy_flag = SCCEABORT;
-    pid = __real_fork();
-    if (pid == 0) abort();
-    assert(pid > 0);
-    wait(&status);
-    assert(WEXITSTATUS(status) == SIGABRT);
-    assert(WTERMSIG(status) == 0);
-
-    // Groupes d'erreurs.
-    dummy_flag = SCCENONE |                     \
-        SCCEABORT | SCCECALLOC | SCCEPIPE  |    \
-        SCCEFORK  | SCCEDUP2   | SCCECLOSE |    \
-        SCCEREAD  | SCCEWRITE  | SCCEMALLOC;
-
-    assert(calloc(1, sizeof(char)) == NULL);
-    assert(malloc(1) == NULL);
-    assert(pipe(pipefd) < 0);
-    assert(fork() < 0);
-    assert(dup2(STDERR_FILENO, STDOUT_FILENO) < 0);
-    assert(write(pipefd[1], teststr, lenstr) < 0);
-    assert(close(pipefd[1]) < 0);
-    assert(read(pipefd[0], buf, lenstr) < 0);
-
-    pid = __real_fork();
-    if (pid == 0) abort();
-    assert(pid > 0);
-    wait(&status);
-    assert(WEXITSTATUS(status) == SIGABRT);
-    assert(WTERMSIG(status) == 0);
-
-    dummy_flag = SCCEALL;
-    assert(calloc(1, sizeof(char)) == NULL);
-    assert(malloc(1) == NULL);
-    assert(pipe(pipefd) < 0);
-    assert(fork() < 0);
-    assert(dup2(STDERR_FILENO, STDOUT_FILENO) < 0);
-    assert(write(pipefd[1], teststr, lenstr) < 0);
-    assert(close(pipefd[1]) < 0);
-    assert(read(pipefd[0], buf, lenstr) < 0);
-
     pid = __real_fork();
     if (pid == 0) abort();
     assert(pid > 0);

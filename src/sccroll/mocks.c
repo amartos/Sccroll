@@ -29,13 +29,6 @@
 // clang-format on
 
 /**
- * @var disabled
- * @since 0.1.0
- * @brief Drapeau désactivant les erreurs de simulacres si @c true.
- */
-static bool disabled = false;
-
-/**
  * @def sccroll_mockError
  * @since 0.1.0
  * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger() renvoie
@@ -50,7 +43,7 @@ static bool disabled = false;
  * par @p __real_name(...).
  */
 #define sccroll_mockError(name, errtrig, errval,...)                    \
-    sccroll_mockTrigger(errtrig) && !disabled                           \
+    sccroll_mockTrigger(errtrig)                                        \
         ? errval                                                        \
         : __real_##name(__VA_ARGS__)
 
@@ -106,9 +99,6 @@ SCCROLL_MOCK(void, abort, void)
     // est de quitter de la mauvaise manière: au lieu de s'arrêter
     // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
     // s'arrête avec exit et un status d'erreur.
-    // On désactive les mocks pour éviter une erreur provoquées dans
-    // des fonctions qui ne devraient pas échouer.
-    disabled = true;
     sccroll_mockTrigger(SCCEABORT)
         ? (__gcov_dump(), exit(SIGABRT))
         : (__gcov_dump(), __real_abort());

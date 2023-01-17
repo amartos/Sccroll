@@ -112,21 +112,21 @@
  * @since 0.1.0
  * @brief Drapeaux utilisables par sccroll_mockTrigger() pour indiquer
  * quel simulacre pré-fourni doit être en erreur.
+ * @attention Les drapeaux **ne peuvent pas** être combinés pour
+ * déclencher plusieurs erreurs simultanément.
  */
 typedef enum SccrollMockFlags {
-    SCCENONE   = 0,   /**< Drapeau ne provoquant pas d'erreurs. */
-    SCCEABORT  = 2,   /**< Drapeau de abort(). */
-    SCCECALLOC = 4,   /**< Drapeau de calloc(). */
-    SCCEPIPE   = 8,   /**< Drapeau de pipe(). */
-    SCCEFORK   = 16,  /**< Drapeau de fork(). */
-    SCCEDUP2   = 32,  /**< Drapeau de dup2(). */
-    SCCECLOSE  = 64,  /**< Drapeau de close(). */
-    SCCEREAD   = 128, /**< Drapeau de read(). */
-    SCCEWRITE  = 256, /**< Drapeau de write(). */
-    SCCEMALLOC = 512, /**< Drapeau de malloc() (**incompatible avec #SCCEABORT**). */
-    SCCEMAX    = 1024,/**< Valeur maximale des mocks individuels. */
-    SCCEALLOC  = SCCECALLOC | SCCEMALLOC, /**< Drapeaux de tous les mocks type *alloc. */
-    SCCEALL    = SCCEMAX-1,               /**< Tous les drapeaux de simulacres individuels. */
+    SCCENONE = 0, /**< Drapeau ne provoquant pas d'erreurs. */
+    SCCEABORT,    /**< Drapeau de abort(). */
+    SCCECALLOC,   /**< Drapeau de calloc(). */
+    SCCEPIPE,     /**< Drapeau de pipe(). */
+    SCCEFORK,     /**< Drapeau de fork(). */
+    SCCEDUP2,     /**< Drapeau de dup2(). */
+    SCCECLOSE,    /**< Drapeau de close(). */
+    SCCEREAD,     /**< Drapeau de read(). */
+    SCCEWRITE,    /**< Drapeau de write(). */
+    SCCEMALLOC,   /**< Drapeau de malloc(). */
+    SCCEMAX,      /**< Valeur maximale des mocks individuels. */
 } SccrollMockFlags;
 
 /**

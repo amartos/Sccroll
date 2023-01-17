@@ -53,7 +53,7 @@ static bool called = false;
 bool sccroll_mockTrigger(SccrollMockFlags mock)
 {
     if (called) return false;
-    return (called = sccroll_hasFlags(errnum, mock) && delay-- == 0);
+    return (called = errnum == mock && delay-- == 0);
 }
 
 // Fonction de test réussit quelles que soient les conditions.
@@ -102,7 +102,7 @@ static bool assertMock(void)
 int main(void)
 {
     assertMock();
-    for (errnum = 2, delay = 0; errnum < SCCEMAX; delay = 0, errnum <<= 1)
+    for (errnum = 1, delay = 0; errnum < SCCEMAX; ++errnum, delay = 0)
         while (assertMock()) ++delay;
     return EXIT_SUCCESS;
 }

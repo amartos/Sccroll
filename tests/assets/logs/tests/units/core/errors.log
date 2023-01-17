@@ -27,12 +27,14 @@ errors: fork failed for fork: Success
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
 errors: duplicate pipe failed for dup2: Success
-errors: duplicate pipe failed for dup2: Success
-errors: duplicate pipe failed for dup2: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+errors: close pipe failed for close: Success
+errors: close pipe failed for close: Success
+errors: close pipe failed for close: Success
+errors: close pipe failed for close: Success
 errors: close pipe failed for close: Success
 errors: close pipe failed for close: Success
 errors: close pipe failed for close: Success

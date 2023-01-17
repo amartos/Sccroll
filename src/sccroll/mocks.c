@@ -29,32 +29,68 @@
 // clang-format on
 
 /**
+ * @def sccroll_mockFatal
+ * @since 0.1.0
+ * @brief Nullifie #trigger, sauvegarde les données pour gcov et
+ * termine le programme.
+ * @param killcall L'appel terminant le programme.
+ */
+#define sccroll_mockFatal(killcall) (sccroll_mockFlush(), __gcov_dump(), killcall)
+
+/**
+ * @def sccroll_mockCalled
+ * @since 0.1.0
+ * @brief Détermine si le simulacre décrit par @p flag est celui
+ * indiqué par #trigger.
+ * @param flag Le code SccrollMockFlags du simulacre appelant.
+ */
+#define sccroll_mockCalled(flag) (trigger && trigger->mock == flag)
+
+/**
+ * @since 0.1.0
+ * @brief Détermine s'il faut déclencher une erreur du simulacre.
+ * @param mock Le code SccrollMockFlags du simulacre.
+ * @return true si le simulacre doit déclencher une erreur, sinon
+ * false.
+ * @attention Si l'option SCCMABORT est donnée, que
+ * SccrollMockTrigger::delay de #trigger est négatif, et que le
+ * simulacre correspondant est appelé, la fonction termine le
+ * programme (@c SIGABRT).
+ */
+static bool sccroll_mockFire(SccrollMockFlags mock);
+
+/**
+ * @var mock_trigger
+ * @since 0.1.0
+ * @brief Variable indiquant le nombre d'appels du simulacre à ignorer.
+ */
+static SccrollMockTrigger * trigger = NULL;
+
+/**
+ * @var ignoring_delay
+ * @since 0.1.0
+ * @brief Matrice indicant si les simulacres doivent ignorer
+ * SccrollMockTrigger::delay.
+ */
+static const bool ignoring_delay[SCCEMAX] = {
+    [SCCEABORT] = true,
+};
+
+/**
  * @def sccroll_mockError
  * @since 0.1.0
- * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger() renvoie
- * @c true, sinon renvoie la valeur de @c __real_name(...).
+ * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger correspond
+ * au simulacre, sinon renvoie la valeur de @c __real_name(...).
  * @param name Le nom de la fonction originale.
  * @param errtrig Le code SccrollMockFlags du simulacre.
  * @param errval La valeur à renvoyer pour simuler l'erreur de @p name.
  * @param ... Les arguments pour la fonction originale (vide pour
  * "sans arguments").
- * @return @p errval si sccroll_mockTrigger() renvoie @p true et
- * qu'aucun drapeau incompatible n'est donné, sinon la valeur renvoyée
- * par @p __real_name(...).
+ * @return @p errval si sccroll_mockTrigger correspond au simulacre,
+ * sinon la valeur renvoyée par @p __real_name(...).
  */
-#define sccroll_mockError(name, errtrig, errval,...)                    \
-    sccroll_mockTrigger(errtrig)                                        \
-        ? errval                                                        \
-        : __real_##name(__VA_ARGS__)
-
-/**
- * @since 0.1.0
- * @brief Fonction renvoyant toujours #SCCENONE.
- * @note est utilisée comme alias faible de sccroll_mockTrigger().
- * @param mock Paramètre inutilisé.
- * @return @c false.
- */
-static bool sccroll_enone(SccrollMockFlags mock) __attribute__((unused));
+#define sccroll_mockError(name, errtrig, errval, ...)               \
+    sccroll_mockFire(errtrig) ? errval : __real_##name(__VA_ARGS__)
 
 /**
  * @since 0.1.0
@@ -68,6 +104,26 @@ extern void __gcov_dump(void);
  * Implémentation
  ******************************************************************************/
 // clang-format on
+
+void sccroll_mockTrigger(SccrollMockTrigger * mock_trigger) { trigger = mock_trigger; }
+
+void sccroll_mockFlush(void) { trigger = NULL; }
+
+static bool sccroll_mockFire(SccrollMockFlags mock)
+{
+    if (!sccroll_mockCalled(mock)) return false;
+    else if (ignoring_delay[mock]) return true;
+    else if (trigger->delay < 0 && sccroll_hasFlags(trigger->opts, SCCMABORT))
+        return sccroll_mockFatal(raise(SIGABRT));
+    else if (trigger->delay > 0) return (--trigger->delay, false);
+    else if (trigger->delay == 0) {
+        sccroll_hasFlags(trigger->opts, SCCMFLUSH)
+            ? sccroll_mockFlush()
+            : --trigger->delay;
+        return true;
+    }
+    return false;
+}
 
 const char* sccroll_mockName(SccrollMockFlags mock)
 {
@@ -86,22 +142,19 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     }
 }
 
-weak_alias(sccroll_enone, sccroll_mockTrigger);
-static bool sccroll_enone(SccrollMockFlags mock)
-{
-    sccroll_unused(mock);
-    return false;
-}
-
 SCCROLL_MOCK(void, abort, void)
 {
-    // La fonction doit quitter. Mais une erreur possible pour elle
-    // est de quitter de la mauvaise manière: au lieu de s'arrêter
-    // avec un signal SIGABRT et un status EXIT_SUCCESS, la fonction
-    // s'arrête avec exit et un status d'erreur.
-    sccroll_mockTrigger(SCCEABORT)
-        ? (__gcov_dump(), exit(SIGABRT))
-        : (__gcov_dump(), __real_abort());
+    // On ne tient pas compte du délai ici car on cherche à quitter,
+    // et ne pas le faire risque de provoquer plus de problèmes
+    // qu'autre chose. Sans compter que vérifier qu'un abort a bien
+    // quitté n'est probablement pas courant.
+    // La fonction doit donc quitter. Mais une erreur possible pour
+    // elle est de quitter de la mauvaise manière: au lieu de
+    // s'arrêter avec un signal SIGABRT et un status EXIT_SUCCESS, la
+    // fonction s'arrête avec exit et un status d'erreur.
+    sccroll_mockFire(SCCEABORT)
+        ? sccroll_mockFatal(exit(SIGABRT))
+        : sccroll_mockFatal(__real_abort());
 }
 
 SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)

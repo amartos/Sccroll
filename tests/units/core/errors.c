@@ -36,60 +36,57 @@ extern __typeof__(fork) __real_fork;
 // On s'assure d'utiliser la version originale de abort.
 extern __typeof__((abort)) __real_abort;
 
-// Le mock testé courant.
-static SccrollMockFlags errnum = SCCENONE;
-
-// Variable permettant de repousser la levée d'erreur de delay
-// appels. Ceci permet de tester les appels et leurs erreurs qui sont
-// situés plus loin dans la séquence d'exécution (puisqu'une erreur
-// plus tôt stoppera le programme).
-static int delay = 0;
-
-// Variable indiquant si le simulacre a été appelé et doit entrer en
-// erreur.
-static bool called = false;
-
-// Redéfinition prévue par l'API.
-bool sccroll_mockTrigger(SccrollMockFlags mock)
-{
-    if (called) return false;
-    return (called = errnum == mock && delay-- == 0);
-}
-
 // Fonction de test réussit quelles que soient les conditions.
 void test_success(void) {};
 
 // Effectue un test unitaire de ftest dans un fork (la fonction
 // originale), et vérifie qu'une erreur est bien levée par
 // sccroll_run.
-static bool assertMock(void)
+static bool assertMock(SccrollMockFlags mock, int delay)
 {
-    called = false;
+    SccrollMockTrigger trigger = {
+        .mock = mock,
+        .delay = delay,
+        .opts = SCCMABORT,
+    };
     const SccrollEffects test = {
         .wrapper = test_success,
-        .name = sccroll_mockName(errnum),
-        .flags = sccroll_hasFlags(errnum, SCCEFORK) ? 0 : NOFORK,
+        .name = sccroll_mockName(mock),
+        .flags = sccroll_hasFlags(mock, SCCEFORK) ? 0 : NOFORK,
     };
 
     pid_t pid = __real_fork();
     if (pid < 0)
         err(EXIT_FAILURE, "__real_fork failed for %s", test.name);
     else if (pid == 0) {
+        sccroll_mockTrigger(&trigger);
         sccroll_register(&test);
         sccroll_run();
-        // On envoie un signal indiquant que le simulacre testé n'est
-        // pas appelé dans la librairie avec le delai donné.
-        if (!called) __real_abort();
+        exit(0);
     }
 
-    int status = 0;
+    int status, code, signal;
     wait(&status);
-    called = WTERMSIG(status) != SIGABRT;
-    if (called && !WEXITSTATUS(status)) {
-        fprintf(stderr, "%s error not handled (delay: %i)\n", test.name, delay);
+    code = WEXITSTATUS(status);
+
+    // On vérifie qu'il n'y a pas d'erreur si aucun simulacre ne
+    // devrait entrer en erreur.
+    assert(!(!mock && code));
+
+    // On vérifie que les simulacres n'ont pas envoyé SIGABRT; ce
+    // serait le signe que l'erreur du simulacre appelée à delay n'a
+    // pas été prise en compte.
+    signal = WTERMSIG(status);
+    if (signal == SIGABRT) {
+        fprintf(stderr,
+                "assertMock: %s mock error in call #%i not handled\n",
+                sccroll_mockName(mock), delay);
         raise(SIGABRT);
     }
-    return called;
+
+    // Si une erreur est levée (code ou signal), on peut supposer
+    // qu'il reste encore des appels à vérifier.
+    return mock && (code || signal);
 }
 
 // clang-format off
@@ -101,8 +98,9 @@ static bool assertMock(void)
 
 int main(void)
 {
-    assertMock();
-    for (errnum = 1, delay = 0; errnum < SCCEMAX; ++errnum, delay = 0)
-        while (assertMock()) ++delay;
+    SccrollMockFlags mock;
+    int delay;
+    for (mock = SCCENONE, delay = 0; mock < SCCEMAX; ++mock, delay = 0)
+        while (assertMock(mock, delay++));
     return EXIT_SUCCESS;
 }

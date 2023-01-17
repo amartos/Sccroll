@@ -45,15 +45,6 @@ const float sigma = 0.05f;
 // ratio de bits 0/1 attendu pour un nombre aléatoire.
 const float expected = 0.50f;
 
-// Variable utilisée pour provoquer des erreurs des mocks.
-static unsigned errnum = SCCENONE;
-
-// Prévu par l'API des mocks.
-bool sccroll_mockTrigger(SccrollMockFlags mock)
-{
-    return sccroll_hasFlags(errnum, mock);
-}
-
 // Cette fonction calcule le ratio de bits 1 et 0 de l'espace mémoire
 // blob de size octets.
 __attribute__((nonnull(1)))
@@ -103,12 +94,10 @@ int main(void)
     assert(fabs(ratio - expected) < sigma);
 
     // sccroll_rndalloc ne gère pas les erreurs.
-    errnum = SCCEMALLOC;
+    SccrollMockTrigger trigger = { .mock = SCCEMALLOC, };
+    sccroll_mockTrigger(&trigger);
     data = sccroll_rndalloc(1, sizeof(int));
     assert(data == NULL);
 
-    // gcov uses malloc during exit.
-    // TODO: fix malloc error triggering for exits.
-    errnum = SCCENONE;
     return EXIT_SUCCESS;
 }

@@ -12,6 +12,8 @@
  *     src/sccroll.c src/mocks.c \
  *     -o build/libs/libsccroll.so
  * @endcode
+ * @todo Renommer structures et fonctions; les noms sont parfois
+ * redondants et ne sont pas nécessairement bien choisi.
  *
  * @addtogroup API
  * @{
@@ -31,6 +33,7 @@
 #include "sccroll/helpers.h"
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
@@ -96,10 +99,15 @@
  * @}
  * @name Simulacres prédéfinis.
  *
- * Le comportement des simulacres fournis est déterminé par le retour
- * de la fonction sccroll_mockTrigger(). Si celui-ci correspond au
- * code SccrollMockFlags du simulacre, l'erreur est déclenchée; sinon
- * la fonction agit comme l'originale.
+ * Le comportement des simulacres fournis est déterminé par la
+ * structure SccrollMockTrigger passée à sccroll_mockTrigger(). Des
+ * options définies par SccrollMockOptions sont disponibles en les
+ * passant à SccrollMockTrigger::opts à l'aide d'un OR.
+ *
+ * Par défaut, le module conserve le dernier SccrollMockTrigger passé
+ * à sccroll_mockTrigger(). Une option permet de l'oublier à la
+ * première erreur, mais l'appel de sccroll_mockFlush() est également
+ * dédié à cette opération.
  *
  * Certains simulacres fournissent également d'autres options et
  * capacités décrites dans leur documentation.
@@ -110,8 +118,8 @@
 /**
  * @enum SccrollMockFlags
  * @since 0.1.0
- * @brief Drapeaux utilisables par sccroll_mockTrigger() pour indiquer
- * quel simulacre pré-fourni doit être en erreur.
+ * @brief Drapeaux pour SccrollMockTrigger::mock afin d'indiquer quel
+ * simulacre pré-fourni doit être en erreur.
  * @attention Les drapeaux **ne peuvent pas** être combinés pour
  * déclencher plusieurs erreurs simultanément.
  */
@@ -130,17 +138,56 @@ typedef enum SccrollMockFlags {
 } SccrollMockFlags;
 
 /**
+ * @enum SccrollMockOptions
  * @since 0.1.0
- * @brief Fonction utilisée pour provoquer une erreur dans les
- * simulacres fournis par la bibliothèque.
- * @attention Cette fonction de provoque pas d'erreur par défaut. Elle
- * peut cependant être redéfinie sans problèmes par l'utilisateur afin
- * de provoquer les erreurs voulues selon les conditions voulues.
- * @param mock L'identifiant SccrollMockFlags du mock.
- * @return @c true si le simulacre correspondant à l'identifiant
- * @p mock doit lever une erreur, sinon @c false.
+ * @brief Options pour les simulacres prédéfinis.
  */
-bool sccroll_mockTrigger(SccrollMockFlags mock);
+typedef enum SccrollMockOptions {
+    SCCMNONE  = 0, /**< Pas d'options. */
+    SCCMFLUSH = 2, /**< Effacer du module le pointeur de la structure
+                    * SccrollMockTrigger après le premier appel de simulacre
+                    * en erreur. */
+    SCCMABORT = 4, /**< Lever une erreur au prochain appel de
+                    * simulacre après celui en erreur (ou si delay est
+                    * négatif). SCCEABORT a cette option par défaut. */
+} SccrollMockOptions;
+
+/**
+ * @struct SccrollMockTrigger
+ * @since 0.1.0
+ * @brief Structure contenant les informations nécessaires au
+ * déclenchement d'un simulacre prédéfini.
+ * @note SccrollMockTrigger::abort à @c true déclenche une erreur si
+ * SccrollMockTrigger::delay est négatif.
+ */
+typedef struct SccrollMockTrigger {
+    SccrollMockFlags mock;   /**< Drapeau correspondant au simulacre à déclencher. */
+    SccrollMockOptions opts; /**< Options pour le déclenchement des simulacres. */
+    int delay;               /**< Nombre d'appels du simulacre à ignorer. */
+} SccrollMockTrigger;
+
+/**
+ * @since 0.1.0
+ * @brief Fonction utilisée pour provoquer une erreur dans le
+ * simulacre fourni par la bibliothèque et correspondant à la valeur
+ * de @p mock.
+ * @param trigger SccrollMockTrigger contenant les informations sur le
+ * déclenchement de l'erreur, ou NULL pour ne rien déclencher.
+ * @attention La structure @p trigger est réutilisée tant que le
+ * pointeur est encore valable, sauf si SccrollMockTrigger::abort vaut
+ * @c true et lève une erreur ou que la fonction @c abort est
+ * utilisée. Ces deux cas reviennent à utiliser sccroll_mockFlush().
+ */
+void sccroll_mockTrigger(SccrollMockTrigger * trigger);
+
+/**
+ * @since 0.1.0
+ * @brief Efface le pointeur de la dernière structure
+ * SccrollMockTrigger donnée *via* sccroll_mockTrigger().
+ * @note La structure en soi n'est pas effacée, juste sa référence
+ * pour le module.
+ */
+void sccroll_mockFlush(void);
 
 /**
  * @since 0.1.0

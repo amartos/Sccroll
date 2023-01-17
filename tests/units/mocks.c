@@ -32,7 +32,8 @@
 // Constantes du test
 enum {
     MAX = 10,       // Nombre de tests de délai max
-    SCCESCCRUN = 2, // identifiant du simulacre interne
+    SCCESCCRUN = 2, // identifiant du simulacre interne de sccroll_run
+    SCCEFREE = 4,   // identifiant du simulacre interne de free
 };
 
 
@@ -67,7 +68,8 @@ extern __typeof__(pipe) __real_pipe;
 // fonction ne lève aucune erreur qui puisse être prévue.
 SCCROLL_MOCK(void, free, void* ptr)
 {
-    puts("free mocked");
+    if (sccroll_hasFlags(dummy_flag, SCCEFREE))
+        puts("free mocked");
     __real_free(ptr);
 }
 
@@ -258,17 +260,17 @@ int main(void)
 
     // On teste les constructions de mocks
 
-    // Les fonctions mockées doivent afficher un message si le mock
-    // est réussi. Sinon, sccroll_run() provoquera une erreur en
-    // appelant sccroll_before(), et l'assert assure un second niveau
-    // de vérification (puisque le seul test enregistré est en échec,
-    // et non en réussite comme testé ici).
+    // On s'assure que les fonctions mockées de la librairie peuvent
+    // être appelées avec leur nom original.
+    dummy_flag = SCCEFREE;
+    free(strdup("test"));
+
+    // Si le mock de sccroll_run() ne fonctionne pas, il provoquera
+    // une erreur en appelant sccroll_before(), et l'assert assure un
+    // second niveau de vérification (puisque le seul test enregistré
+    // est en échec, et non en réussite comme testé ici).
     dummy_flag = SCCENONE;
     assert(!sccroll_run());
-
-    // On s'assure que les fonctions mockées peuvent être appelées
-    // avec leur nom original.
-    free(strdup("test"));
 
     // Un changement d'état du drapeau affichera un nouveau message.
     dummy_flag = SCCESCCRUN;

@@ -4,6 +4,7 @@
  * @brief       Test unitaire des gestions d'erreurs de la librairie.
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  * @compilation
  * @see sccroll.h pour la compilation de libsccroll.so

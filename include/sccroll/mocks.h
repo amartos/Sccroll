@@ -4,6 +4,7 @@
  * @brief       Simulacres pré-fournis.
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  * @compilation
  * @code{.sh}

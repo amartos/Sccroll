@@ -4,6 +4,7 @@
  * @brief       Ficher en-tête de la librairie Sccroll.
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  *
  * Ce fichier est l'entête à intégrer dans les fichiers de

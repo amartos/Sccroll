@@ -2,7 +2,7 @@ Main executed with 6 arguments: [ 0 1 2 3 4 5 ]
 [ [0;1;36mDIFF[0m ] test_print: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_print: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mmain: tests/units/core/execution/main.c:33: test_print: Assertion `false && "Test executed."' failed.[0m
+res: [0;0;31mmain: tests/units/core/execution/main.c:34: test_print: Assertion `false && "Test executed."' failed.[0m
 [ [0;1;31mFAIL[0m ] test_print
 
 

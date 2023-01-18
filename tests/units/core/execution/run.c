@@ -4,6 +4,7 @@
  * @brief       Test unitaire d'exécution de sccroll_run().
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  * @compilation
  * @see sccroll.h pour la compilation de libsccroll.so
@@ -55,7 +56,7 @@ int main(void)
         .wrapper = test_print,
         .name = "test_print_success",
         .std[STDERR_FILENO].content =
-        "run: tests/units/core/execution/run.c:42: test_print: Assertion `false && \"Test executed.\"' failed.",
+        "run: tests/units/core/execution/run.c:43: test_print: Assertion `false && \"Test executed.\"' failed.",
         .code = { .type = SCCSIGNAL, .value = SIGABRT },
     };
     for (int i = 0; i < MAXF; ++i) sccroll_register(&testf);

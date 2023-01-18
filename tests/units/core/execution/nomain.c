@@ -4,6 +4,7 @@
  * @brief       Test unitaire d'exécution des tests sans main défini.
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  * @compilation
  * @see sccroll.h pour la compilation de libsccroll.so

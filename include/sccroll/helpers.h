@@ -4,6 +4,7 @@
  * @brief       Macros d'aides à la programmation.
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  * @compilation @ref sccroll.h
  *

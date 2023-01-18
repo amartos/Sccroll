@@ -4,6 +4,7 @@
  * @brief       Ficher en-tête des assertions de Sccroll.
  * @date        2022
  * @author      Alexandre Martos
+ * @email       contact@amartos.fr
  * @copyright   MIT License
  * @compilation @ref sccroll.h
  *

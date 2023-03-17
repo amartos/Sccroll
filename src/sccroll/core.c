@@ -50,6 +50,22 @@ typedef enum SccrollColors{
 } SccrollColors;
 
 /**
+ * @def COLSTART
+ * @since 0.1.0
+ * @brief Les codes de changement de coloration et apparence.
+ * @param i Un code SccrollFonts pour l'apparence du texte
+ * @param i Un code SccrollColors pour la couleur du texte
+ */
+#define COLSTART "\e[0;%i;3%im"
+
+/**
+ * @def COLEND
+ * @since 0.1.0
+ * @brief Reset l'apparence du texte affiché au défaut.
+ */
+#define COLEND "\e[0m"
+
+/**
  * @def COLSTRFMT
  * @since 0.1.0
  * @brief Ajoute les codes ANSI de coloration à une chaîne.
@@ -57,7 +73,7 @@ typedef enum SccrollColors{
  * @param i Un code SccrollColors pour la couleur du texte
  * @param s La chaîne à colorer
  */
-#define COLSTRFMT "\e[0;%i;3%im%s\e[0m"
+#define COLSTRFMT COLSTART "%s" COLEND
 
 // clang-format off
 

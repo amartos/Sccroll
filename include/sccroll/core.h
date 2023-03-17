@@ -204,7 +204,11 @@ typedef struct SccrollCode {
  * Si le contenu de fichiers doit être testé, leur chemin doit être
  * passé à SccrollEffects::files::path. L'analyse s'arrête à la
  * première occurrence de SccrollEffects::files::path de valeur
- * @c NULL.
+ * @c NULL. Si Une taille est confiée à SccrollEffects::files::size
+ * (maximum considéré de #SCCMAX), le contenu sera considéré comme un
+ * blob d'octets. Si aucune taille n'est donnée, le contenu est
+ * considéré comme une chaîne de caractères et comparée jusqu'au
+ * premier octet nul.
  *
  * Les options de test, décrites dans SccrollFlags, sont à passer à
  * SccrollEffects::flags en les groupant avec OR.

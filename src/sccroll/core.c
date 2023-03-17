@@ -257,11 +257,10 @@ static char* sccroll_strip(const char* string) __attribute__((nonnull));
  * @since 0.1.0
  * @brief Récupère le contenu du fichier donné.
  * @attention Utilise malloc.
- * @param path Le chemin de fichier.
+ * @param file La structure contenant les informations sur le fichier.
  * @param name Le nom du test correspondant au fichier.
- * @return Les #SCCMAX-1 premiers octets du fichier.
  */
-static char* sccroll_fread(const char* restrict path, const char* restrict name) __attribute__((nonnull));
+static void sccroll_fread(SccrollFile* restrict file, const char* restrict name) __attribute__((nonnull));
 
 // clang-format off
 
@@ -531,26 +530,34 @@ static void sccroll_pcodes(const SccrollEffects* restrict expected, const Sccrol
     __attribute__((nonnull));
 
 /**
- * @typedef SccrollStrDiff
+ * @typedef SccrollBlobDiff
  * @since 0.1.0
  * @brief Structure contenant les informations minimales pour
- * l'affichage de différences entre deux chaînes d'un test.
+ * l'affichage de différences entre deux blobs d'un test.
  */
-typedef struct SccrollStrDiff {
-    const char* expected; /**< La chaîne attendue. */
-    const char* result;   /**< La chaîne obtenue. */
+typedef struct SccrollBlobDiff {
+    const SccrollBlob* expected; /**< Le blob attendu. */
+    const SccrollBlob* result;   /**< Le blob obtenu. */
     const char* name;     /**< Le nom du test. */
-    const char* desc;     /**< La description des chaînes. */
-} SccrollStrDiff;
+    const char* desc;     /**< La description des blobs. */
+} SccrollBlobDiff;
 
 /**
  * @since 0.1.0
  * @brief Affiche les différences entre deux chaînes au niveau des
  * lignes.
- * @param infos La structure SccrollStrDiff contenant les chaînes
- * SccrollStrDiff::expected et SccrollStrDiff::result différentes.
+ * @param infos La structure SccrollBlobDiff contenant les chaînes
+ * SccrollBlobDiff::expected et SccrollBlobDiff::result différentes.
  */
-static void sccroll_pdiff(const SccrollStrDiff* restrict infos) __attribute__((nonnull));
+static void sccroll_pdiff(const SccrollBlobDiff* restrict infos) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Affiche deux blobs de données différents.
+ * @param infos La structure SccrollBlobDiff contenant les blobs
+ * SccrollBlobDiff::expected et SccrollBlobDiff::result différents.
+ */
+static void sccroll_dump(const SccrollBlobDiff* restrict infos) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
@@ -637,17 +644,19 @@ static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
 {
     SccrollEffects* prepared = sccroll_dup(effects);
     int i;
-    char *string, *stripped;
+    char *stripped;
     for (i = STDIN_FILENO; i < SCCMAXSTD; ++i) {
-        string = prepared->std[i].path
-            ? sccroll_fread(prepared->std[i].path, prepared->name)
-            : strdup(prepared->std[i].content.blob ? prepared->std[i].content.blob : "");
+        if (prepared->std[i].path)
+            sccroll_fread(&prepared->std[i], prepared->name);
+        else if (!prepared->std[i].content.blob)
+            prepared->std[i].content.blob = strdup("");
+        else if (prepared->std[i].content.blob)
+            prepared->std[i].content.blob = strdup(prepared->std[i].content.blob);
         if (!sccroll_hasFlags(prepared->flags, NOSTRP)) {
-            stripped = sccroll_strip(string);
-            free(string);
-            string = stripped;
+            stripped = sccroll_strip(prepared->std[i].content.blob);
+            free(prepared->std[i].content.blob);
+            prepared->std[i].content.blob = stripped;
         }
-        prepared->std[i].content = string;
     }
 
     return prepared;
@@ -678,14 +687,20 @@ static char* sccroll_strip(const char* oldstring)
     return string;
 }
 
-static char* sccroll_fread(const char* restrict path, const char* restrict name)
+static void sccroll_fread(SccrollFile* restrict file, const char* restrict name)
 {
     char buffer[SCCMAX] = { 0 };
-    FILE* file = fopen(path, "r");
-    sccroll_err(!file, path, name);
-    sccroll_err(!fread(buffer, sizeof(char), SCCMAX, file) && ferror(file), path, name);
-    fclose(file);
-    return strdup(buffer);
+    FILE* stream = fopen(file->path, "rb");
+    sccroll_err(!stream, file->path, name);
+    sccroll_err(
+        !(file->content.size = fread(buffer, sizeof(char), SCCMAX, stream))
+        && ferror(stream), file->path, name
+    );
+    fclose(stream);
+    void* blob = calloc(file->content.size, sizeof(char));
+    if (!blob) err(EXIT_FAILURE, "could not allocate for blob");
+    memcpy(blob, buffer, file->content.size*sizeof(char));
+    file->content.blob = blob;
 }
 
 // clang-format off
@@ -872,7 +887,7 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
 static void sccroll_files(SccrollEffects* restrict result)
 {
     for (int i = 0; i < SCCMAX && result->files[i].path; ++i)
-        result->files[i].content.blob = sccroll_fread(result->files[i].path, result->name);
+        sccroll_fread(&result->files[i], result->name);
 }
 
 // clang-format off
@@ -885,6 +900,7 @@ static void sccroll_files(SccrollEffects* restrict result)
 static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
 {
     bool diff            = false;
+    size_t explen = 0, reslen = 0;
     SccrollStrDiff infos = { .name = expected->name };
 
     if (expected->code.value != result->code.value) {
@@ -896,23 +912,36 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
         if (strcmp(expected->std[i].content.blob, result->std[i].content.blob)) {
             if (!sccroll_hasFlags(expected->flags, NODIFF)) {
-                infos.expected = expected->std[i].content.blob;
-                infos.result = result->std[i].content.blob;
+                infos.expected = &expected->std[i].content;
+                infos.result = &result->std[i].content;
                 infos.desc = i == STDOUT_FILENO ? "stdout" : "stderr";
                 sccroll_pdiff(&infos);
             }
         }
 
-    for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i)
-        if (strcmp(expected->files[i].content.blob, result->files[i].content.blob)) {
+    for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i, explen = 0, reslen = 0) {
+        if (expected->files[i].content.size) {
+            explen = expected->files[i].content.size;
+            reslen = result->files[i].content.size;
+        }
+        else {
+            explen = strlen(expected->files[i].content.blob);
+            reslen = strlen(result->files[i].content.blob);
+        }
+
+        if (explen != reslen
+            || memcmp(expected->files[i].content.blob, result->files[i].content.blob, explen)) {
             diff = true;
             if (!sccroll_hasFlags(expected->flags, NODIFF)) {
-                infos.expected = expected->files[i].content.blob;
-                infos.result = result->files[i].content.blob;
+                infos.expected = &expected->files[i].content;
+                infos.result = &result->files[i].content;
                 infos.desc = expected->files[i].path;
-                sccroll_pdiff(&infos);
+                expected->files[i].content.size
+                    ? sccroll_dump(&infos)
+                    : sccroll_pdiff(&infos);
             }
         }
+    }
     return diff;
 }
 
@@ -948,14 +977,14 @@ static void sccroll_pcodes(const SccrollEffects* restrict expected, const Sccrol
     fprintf(stderr, CODEFMT, expected->name, desc, exp, expdesc, res, resdesc);
 }
 
-static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
+static void sccroll_pdiff(const SccrollBlobDiff* restrict infos)
 {
     size_t expc, resc;
     char *expz = NULL, *resz = NULL;
     char *expn = NULL, *resn = NULL;
 
-    sccroll_err(argz_create_sep(infos->expected, '\n', &expz, &expc), infos->desc, infos->name);
-    sccroll_err(argz_create_sep(infos->result, '\n', &resz, &resc), infos->desc, infos->name);
+    sccroll_err(argz_create_sep(infos->expected->blob, '\n', &expz, &expc), infos->desc, infos->name);
+    sccroll_err(argz_create_sep(infos->result->blob, '\n', &resz, &resc), infos->desc, infos->name);
 
     fprintf(stderr, DIFFFMT, infos->name, infos->desc);
     for (
@@ -972,6 +1001,23 @@ static void sccroll_pdiff(const SccrollStrDiff* restrict infos)
 
     free(expz);
     free(resz);
+}
+
+static void sccroll_dump(const SccrollBlobDiff* restrict infos)
+{
+    char* data = infos->expected->blob;
+    int digits = sizeof(char)*2;
+    fprintf(stderr, DIFFFMT, infos->name, infos->desc);
+
+    fprintf(stderr, "exp (bytes): " COLSTART, NORMAL, GREEN);
+    for (size_t i = 0; i < infos->expected->size; ++i)
+        fprintf(stderr, "%0*x", digits, *data++);
+    fprintf(stderr, COLEND "\nres (bytes): " COLSTART, NORMAL, RED);
+
+    data = infos->result->blob;
+    for (size_t i = 0; i < infos->result->size; ++i)
+        fprintf(stderr, "%0*x", digits, *data++);
+    fprintf(stderr, COLEND "\n");
 }
 
 static void sccroll_review(int report[REPORTMAX])

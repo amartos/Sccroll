@@ -521,6 +521,57 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
 
 /**
  * @since 0.1.0
+ * @brief Compare deux SccrollEffects::codes et indique leurs
+ * différences.
+ *
+ * La fonction détermine si les SccrollEffecst::codes de @p expected
+ * et @p result diffèrent, et renvoie @c true si c'est le cas. Si
+ * l'option #NODIFF est définie pour le test, elle ne fait rien de
+ * plus. Dans le cas contraire, elle affiche la différence entre les
+ * deux structures.
+ *
+ * @param expected,result Les structures à comparer.
+ * @return true si les SccrollEffects::codes diffèrent.
+ */
+static bool sccroll_diffCodes(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+    __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Compare deux SccrollEffects::std et indique leurs
+ * différences.
+ *
+ * La fonction détermine si les SccrollEffecst::std de @p expected
+ * et @p result diffèrent, et renvoie @c true si c'est le cas. Si
+ * l'option #NODIFF est définie pour le test, elle ne fait rien de
+ * plus. Dans le cas contraire, elle affiche la différence entre les
+ * deux structures.
+ *
+ * @param expected,result Les structures à comparer.
+ * @return true si les SccrollEffects::std diffèrent.
+ */
+static bool sccroll_diffStd(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+    __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Compare deux SccrollEffects::files et indique leurs
+ * différences.
+ *
+ * La fonction détermine si les SccrollEffecst::files de @p expected
+ * et @p result diffèrent, et renvoie @c true si c'est le cas. Si
+ * l'option #NODIFF est définie pour le test, elle ne fait rien de
+ * plus. Dans le cas contraire, elle affiche la différence entre les
+ * deux structures.
+ *
+ * @param expected,result Les structures à comparer.
+ * @return true si au moins un des SccrollEffects::files diffère.
+ */
+static bool sccroll_diffFiles(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+    __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
  * @brief Affiche un message d'erreur décrivant la différence entre
  * @p exp et @p res.
  * @param expected Les effets attendus.
@@ -899,16 +950,28 @@ static void sccroll_files(SccrollEffects* restrict result)
 
 static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
 {
-    bool diff            = false;
-    size_t explen = 0, reslen = 0;
-    SccrollStrDiff infos = { .name = expected->name };
+    // On ne renvoie pas un OU direct, car on veut *tout* comparer, un
+    // OU direct s'arrêtant à la première différence.
+    bool diff = sccroll_diffCodes(expected, result);
+    diff |= sccroll_diffStd(expected, result);
+    diff |= sccroll_diffFiles(expected, result);
+    return diff;
+}
 
+static bool sccroll_diffCodes(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+{
     if (expected->code.value != result->code.value) {
-        diff = true;
         if(!sccroll_hasFlags(expected->flags, NODIFF))
             sccroll_pcodes(expected, result);
+        return true;
     }
+    return false;
+}
 
+static bool sccroll_diffStd(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+{
+    bool diff = false;
+    SccrollBlobDiff infos = { .name = expected->name };
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
         if (strcmp(expected->std[i].content.blob, result->std[i].content.blob)) {
             if (!sccroll_hasFlags(expected->flags, NODIFF)) {
@@ -917,7 +980,16 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
                 infos.desc = i == STDOUT_FILENO ? "stdout" : "stderr";
                 sccroll_pdiff(&infos);
             }
+            diff = true;
         }
+    return diff;
+}
+
+static bool sccroll_diffFiles(const SccrollEffects* restrict expected, const SccrollEffects* restrict result)
+{
+    bool diff = false;
+    size_t explen = 0, reslen = 0;
+    SccrollBlobDiff infos = { .name = expected->name };
 
     for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i, explen = 0, reslen = 0) {
         if (expected->files[i].content.size) {

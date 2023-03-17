@@ -154,10 +154,8 @@ $(PROJECT): init $(LIBS)/$(TARGET)
 
 # @brief Installe le logiciel compilé sur le système.
 install: $(PROJECT)
-	@sudo mkdir -p $(PREFIX)/lib/$(PROJECT)
-	@sudo rm -rf $(PREFIX)/lib/$(PROJECT)/*
-	@sudo cp -r $(LIBS)/* $(PREFIX)/lib/$(PROJECT)/
-	@sudo cp -r $(INCLUDES)/* $(PREFIX)/include/
+	@sudo cp -rf $(LIBS)/* $(PREFIX)/lib/
+	@sudo cp -rf $(INCLUDES)/* $(PREFIX)/include/
 	@$(INFO) ok $@
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)

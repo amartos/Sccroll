@@ -153,8 +153,8 @@ typedef enum SccrollCodeType {
  * @brief Structure de stockage du code d'erreur.
  */
 typedef struct SccrollCode {
-    SccrollCodeType type;
-    int value;
+    SccrollCodeType type; /**< Type du code d'erreur. */
+    int value;            /**< Valeur attendue. */
 } SccrollCode;
 
 /**
@@ -182,7 +182,8 @@ typedef struct SccrollCode {
  * une chaîne vide.
  *
  * Une entrée *via* stdin peut être simulée en passant une chaîne de
- * caractères à SccrollEffects::std[STDIN_FILENO].
+ * caractères à SccrollEffects::std[STDIN_FILENO], ou *via* le contenu
+ * d'un fichier comme pour les sorties standards.
  *
  * La structure ne peut stocker qu'un seul code d'erreur à la fois
  * dans SccrollEffects::code, étant donné que la valeur de errno n'est

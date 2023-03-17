@@ -55,7 +55,7 @@ int main(void)
     SccrollEffects tests = {
         .wrapper = test_print,
         .name = "test_print_success",
-        .std[STDERR_FILENO].content =
+        .std[STDERR_FILENO].content.blob =
         "run: tests/units/core/execution/run.c:43: test_print: Assertion `false && \"Test executed.\"' failed.",
         .code = { .type = SCCSIGNAL, .value = SIGABRT },
     };

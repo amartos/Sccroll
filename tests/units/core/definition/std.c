@@ -72,10 +72,10 @@ void test_integration(void)
 #define test_run(io)                            \
     test.wrapper = test_ ## io;                 \
     test.name = "test " #io " success";         \
-    test.std[fileno(io)].content = teststr;     \
+    test.std[fileno(io)].content.blob = teststr;\
     sccroll_register(&test);                    \
     test.name = "test " #io " fail";            \
-    test.std[fileno(io)].content = errstr;      \
+    test.std[fileno(io)].content.blob = errstr; \
     sccroll_register(&test);                    \
     test = zero
 
@@ -93,51 +93,51 @@ int main(void)
     test.wrapper = test_integration;
 
     test.name = "test all success";
-    test.std[STDIN_FILENO].content = teststr;
-    test.std[STDOUT_FILENO].content = teststr;
-    test.std[STDERR_FILENO].content = teststr;
+    test.std[STDIN_FILENO].content.blob = teststr;
+    test.std[STDOUT_FILENO].content.blob = teststr;
+    test.std[STDERR_FILENO].content.blob = teststr;
     sccroll_register(&test);
 
     test.name = "test all fail (stdin)";
-    test.std[STDIN_FILENO].content = errstr;
-    test.std[STDOUT_FILENO].content = teststr;
-    test.std[STDERR_FILENO].content = teststr;
+    test.std[STDIN_FILENO].content.blob = errstr;
+    test.std[STDOUT_FILENO].content.blob = teststr;
+    test.std[STDERR_FILENO].content.blob = teststr;
     sccroll_register(&test);
 
     test.name = "test all fail (stdout)";
-    test.std[STDIN_FILENO].content = teststr;
-    test.std[STDOUT_FILENO].content = errstr;
-    test.std[STDERR_FILENO].content = teststr;
+    test.std[STDIN_FILENO].content.blob = teststr;
+    test.std[STDOUT_FILENO].content.blob = errstr;
+    test.std[STDERR_FILENO].content.blob = teststr;
     sccroll_register(&test);
 
     test.name = "test all fail (stderr)";
-    test.std[STDIN_FILENO].content = teststr;
-    test.std[STDOUT_FILENO].content = teststr;
-    test.std[STDERR_FILENO].content = errstr;
+    test.std[STDIN_FILENO].content.blob = teststr;
+    test.std[STDOUT_FILENO].content.blob = teststr;
+    test.std[STDERR_FILENO].content.blob = errstr;
     sccroll_register(&test);
 
     test.name = "test all fail (stdin + stdout)";
-    test.std[STDIN_FILENO].content = errstr;
-    test.std[STDOUT_FILENO].content = errstr;
-    test.std[STDERR_FILENO].content = teststr;
+    test.std[STDIN_FILENO].content.blob = errstr;
+    test.std[STDOUT_FILENO].content.blob = errstr;
+    test.std[STDERR_FILENO].content.blob = teststr;
     sccroll_register(&test);
 
     test.name = "test all fail (stdin + stderr)";
-    test.std[STDIN_FILENO].content = errstr;
-    test.std[STDOUT_FILENO].content = teststr;
-    test.std[STDERR_FILENO].content = errstr;
+    test.std[STDIN_FILENO].content.blob = errstr;
+    test.std[STDOUT_FILENO].content.blob = teststr;
+    test.std[STDERR_FILENO].content.blob = errstr;
     sccroll_register(&test);
 
     test.name = "test all fail (stdout + stderr)";
-    test.std[STDIN_FILENO].content = teststr;
-    test.std[STDOUT_FILENO].content = errstr;
-    test.std[STDERR_FILENO].content = errstr;
+    test.std[STDIN_FILENO].content.blob = teststr;
+    test.std[STDOUT_FILENO].content.blob = errstr;
+    test.std[STDERR_FILENO].content.blob = errstr;
     sccroll_register(&test);
 
     test.name = "test all fail";
-    test.std[STDIN_FILENO].content = errstr;
-    test.std[STDOUT_FILENO].content = errstr;
-    test.std[STDERR_FILENO].content = errstr;
+    test.std[STDIN_FILENO].content.blob = errstr;
+    test.std[STDOUT_FILENO].content.blob = errstr;
+    test.std[STDERR_FILENO].content.blob = errstr;
     sccroll_register(&test);
 
     assert(sccroll_run() == 10);

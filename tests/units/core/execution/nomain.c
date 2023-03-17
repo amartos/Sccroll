@@ -31,4 +31,4 @@
 // clang-format on
 
 // Test simple, affiche un message sur stdout si le test est exécuté.
-SCCROLL_TEST(test_print, .std[STDOUT_FILENO].content="Test executed.") { puts("Test executed."); }
+SCCROLL_TEST(test_print, .std[STDOUT_FILENO].content.blob="Test executed.") { puts("Test executed."); }

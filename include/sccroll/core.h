@@ -126,13 +126,23 @@ typedef enum SccrollFlags {
 } SccrollFlags;
 
 /**
+ * @struct SccrollBlob
+ * @since 0.1.0
+ * @brief Gère une structure de donnée quelconque.
+ */
+typedef struct SccrollBlob {
+    void* blob;  /**< Le blob de données. */
+    size_t size; /**< La taille du blob. */
+} SccrollBlob;
+
+/**
  * @struct SccrollFile
  * @since 0.1.0
  * @brief Structure stockant le chemin d'un fichier et son contenu.
  */
 typedef struct SccrollFile {
     const char* path; /**< Le chemin du fichier. */
-    char* content;    /**< Le contenu du fichier. */
+    SccrollBlob content; /**< Le contenu du fichier. */
 } SccrollFile;
 
 /**
@@ -178,8 +188,9 @@ typedef struct SccrollCode {
  * sont ceux à enregistrer pour SccrollEffects::std::content. Ce
  * dernier sera remplacé dans tous les cas si
  * SccrollEffects::std::path est non @c NULL. Si les deux membres de
- * SccrollEffects::std sont @c NULL, la comparaison sera effctuée avec
- * une chaîne vide.
+ * SccrollEffects::std sont @c NULL, la comparaison sera effectuée
+ * avec une chaîne vide. Dans tous les cas, le contenu est considéré
+ * comme une chaîne de caractères.
  *
  * Une entrée *via* stdin peut être simulée en passant une chaîne de
  * caractères à SccrollEffects::std[STDIN_FILENO], ou *via* le contenu

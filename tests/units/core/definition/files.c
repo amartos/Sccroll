@@ -59,7 +59,7 @@ void preptests(void)
 
     for (int i = 0; i < SCCMAX; ++i, memset(path, 0, strlen(path))) {
         sprintf(path, template, "file", i);
-        test.files[i].content = i < SCCMAX/2 ? strdup(contentstr) : strdup(errstr);
+        test.files[i].content.blob = i < SCCMAX/2 ? strdup(contentstr) : strdup(errstr);
         test.files[i].path = strdup(path);
 
         if (i < SCCMAXSTD) {

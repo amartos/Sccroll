@@ -641,7 +641,7 @@ static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
     for (i = STDIN_FILENO; i < SCCMAXSTD; ++i) {
         string = prepared->std[i].path
             ? sccroll_fread(prepared->std[i].path, prepared->name)
-            : strdup(prepared->std[i].content ? prepared->std[i].content : "");
+            : strdup(prepared->std[i].content.blob ? prepared->std[i].content.blob : "");
         if (!sccroll_hasFlags(prepared->flags, NOSTRP)) {
             stripped = sccroll_strip(string);
             free(string);
@@ -765,8 +765,8 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
         }
 
         errno = 0;
-        length = sizeof(char)*strlen(result->std[STDIN_FILENO].content);
-        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO].content, length);
+        length = sizeof(char)*strlen(result->std[STDIN_FILENO].content.blob);
+        sccroll_pipes(PIPEWRTE, result->name, pipefd[STDIN_FILENO], result->std[STDIN_FILENO].content.blob, length);
         result->wrapper();
         sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 
@@ -857,19 +857,22 @@ static void sccroll_std(SccrollEffects* restrict result, int pipefd[SCCMAXSTD][2
 {
     // La chaîne de charactères est identique (non dupliquée) avec
     // expected. Libérer celle de result engendrerait une erreur.
-    result->std[STDIN_FILENO].content = NULL;
+    result->std[STDIN_FILENO].content.blob = NULL;
 
     char buffer[SCCMAX] = { 0 };
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i, memset(buffer, 0, strlen(buffer))) {
         sccroll_pipes(PIPEREAD, result->name, pipefd[i], buffer, SCCMAX);
-        result->std[i].content = sccroll_hasFlags(result->flags, NOSTRP) ? strdup(buffer) : sccroll_strip(buffer);
+        result->std[i].content.blob =
+            sccroll_hasFlags(result->flags, NOSTRP)
+            ? strdup(buffer)
+            : sccroll_strip(buffer);
     }
 }
 
 static void sccroll_files(SccrollEffects* restrict result)
 {
     for (int i = 0; i < SCCMAX && result->files[i].path; ++i)
-        result->files[i].content = sccroll_fread(result->files[i].path, result->name);
+        result->files[i].content.blob = sccroll_fread(result->files[i].path, result->name);
 }
 
 // clang-format off
@@ -891,22 +894,21 @@ static bool sccroll_diff(const SccrollEffects* restrict expected, const SccrollE
     }
 
     for (int i = STDOUT_FILENO; i < SCCMAXSTD; ++i)
-        if (strcmp(expected->std[i].content, result->std[i].content)) {
-            diff = true;
+        if (strcmp(expected->std[i].content.blob, result->std[i].content.blob)) {
             if (!sccroll_hasFlags(expected->flags, NODIFF)) {
-                infos.expected = expected->std[i].content;
-                infos.result = result->std[i].content;
+                infos.expected = expected->std[i].content.blob;
+                infos.result = result->std[i].content.blob;
                 infos.desc = i == STDOUT_FILENO ? "stdout" : "stderr";
                 sccroll_pdiff(&infos);
             }
         }
 
     for (int i = 0; i < SCCMAX && (bool)expected->files[i].path; ++i)
-        if (strcmp(expected->files[i].content, result->files[i].content)) {
+        if (strcmp(expected->files[i].content.blob, result->files[i].content.blob)) {
             diff = true;
             if (!sccroll_hasFlags(expected->flags, NODIFF)) {
-                infos.expected = expected->files[i].content;
-                infos.result = result->files[i].content;
+                infos.expected = expected->files[i].content.blob;
+                infos.result = result->files[i].content.blob;
                 infos.desc = expected->files[i].path;
                 sccroll_pdiff(&infos);
             }
@@ -991,8 +993,8 @@ static void sccroll_review(int report[REPORTMAX])
 
 static void sccroll_free(const SccrollEffects* restrict effects)
 {
-    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i].content);
-    for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content);
+    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i].content.blob);
+    for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content.blob);
     free((void*)effects);
 }
 

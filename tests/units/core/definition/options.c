@@ -55,8 +55,8 @@ void test_dummy(void)
 static SccrollEffects test = {
     .wrapper = test_dummy,
     .std = {
-        [STDOUT_FILENO].content = strpstdout,
-        [STDERR_FILENO].content = strpstderr,
+        [STDOUT_FILENO].content.blob = strpstdout,
+        [STDERR_FILENO].content.blob = strpstderr,
     },
 };
 
@@ -76,8 +76,8 @@ void test_nostrp(void)
 
     SccrollEffects test_opt = test;
     test_opt.flags = NOSTRP;
-    test_opt.std[STDOUT_FILENO].content = nostrpstdoutnewline;
-    test_opt.std[STDERR_FILENO].content = nostrpstderr;
+    test_opt.std[STDOUT_FILENO].content.blob = nostrpstdoutnewline;
+    test_opt.std[STDERR_FILENO].content.blob = nostrpstderr;
     sccroll_register(&test_opt);
     assert(!sccroll_run());
 }
@@ -91,7 +91,7 @@ void test_nofork(void)
     test_opt.flags = NOFORK;
     // NOFORK ne devrait pas stopper le programme en cas de différence
     // observé/attendu.
-    test_opt.std[STDOUT_FILENO].content = errstr;
+    test_opt.std[STDOUT_FILENO].content.blob = errstr;
     sccroll_register(&test_opt);
     assert(sccroll_run() == 1);
     assert(count == 1);
@@ -101,8 +101,8 @@ void test_nodiff(void)
 {
     SccrollEffects test_opt = test;
     test_opt.name = "test_nodiff";
-    test_opt.std[STDOUT_FILENO].content = errstr;
-    test_opt.std[STDERR_FILENO].content = strpstdout;
+    test_opt.std[STDOUT_FILENO].content.blob = errstr;
+    test_opt.std[STDERR_FILENO].content.blob = strpstdout;
     sccroll_register(&test_opt);
     test_opt.flags = NODIFF;
     sccroll_register(&test_opt);
@@ -117,8 +117,8 @@ void test_integration(void)
     test_opt.name = "test_all";
     test_opt.flags = ~0;
 
-    test_opt.std[STDOUT_FILENO].content = nostrpstdoutnewline;
-    test_opt.std[STDERR_FILENO].content = errstr;
+    test_opt.std[STDOUT_FILENO].content.blob = nostrpstdoutnewline;
+    test_opt.std[STDERR_FILENO].content.blob = errstr;
 
     sccroll_register(&test_opt);
     assert(sccroll_run() == 1);

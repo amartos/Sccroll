@@ -748,10 +748,15 @@ static void sccroll_fread(SccrollFile* restrict file, const char* restrict name)
         && ferror(stream), file->path, name
     );
     fclose(stream);
-    void* blob = calloc(file->content.size, sizeof(char));
-    if (!blob) err(EXIT_FAILURE, "could not allocate for blob");
-    memcpy(blob, buffer, file->content.size*sizeof(char));
-    file->content.blob = blob;
+    // +char pour considérer les comparaisons de chaînes de
+    // caractères. Puisque size n'est pas modifié, le dernier octet
+    // est nul et "caché" à la comparaison.
+    file->content.blob = blobdup(
+        buffer,
+        file->content.size < sizeof(buffer)
+        ? file->content.size+sizeof(char)
+        : sizeof(buffer)
+    );
 }
 
 // clang-format off

@@ -20,6 +20,7 @@
 #define _GNU_SOURCE
 
 #include "sccroll/helpers.h"
+#include "sccroll/data.h"
 
 #include <argz.h>
 #include <err.h>

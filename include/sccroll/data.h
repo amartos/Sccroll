@@ -19,7 +19,9 @@
 
 #include "sccroll/helpers.h"
 
+#include <err.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 // clang-format off
@@ -53,6 +55,27 @@ void sccroll_monkey(void* blob, size_t size) __attribute__((leaf, nothrow, nonnu
  * remplis de données aléatoires, ou NULL en cas d'erreur.
  */
 void* sccroll_rndalloc(size_t nmemb, size_t size);
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ * @name Copies de données.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief Copie un block de donnée.
+ * @param blob Le block à copier.
+ * @param size Le nombre d'octets de blob à copier.
+ * @return Un pointeur vers une copie des @p size premiers octets de
+ * @p blob, ou un pointeur vers un emplacement mémoire de @p size
+ * octets initialisés à 0 si @p blob est NULL, ou NULL si @p size vaut
+ * 0.
+ */
+void* blobdup(const void* restrict blob, size_t size);
 
 // clang-format off
 

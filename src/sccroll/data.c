@@ -68,3 +68,12 @@ void* sccroll_rndalloc(size_t nmemb, size_t size)
     if (randomized) sccroll_monkey(randomized, real_size);
     return randomized;
 }
+
+void* blobdup(const void* restrict blob, size_t size)
+{
+    if (!size) return NULL;
+    void* copy = calloc(1, size);
+    if (!copy) err(EXIT_FAILURE, "could not copy blob");
+    if (blob) memcpy(copy, blob, size);
+    return copy;
+}

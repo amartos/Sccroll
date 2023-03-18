@@ -75,6 +75,25 @@ typedef enum SccrollColors{
  */
 #define COLSTRFMT COLSTART "%s" COLEND
 
+/**
+ * @def HEXFMT
+ * @since 0.1.0
+ * @brief Format d'affichage des octets.
+ * @param \* Le nombre de chiffres à afficher.
+ * @param x La valeur de l'octet.
+ */
+#define HEXFMT "%0*x"
+
+/**
+ * @def COLHEXFMT
+ * @since 0.1.0
+ * @brief Ajoute les codes ANSI de coloration à une valeur d'octet.
+ * @param i Un code SccrollFonts pour l'apparence du texte
+ * @param \* Le nombre de chiffres à afficher.
+ * @param x La valeur de l'octet.
+ */
+#define COLHEXFMT COLSTART HEXFMT COLEND
+
 // clang-format off
 
 /******************************************************************************
@@ -1110,19 +1129,40 @@ static void sccroll_pdiff(const SccrollBlobDiff* restrict infos)
 
 static void sccroll_dump(const SccrollBlobDiff* restrict infos)
 {
-    char* data = infos->expected->blob;
-    int digits = sizeof(char)*2;
+    const int digits         = sizeof(char)*2;
+    char expbuffer[SCCMAX/2] = { 0 };
+    char resbuffer[SCCMAX/2] = { 0 };
+    char expected[SCCMAX*2]  = "exp (bytes): ";
+    char result[SCCMAX*2]    = "res (bytes): ";
+    char* expdata            = infos->expected->blob;
+    char* resdata            = infos->result->blob;
+    bool same                = false;
+
     fprintf(stderr, DIFFFMT, infos->name, infos->desc);
+    for (size_t i = 0; i <= infos->expected->size || i <= infos->result->size; ++i) {
+        same =
+            i <= infos->expected->size
+            && i <= infos->result->size
+            && expdata[i] == resdata[i];
 
-    fprintf(stderr, "exp (bytes): " COLSTART, NORMAL, GREEN);
-    for (size_t i = 0; i < infos->expected->size; ++i)
-        fprintf(stderr, "%0*x", digits, *data++);
-    fprintf(stderr, COLEND "\nres (bytes): " COLSTART, NORMAL, RED);
+        if (same && i <= infos->expected->size)
+            sprintf(expbuffer, HEXFMT, digits, expdata[i]);
+        else if (i <= infos->expected->size)
+            sprintf(expbuffer, COLHEXFMT, NORMAL, GREEN, digits, expdata[i]);
+        else if (*expbuffer)
+            memset(expbuffer, 0, sizeof(char)*strlen(expbuffer));
 
-    data = infos->result->blob;
-    for (size_t i = 0; i < infos->result->size; ++i)
-        fprintf(stderr, "%0*x", digits, *data++);
-    fprintf(stderr, COLEND "\n");
+        if (same && i <= infos->result->size)
+            sprintf(resbuffer, HEXFMT, digits, resdata[i]);
+        else if (i <= infos->result->size)
+            sprintf(resbuffer, COLHEXFMT, NORMAL, RED, digits, resdata[i]);
+        else if (*resbuffer)
+            memset(resbuffer, 0, sizeof(char)*strlen(resbuffer));
+
+        strcat(expected, expbuffer);
+        strcat(result, resbuffer);
+    }
+    fprintf(stderr, "%s\n%s\n", expected, result);
 }
 
 static void sccroll_review(int report[REPORTMAX])

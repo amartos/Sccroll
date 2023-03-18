@@ -232,6 +232,15 @@ static SccrollEffects* sccroll_gen(void);
 
 /**
  * @since 0.1.0
+ * @brief Duplique une structure SccrollBlob.
+ * @param dest La structure SccrollBlob de destination.
+ * @param src La structure SccrollBlob à dupliquer.
+ */
+static void sccroll_blobcpy(SccrollBlob* restrict dest, const SccrollBlob* restrict src)
+    __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
  * @brief Détermine si des options nécessitant un pré-traitement ont
  * été données, et les applique.
  * @attention Utilise malloc.
@@ -696,19 +705,12 @@ static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
     SccrollEffects* prepared = sccroll_dup(effects);
     int i;
     char *stripped;
-    for (i = STDIN_FILENO; i < SCCMAXSTD; ++i) {
-        if (prepared->std[i].path)
-            sccroll_fread(&prepared->std[i], prepared->name);
-        else if (!prepared->std[i].content.blob)
-            prepared->std[i].content.blob = strdup("");
-        else if (prepared->std[i].content.blob)
-            prepared->std[i].content.blob = strdup(prepared->std[i].content.blob);
+    for (i = STDIN_FILENO; i < SCCMAXSTD; ++i)
         if (!sccroll_hasFlags(prepared->flags, NOSTRP)) {
             stripped = sccroll_strip(prepared->std[i].content.blob);
             free(prepared->std[i].content.blob);
             prepared->std[i].content.blob = stripped;
         }
-    }
 
     return prepared;
 }
@@ -716,7 +718,23 @@ static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
 static SccrollEffects* sccroll_dup(const SccrollEffects* restrict effects)
 {
     SccrollEffects* copy = sccroll_gen();
-    memcpy(copy, effects, sizeof(SccrollEffects));
+    copy->name    = effects->name;
+    copy->wrapper = effects->wrapper;
+    copy->flags   = effects->flags;
+    copy->code    = effects->code;
+
+    for (int i = 0; i < SCCMAX && (effects->files[i].path || i < SCCMAXSTD); ++i) {
+        if (i < SCCMAXSTD) {
+            if ((copy->std[i].path = effects->std[i].path))
+                sccroll_fread(&copy->std[i], effects->name);
+            else
+                sccroll_blobcpy(&copy->std[i].content, &effects->std[i].content);
+        }
+
+        if ((copy->files[i].path = effects->files[i].path))
+            sccroll_blobcpy(&copy->files[i].content, &effects->files[i].content);
+    }
+
     return copy;
 }
 
@@ -725,6 +743,16 @@ static SccrollEffects* sccroll_gen(void)
     SccrollEffects* effects = calloc(1, sizeof(SccrollEffects));
     sccroll_err(!effects, "alloc", "SccrollEffects");
     return effects;
+}
+
+static void sccroll_blobcpy(SccrollBlob* restrict dest, const SccrollBlob* restrict src)
+{
+    if (!src->blob) dest->blob = strdup("");
+    else if (!src->size) dest->blob = strdup(src->blob);
+    else {
+        dest->blob = blobdup(src->blob, src->size);
+        dest->size = src->size;
+    }
 }
 
 static char* sccroll_strip(const char* oldstring)

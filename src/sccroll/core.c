@@ -1116,8 +1116,11 @@ static void sccroll_review(int report[REPORTMAX])
 
 static void sccroll_free(const SccrollEffects* restrict effects)
 {
-    for (int i = STDIN_FILENO; i < SCCMAXSTD; ++i) free(effects->std[i].content.blob);
-    for (int i = 0; i < SCCMAX && effects->files[i].path; ++i) free(effects->files[i].content.blob);
+    for (int i = 0; i < SCCMAX && (effects->files[i].path || i < SCCMAXSTD); ++i) {
+        if (i < SCCMAXSTD) free(effects->std[i].content.blob);
+        free(effects->files[i].content.blob);
+    }
+
     free((void*)effects);
 }
 

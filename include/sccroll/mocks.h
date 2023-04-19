@@ -121,6 +121,18 @@
  * @since 0.1.0
  * @brief Drapeaux pour SccrollMockTrigger::mock afin d'indiquer quel
  * simulacre pré-fourni doit être en erreur.
+ * @attention
+ * Le drapeau #SCCEABORT est là pour aider la récupération
+ * de données de gcov() malgré la sortie abrupte du programme. Sa
+ * capacité de déclenchement d'erreur est utilisée surtout pour tester
+ * le simulacre.
+ *
+ * Il est tout à fait possible de déclencher son erreur attitrée dans
+ * un test unitaire quelconque, mais le simulacre va utiliser exit() à
+ * la place de abort(), et donc va déclencher toutes les fonctions
+ * inscrites pour appel à l'exit. Il est déconseillé de l'utiliser
+ * dans ce but.
+ *
  * @attention Les drapeaux **ne peuvent pas** être combinés pour
  * déclencher plusieurs erreurs simultanément.
  */
@@ -147,7 +159,7 @@ typedef enum SccrollMockOptions {
     SCCMNONE  = 0, /**< Pas d'options. */
     SCCMFLUSH = 2, /**< Effacer du module le pointeur de la structure
                     * SccrollMockTrigger après le premier appel de simulacre
-                    * en erreur. */
+                    * en erreur. SCCEABORT a cette option par défaut. */
     SCCMABORT = 4, /**< Lever une erreur au prochain appel de
                     * simulacre après celui en erreur (ou si delay est
                     * négatif). SCCEABORT a cette option par défaut. */

@@ -145,6 +145,14 @@ const char* sccroll_mockName(SccrollMockFlags mock)
 
 SCCROLL_MOCK(void, abort, void)
 {
+    // Normalement, créer un simulacre de abort() ou autre fonctions
+    // qui terminent le programme est vivement déconseillé, et à
+    // raison.
+    // Toutefois, abort() ne gère pas les données de gcov(), ce qui
+    // pose problème pour la couverture. Ce simulacre est donc là pour
+    // régler le problème. L'erreur déclenchée est là surtout pour
+    // tester le simulacre, et l'utilisateur est libre de l'ignorer.
+
     // On ne tient pas compte du délai ici car on cherche à quitter,
     // et ne pas le faire risque de provoquer plus de problèmes
     // qu'autre chose. Sans compter que vérifier qu'un abort a bien
@@ -153,6 +161,9 @@ SCCROLL_MOCK(void, abort, void)
     // elle est de quitter de la mauvaise manière: au lieu de
     // s'arrêter avec un signal SIGABRT et un status EXIT_SUCCESS, la
     // fonction s'arrête avec exit et un status d'erreur.
+    // De plus, quitter avec exit() au lieu de abort() va déclencher
+    // d'autres fonctions (les destructors/rappels de atexit), ce qui
+    // indique d'autant plus une erreur.
     sccroll_mockFire(SCCEABORT)
         ? sccroll_mockFatal(exit(SIGABRT))
         : sccroll_mockFatal(__real_abort());

@@ -44,6 +44,8 @@
  * @brief Détermine si le simulacre décrit par @p flag est celui
  * indiqué par #trigger.
  * @param flag Le code SccrollMockFlags du simulacre appelant.
+ * @return true si le simulacre @p flag est celui indiqué par
+ * #trigger, sinon false.
  */
 #define sccroll_mockCalled(flag) (trigger && trigger->mock == flag)
 

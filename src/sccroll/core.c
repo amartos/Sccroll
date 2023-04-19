@@ -694,10 +694,12 @@ static void sccroll_atrun(void)
     SCCSEP = strdup(sep);
 }
 
-weak_alias(sccroll_void, sccroll_init);
-weak_alias(sccroll_void, sccroll_clean);
-weak_alias(sccroll_void, sccroll_before);
-weak_alias(sccroll_void, sccroll_after);
+// Pas de classe de stockage ici car ces fonctions font partie de
+// l'API.
+weak_alias(, sccroll_void, sccroll_init);
+weak_alias(, sccroll_void, sccroll_clean);
+weak_alias(, sccroll_void, sccroll_before);
+weak_alias(, sccroll_void, sccroll_after);
 static void sccroll_void(void) {}
 
 // clang-format off
@@ -707,7 +709,9 @@ static void sccroll_void(void) {}
  ******************************************************************************/
 // clang-format on
 
-strong_alias(sccroll_push, sccroll_register);
+// Pas de classe de stockage ici car sccroll_register fait partie de
+// l'API.
+strong_alias(, sccroll_push, sccroll_register);
 static void sccroll_push(const SccrollEffects* restrict expected)
 {
     struct SccrollNode* node = calloc(1, sizeof(struct SccrollNode));
@@ -813,7 +817,8 @@ static void sccroll_fread(SccrollFile* restrict file, const char* restrict name)
  ******************************************************************************/
 // clang-format on
 
-weak_alias(sccroll_main, main);
+// Pas de classe de stockage ici car main fait partie de l'API.
+weak_alias(, sccroll_main, main);
 static int sccroll_main(void)
 {
     return sccroll_run() ? EXIT_FAILURE : EXIT_SUCCESS;

@@ -90,8 +90,8 @@
  * le simulacre ne prend aucun paramètre.
  */
 #define SCCROLL_MOCK(retval, name, ...)         \
-    attr_rename(name, __real_##name);           \
-    attr_rename(name, __wrap_##name);           \
+    attr_rename(extern, name, __real_##name);   \
+    attr_rename(extern, name, __wrap_##name);   \
     retval __wrap_##name(__VA_ARGS__)
 
 // clang-format off

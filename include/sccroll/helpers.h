@@ -77,6 +77,8 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
  * @{
  * @note Les attributs de la fonction originelle sont automatiquement
  * copiés.
+ * @param storage Un spécificateur de classe de stockage (@c extern,
+ * @c static, @c register, @c auto, ou rien).
  * @param name Nom de la fonction d'origine.
  * @param aliasname Nom de l'alias.
  * @param ... Attributs supplémentaires pour l'alias.
@@ -93,8 +95,8 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
  * @note Les attributes de la fonction originelle sont automatiquement
  * copiés.
  */
-#define attr_rename(name, aliasname, ...)           \
-    extern __typeof__(name) aliasname               \
+#define attr_rename(storage, name, aliasname, ...)     \
+    storage __typeof__(name) aliasname                 \
     __attribute__((copy(name), ##__VA_ARGS__))
 
 /**
@@ -102,21 +104,35 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
  * @since 0.1.0
  * @brief Génère un alias du type de la librairie GNU C.
  */
-#define attr_alias(name, aliasname, ...) attr_rename(name, aliasname, alias(#name))
+#define attr_alias(storage, name, aliasname, ...)      \
+    attr_rename(storage, name, aliasname, alias(#name))
 
 /**
  * @def strong_alias
  * @since 0.1.0
  * @brief Génère un alias fort.
  */
-#define strong_alias(name, aliasname) attr_alias(name, aliasname)
+#define strong_alias(storage, name, aliasname)  \
+    attr_alias(storage, name, aliasname)
 
 /**
  * @def weak_alias
  * @since 0.1.0
  * @brief Génère un alias faible.
  */
-#define weak_alias(name, aliasname) attr_alias(name, aliasname, weak)
+#define weak_alias(storage, name, aliasname)    \
+    attr_alias(storage, name, aliasname, weak)
+
+/**
+ * @def weak_alias
+ * @since 0.1.0
+ * @brief Génère un alias d'une fonction d'un autre module.
+ * @param aliasmacro La macro d'alias à utiliser pour générer
+ * l'alias et qui prend les paramètres @c storage, @c name et
+ * @c aliasname.
+ */
+#define extern_alias(aliasmacro, name, aliasname)   \
+    aliasmacro(extern, name, aliasname)
 
 // clang-format off
 

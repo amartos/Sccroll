@@ -53,7 +53,7 @@ void arc4random_buf(void* blob, size_t size) __attribute__((weak, nonnull(1)));
 static void sccroll_peanuts(void) { srandom(time(NULL)); }
 
 // arc4random_buf remplit déjà le rôle de sccroll_monkey.
-weak_alias(arc4random_buf, sccroll_monkey);
+weak_alias(,arc4random_buf, sccroll_monkey);
 
 void arc4random_buf(void* blob, size_t size)
 {

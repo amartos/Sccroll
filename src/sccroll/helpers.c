@@ -28,6 +28,16 @@ unsigned sccroll_hasFlags(unsigned flags, unsigned values)
     return (flags & values);
 }
 
+int sccroll_simplefork(const char* restrict desc, SccrollFunc callback)
+{
+    int status = 0;
+    pid_t pid = fork();
+    if (pid < 0) err(EXIT_FAILURE, "%s", desc);
+    else if (pid == 0) callback(), exit(EXIT_SUCCESS);
+    wait(&status);
+    return status;
+}
+
 const char* strerrorname_np(int errnum)
 {
     switch(errnum)

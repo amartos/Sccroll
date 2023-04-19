@@ -25,12 +25,26 @@
 // clang-format off
 
 /******************************************************************************
+ * Préparation des tests
+ ******************************************************************************/
+// clang-format on
+
+static const int error = 123;
+
+static void sccroll_success(void) { }
+static void sccroll_fatal(void) { abort(); }
+static void sccroll_error(void) { exit(error); }
+
+// clang-format off
+
+/******************************************************************************
  * Exécution des tests
  ******************************************************************************/
 // clang-format on
 
 int main(void)
 {
+    int status;
     unsigned flags = 2|8|32;
     unsigned values = 0;
     assert(!sccroll_hasFlags(flags, values));
@@ -44,4 +58,14 @@ int main(void)
     assert(sccroll_hasFlags(flags, values) == values);
     values = flags;
     assert(sccroll_hasFlags(flags, values) == values);
+
+    status = sccroll_simplefork("success", sccroll_success);
+    assert(WTERMSIG(status) == 0);
+    assert(WEXITSTATUS(status) == EXIT_SUCCESS);
+    status = sccroll_simplefork("fatal", sccroll_fatal);
+    assert(WTERMSIG(status) == SIGABRT);
+    assert(WEXITSTATUS(status) == 0);
+    status = sccroll_simplefork("error", sccroll_error);
+    assert(WTERMSIG(status) == 0);
+    assert(WEXITSTATUS(status) == error);
 }

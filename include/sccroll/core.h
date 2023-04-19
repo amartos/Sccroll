@@ -97,13 +97,6 @@ void sccroll_after(void);
 // clang-format on
 
 /**
- * @typedef SccrollFunc
- * @since 0.1.0
- * @brief Prototype des fonctions de test unitaires.
- */
-typedef void (*SccrollFunc)(void);
-
-/**
  * @enum SccrollIndexes
  * @since 0.1.0
  * @brief Index des tables de SccrollEffects.

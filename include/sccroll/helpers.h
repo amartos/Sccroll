@@ -20,6 +20,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
+#include <err.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 // clang-format off
 
@@ -38,6 +41,33 @@
  * @return @p values si @p flags les contient, sinon 0.
  */
 unsigned sccroll_hasFlags(unsigned flags, unsigned values);
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ * @name Gestion de fonctions de rappel.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @typedef SccrollFunc
+ * @since 0.1.0
+ * @brief Prototype des fonctions de test unitaires.
+ */
+typedef void (*SccrollFunc)(void);
+
+/**
+ * @since 0.1.0
+ * @brief Exécute une fonction de rappel dans un fork.
+ * @param desc La description de la fonction de rappel.
+ * @param callback La fonction de rappel.
+ * @return Le status obtenu avec l'appel de wait(). Si la fonction de
+ * rappel ne fait pas s'arrêter le programme, le fork quitte avec pour
+ * status EXIT_SUCCESS.
+ */
+int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attribute__((nonnull));
 
 // clang-format off
 

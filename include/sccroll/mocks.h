@@ -154,6 +154,8 @@ typedef enum SccrollMockFlags {
     SCCEFOPEN,    /**< Drapeau de fopen() et ferror(). */
     SCCEFSEEK,    /**< Drapeau de fseek() et ferror(). */
     SCCEFTELL,    /**< Drapeau de ftell() et ferror(). */
+    SCCEFREAD,    /**< Drapeau de fread() et ferror(). */
+    SCCEFWRITE,   /**< Drapeau de fwrite() et ferror(). */
     SCCEMAX,      /**< Valeur maximale des mocks individuels. */
 } SccrollMockFlags;
 
@@ -312,6 +314,8 @@ sccroll_mockPrototype(ferror);
 sccroll_mockPrototype(fopen);
 sccroll_mockPrototype(fseek);
 sccroll_mockPrototype(ftell);
+sccroll_mockPrototype(fread);
+sccroll_mockPrototype(fwrite);
 /** @} */
 
 /**
@@ -330,6 +334,8 @@ sccroll_mockPrototype(ftell);
 #define fopen(...)  sccroll_mockCall(fopen, SCCEFOPEN, __VA_ARGS__)
 #define fseek(...) sccroll_mockCall(fseek, SCCEFSEEK, __VA_ARGS__)
 #define ftell(...)  sccroll_mockCall(ftell, SCCEFTELL, __VA_ARGS__)
+#define fread(...)  sccroll_mockCall(fread, SCCEFREAD, __VA_ARGS__)
+#define fwrite(...) sccroll_mockCall(fwrite, SCCEFWRITE, __VA_ARGS__)
 /** @} */
 
 // clang-format off

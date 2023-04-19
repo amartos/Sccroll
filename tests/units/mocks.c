@@ -145,6 +145,7 @@ void test_predefined_mocks(void)
     const char* teststr = "foobar test 123";
     ssize_t lenstr = strlen(teststr);
     const char* textfilepath = "tests/assets/blobs/textfile";
+    char template[] = "/tmp/sccroll.errors.XXXXXX";
     char text[SCCMAX] = { 0 };
     FILE* textfile = fopen(textfilepath, "r");
     if (!textfile) err(EXIT_FAILURE, "%s", textfilepath);
@@ -171,7 +172,30 @@ void test_predefined_mocks(void)
         (fseek(textfile, 1L, SEEK_SET) == -1)
     );
     testMock(SCCEFTELL, 0, (ftell(textfile) == 1), (ftell(textfile) == -1));
+
+    testMock(SCCEFREAD, 0, true, (fread(buf, sizeof(char), SCCMAX, textfile), ferror(textfile) != 0));
+    testMock(SCCEFWRITE, 0, true, (fwrite(text, sizeof(char), SCCMAX, textfile), ferror(textfile) != 0));
+    assert(textfile);
+    rewind(textfile);
+    testMock(
+        SCCEFREAD, 0,
+        (fread(buf, sizeof(char), SCCMAX, textfile) == textlen),
+        (fread(buf, sizeof(char), SCCMAX, textfile) == 0)
+    );
+    assert(!strcmp(buf, text));
+    memset(buf, 0, sizeof(buf));
     fclose(textfile), textfile = NULL;
+
+    mkstemp(template);
+    textfile = fopen(template, "w+");
+    if (!textfile) err(EXIT_FAILURE, "%s", textfilepath);
+    testMock(
+        SCCEFWRITE, 0,
+        (fwrite(text, sizeof(char), textlen, textfile) == textlen),
+        (fwrite(text, sizeof(char), textlen, textfile) == 0)
+    );
+    fseek(textfile, 0L, SEEK_SET);
+    assert(fread(buf, sizeof(char), textlen, textfile) == textlen);
 
     testMock(SCCECALLOC, 0, (dummy=calloc(1,sizeof(char))), calloc(1, sizeof(char)) == NULL);
     free(dummy);
@@ -384,6 +408,38 @@ void test_fullerrors(void)
             break;
         }
         ftell(tmp);
+        break;
+    case SCCEFREAD:
+        mkstemp(template);
+        tmp = fopen(template, "r+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        blob = calloc(1,1);
+        if (!blob) {
+            errmsg = "could not allocate for blob";
+            break;
+        }
+        fread(blob,1,1,tmp);
+        free(blob);
+        fclose(tmp);
+        break;
+    case SCCEFWRITE:
+        mkstemp(template);
+        tmp = fopen(template, "w+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        blob = calloc(1,1);
+        if (!blob) {
+            errmsg = "could not allocate for blob";
+            break;
+        }
+        fwrite(blob,1,1,tmp);
+        free(blob);
+        fclose(tmp);
         break;
     case SCCENONE: exit(0); break;
     default:

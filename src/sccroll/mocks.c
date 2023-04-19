@@ -164,6 +164,8 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
             switch(trigger[SCCMMOCK])
             {
             default: break;
+            case SCCEFWRITE: __attribute__((fallthrough));
+            case SCCEFREAD:  __attribute__((fallthrough));
             case SCCEFTELL: __attribute__((fallthrough));
             case SCCEFSEEK: __attribute__((fallthrough));
             case SCCEFOPEN:
@@ -218,6 +220,8 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEFOPEN:  return "fopen";
     case SCCEFSEEK:  return "fseek";
     case SCCEFTELL:  return "ftell";
+    case SCCEFREAD:  return "fread";
+    case SCCEFWRITE: return "fwrite";
     }
 }
 
@@ -337,6 +341,20 @@ SCCROLL_MOCK(
 );
 
 SCCROLL_MOCK(sccroll_mockFire(SCCEFTELL), -1, long, ftell, FILE* stream, stream);
+
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEFREAD),
+    0, size_t, fread,
+    void* ptr SCCCOMMA size_t size SCCCOMMA size_t nmemb SCCCOMMA FILE* restrict stream,
+    ptr, size, nmemb, stream
+);
+
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEFWRITE),
+    0, size_t, fwrite,
+    const void* ptr SCCCOMMA size_t size SCCCOMMA size_t nmemb SCCCOMMA FILE* restrict stream,
+    ptr, size, nmemb, stream
+);
 
 // clang-format off
 

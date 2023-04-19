@@ -75,6 +75,8 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
  * @}
  * @name Alias Macros générant des alias de fonctions
  * @{
+ * @note Les attributs de la fonction originelle sont automatiquement
+ * copiés.
  * @param name Nom de la fonction d'origine.
  * @param aliasname Nom de l'alias.
  * @param ... Attributs supplémentaires pour l'alias.
@@ -82,12 +84,25 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
 // clang-format on
 
 /**
+ * @def attr_rename
+ * @since 0.1.0
+ * @brief Génère une fonction alias d'une autre fonctions.
+ * @attention "Alias" signifie ici une fonction quasi-identique, mais
+ * avec un nom différent. Ce n'est pas la définition exacte des
+ * "alias" de la librairie GNU C.
+ * @note Les attributes de la fonction originelle sont automatiquement
+ * copiés.
+ */
+#define attr_rename(name, aliasname, ...)           \
+    extern __typeof__(name) aliasname               \
+    __attribute__((copy(name), ##__VA_ARGS__))
+
+/**
  * @def attr_alias
  * @since 0.1.0
- * @brief Génère un alias.
+ * @brief Génère un alias du type de la librairie GNU C.
  */
-#define attr_alias(name, aliasname, ...) \
-    extern __typeof__(name) aliasname __attribute__((alias(#name), ##__VA_ARGS__))
+#define attr_alias(name, aliasname, ...) attr_rename(name, aliasname, alias(#name))
 
 /**
  * @def strong_alias

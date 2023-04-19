@@ -74,8 +74,8 @@
  * type et le nom de la variable (ce dernier peut être différent de
  * celui de la fonction originelle) non séparés par une virgule.
  *
- * Il est possible de fournir des attributs à la fonction; ils doivent
- * toutefois être placés avant la macro pour être pris en compte.
+ * Les attributs de la fonction originelle sont copiés
+ * automatiquement.
  *
  * @attention Cette macro est conçue pour une compilation avec GCC.
  * @attention L'utilisation de cette macro nécessite de passer le
@@ -90,8 +90,8 @@
  * le simulacre ne prend aucun paramètre.
  */
 #define SCCROLL_MOCK(retval, name, ...)         \
-    extern __typeof__(name) __real_##name;      \
-    extern __typeof__(name) __wrap_##name;      \
+    attr_rename(name, __real_##name);           \
+    attr_rename(name, __wrap_##name);           \
     retval __wrap_##name(__VA_ARGS__)
 
 // clang-format off

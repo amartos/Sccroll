@@ -163,6 +163,14 @@ void test_predefined_mocks(void)
     assert(fread(buf, sizeof(char), SCCMAX, textfile) == textlen);
     assert(!strcmp(buf, text));
     memset(buf, 0, sizeof(buf));
+    testMock(SCCEFSEEK, 0, true, (fseek(textfile, 1L, SEEK_SET), ferror(textfile) != 0));
+    testMock(SCCEFTELL, 0, true, (ftell(textfile), ferror(textfile) != 0));
+    testMock(
+        SCCEFSEEK, 0,
+        (fseek(textfile, 1L, SEEK_SET) == 0),
+        (fseek(textfile, 1L, SEEK_SET) == -1)
+    );
+    testMock(SCCEFTELL, 0, (ftell(textfile) == 1), (ftell(textfile) == -1));
     fclose(textfile), textfile = NULL;
 
     testMock(SCCECALLOC, 0, (dummy=calloc(1,sizeof(char))), calloc(1, sizeof(char)) == NULL);
@@ -358,6 +366,24 @@ void test_fullerrors(void)
         mkstemp(template);
         tmp = fopen(template, "r+");
         if (tmp) fclose(tmp);
+        break;
+    case SCCEFSEEK:
+        mkstemp(template);
+        tmp = fopen(template, "r+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        fseek(tmp, 0L, SEEK_SET);
+        break;
+    case SCCEFTELL:
+        mkstemp(template);
+        tmp = fopen(template, "r+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        ftell(tmp);
         break;
     case SCCENONE: exit(0); break;
     default:

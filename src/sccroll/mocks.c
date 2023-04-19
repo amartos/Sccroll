@@ -164,6 +164,8 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
             switch(trigger[SCCMMOCK])
             {
             default: break;
+            case SCCEFTELL: __attribute__((fallthrough));
+            case SCCEFSEEK: __attribute__((fallthrough));
             case SCCEFOPEN:
                 return trigger[SCCMCALLS] > trigger[SCCMDELAY];
             }
@@ -214,6 +216,8 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEMALLOC: return "malloc";
     case SCCEFERROR: return "ferror";
     case SCCEFOPEN:  return "fopen";
+    case SCCEFSEEK:  return "fseek";
+    case SCCEFTELL:  return "ftell";
     }
 }
 
@@ -324,6 +328,15 @@ SCCROLL_MOCK(
     NULL, FILE*, fopen, const char* restrict pathname SCCCOMMA const char* restrict mode,
     pathname, mode
 );
+
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEFSEEK),
+    -1, int, fseek,
+    FILE* stream SCCCOMMA long offset SCCCOMMA int whence,
+    stream, offset, whence
+);
+
+SCCROLL_MOCK(sccroll_mockFire(SCCEFTELL), -1, long, ftell, FILE* stream, stream);
 
 // clang-format off
 

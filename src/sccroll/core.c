@@ -492,6 +492,7 @@ typedef enum SccrollReport {
  * @var SCCSEP
  * @since 0.1.0
  * @brief Ligne de séparation de texte.
+ * @note N'est définie qu'une fois, à l'exécution.
  */
 static const char* SCCSEP = NULL;
 

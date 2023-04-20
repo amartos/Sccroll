@@ -150,6 +150,13 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     }
 }
 
+// clang-format off
+
+/******************************************************************************
+ * Simulacres prédéfinis
+ ******************************************************************************/
+// clang-format on
+
 SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
 {
     return sccroll_mockError(calloc, SCCECALLOC, NULL, nmemb, size);

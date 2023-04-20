@@ -132,6 +132,7 @@
  */
 typedef enum SccrollMockFlags {
     SCCENONE = 0, /**< Drapeau ne provoquant pas d'erreurs. */
+    SCCEMALLOC,   /**< Drapeau de malloc(). */
     SCCECALLOC,   /**< Drapeau de calloc(). */
     SCCEPIPE,     /**< Drapeau de pipe(). */
     SCCEFORK,     /**< Drapeau de fork(). */
@@ -139,7 +140,6 @@ typedef enum SccrollMockFlags {
     SCCECLOSE,    /**< Drapeau de close(). */
     SCCEREAD,     /**< Drapeau de read(). */
     SCCEWRITE,    /**< Drapeau de write(). */
-    SCCEMALLOC,   /**< Drapeau de malloc(). */
     SCCEMAX,      /**< Valeur maximale des mocks individuels. */
 } SccrollMockFlags;
 

@@ -162,20 +162,6 @@ void test_predefined_mocks(void)
     signal = WTERMSIG(status);
     assert(code == 0 && signal == SIGABRT);
 
-    pid = __real_fork();
-    if (pid == 0) {
-        trigger.mock = SCCEABORT;
-        // delay ne devrait pas influer sur abort.
-        trigger.delay = 150;
-        abort();
-        raise(SIGTERM); // au cas où le simulacre échoue à quitter.
-    }
-    assert(pid > 0);
-    wait(&status);
-    code = WEXITSTATUS(status);
-    signal = WTERMSIG(status);
-    assert(trigger.mock != SCCEABORT);
-    assert(code == SIGABRT && !signal);
 }
 
 void test_notrigger(void)

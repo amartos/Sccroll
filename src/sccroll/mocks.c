@@ -76,7 +76,6 @@ static SccrollMockTrigger * trigger = NULL;
  * SccrollMockTrigger::delay.
  */
 static const bool ignoring_delay[SCCEMAX] = {
-    [SCCEABORT] = true,
 };
 
 /**
@@ -133,7 +132,6 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     switch(mock)
     {
     default:         return "none";
-    case SCCEABORT:  return "abort";
     case SCCECALLOC: return "calloc";
     case SCCEPIPE:   return "pipe";
     case SCCEFORK:   return "fork";
@@ -143,32 +141,6 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEWRITE:  return "write";
     case SCCEMALLOC: return "malloc";
     }
-}
-
-SCCROLL_MOCK(void, abort, void)
-{
-    // Normalement, créer un simulacre de abort() ou autre fonctions
-    // qui terminent le programme est vivement déconseillé, et à
-    // raison.
-    // Toutefois, abort() ne gère pas les données de gcov(), ce qui
-    // pose problème pour la couverture. Ce simulacre est donc là pour
-    // régler le problème. L'erreur déclenchée est là surtout pour
-    // tester le simulacre, et l'utilisateur est libre de l'ignorer.
-
-    // On ne tient pas compte du délai ici car on cherche à quitter,
-    // et ne pas le faire risque de provoquer plus de problèmes
-    // qu'autre chose. Sans compter que vérifier qu'un abort a bien
-    // quitté n'est probablement pas courant.
-    // La fonction doit donc quitter. Mais une erreur possible pour
-    // elle est de quitter de la mauvaise manière: au lieu de
-    // s'arrêter avec un signal SIGABRT et un status EXIT_SUCCESS, la
-    // fonction s'arrête avec exit et un status d'erreur.
-    // De plus, quitter avec exit() au lieu de abort() va déclencher
-    // d'autres fonctions (les destructors/rappels de atexit), ce qui
-    // indique d'autant plus une erreur.
-    sccroll_mockFire(SCCEABORT)
-        ? sccroll_mockFatal(exit(SIGABRT))
-        : sccroll_mockFatal(__real_abort());
 }
 
 SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
@@ -210,5 +182,18 @@ SCCROLL_MOCK(ssize_t, write, int fd, const void* buf, size_t count)
 {
     return sccroll_mockError(write, SCCEWRITE, -1, fd, buf, count);
 }
+
+// clang-format off
+
+/******************************************************************************
+ * Redéfinitions des fonctions de la librairie.
+ ******************************************************************************/
+// clang-format on
+
+// abort() ne gère pas les données de gcov(), ce qui pose problème
+// pour la couverture. Cette redéfinition est donc là pour régler le
+// problème. L'exit final est là pour contenter le compilateur, mais
+// ne sera jamais appelé.
+void abort(void) { sccroll_mockFlush(), __gcov_dump(), raise(SIGABRT), exit(SIGABRT); }
 
 /** @} @} */

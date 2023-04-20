@@ -2,10 +2,6 @@
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-
---------------------------------------------------------------------------------
-
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
 errors: test registration failed for calloc: Success
 errors: alloc failed for SccrollEffects: Success
 errors: alloc failed for SccrollEffects: Success
@@ -26,6 +22,8 @@ errors: fork failed for fork: Success
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+errors: duplicate pipe failed for dup2: Success
+errors: duplicate pipe failed for dup2: Success
 errors: duplicate pipe failed for dup2: Success
 
 --------------------------------------------------------------------------------
@@ -48,10 +46,15 @@ errors: read pipe failed for read: Success
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;36mDIFF[0m ] write: stderr
+exp: [0;0;32m[0m
+res: [0;0;31merrors: write pipe failed for write: Success[0m
+[ [0;1;31mFAIL[0m ] write
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 0.00% [0/1]
 
 --------------------------------------------------------------------------------
 

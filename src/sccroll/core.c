@@ -120,7 +120,9 @@ typedef enum SccrollColors{
  * @throw EXIT_FAILURE si @p expr est vraie.
  */
 #define sccroll_err(expr, op, name)                             \
-    if ((expr)) err(EXIT_FAILURE, "%s failed for %s", op, name);
+    expr                                                        \
+    ? err(EXIT_FAILURE, "%s failed for %s", op, name)           \
+    : 0
 
 // clang-format off
 

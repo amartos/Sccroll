@@ -30,28 +30,35 @@
 // clang-format on
 
 /**
+ * @def SCCROLL_MOCKERRFMT
+ * @since 0.1.0
+ * @brief Le format des messages de sccroll_mockPredefined().
+ * @param s Le nom du simulacre testé.
+ * @param i Le nombre d'appels du simulacre au moment du message.
+ * @param s Le message.
+ */
+#define SCCROLL_MOCKERRFMT "%s (call #%u): %s"
+
+/**
  * @def sccroll_mockFatal
  * @since 0.1.0
  * @brief Nullifie #trigger, sauvegarde les données pour gcov et
  * termine le programme.
- * @param killcall L'appel terminant le programme.
  */
-#define sccroll_mockFatal(killcall) (sccroll_mockFlush(), __gcov_dump(), killcall)
-
-/**
- * @def sccroll_mockCalled
- * @since 0.1.0
- * @brief Détermine si le simulacre décrit par @p flag est celui
- * indiqué par #trigger.
- * @param flag Le code SccrollMockFlags du simulacre appelant.
- * @return true si le simulacre @p flag est celui indiqué par
- * #trigger, sinon false.
- */
-#define sccroll_mockCalled(flag) (trigger && trigger->mock == flag)
+#define sccroll_mockFatal()                     \
+    sccroll_mockFlush(),                        \
+        assertMsg(0,                            \
+            SCCROLL_MOCKERRFMT,                 \
+            sccroll_mockName(trigger->mock),    \
+            trigger->delay*-1,                  \
+            "mock error not handled"            \
+        )
 
 /**
  * @since 0.1.0
- * @brief Détermine s'il faut déclencher une erreur du simulacre.
+ * @brief Détermine s'il faut déclencher une erreur du simulacre
+ * ou lever une erreur générale si l'erreur précédente n'a pas été
+ * gérée.
  * @param mock Le code SccrollMockFlags du simulacre.
  * @return true si le simulacre doit déclencher une erreur, sinon
  * false.
@@ -68,15 +75,6 @@ static bool sccroll_mockFire(SccrollMockFlags mock);
  * @brief Variable indiquant le nombre d'appels du simulacre à ignorer.
  */
 static SccrollMockTrigger * trigger = NULL;
-
-/**
- * @var ignoring_delay
- * @since 0.1.0
- * @brief Matrice indicant si les simulacres doivent ignorer
- * SccrollMockTrigger::delay.
- */
-static const bool ignoring_delay[SCCEMAX] = {
-};
 
 /**
  * @def sccroll_mockError
@@ -113,17 +111,26 @@ void sccroll_mockFlush(void) { trigger = NULL; }
 
 static bool sccroll_mockFire(SccrollMockFlags mock)
 {
-    if (!sccroll_mockCalled(mock)) return false;
-    else if (ignoring_delay[mock]) return true;
-    else if (trigger->delay < 0 && sccroll_hasFlags(trigger->opts, SCCMABORT))
-        return sccroll_mockFatal(raise(SIGABRT));
-    else if (trigger->delay > 0) return (--trigger->delay, false);
-    else if (trigger->delay == 0) {
+    if (!trigger) return false;
+    else if (trigger->mock != mock)
+    {
+        // Actions coordonnées entre simulacres.
+        switch(mock)
+        {
+        default: return false;
+        }
+    }
+    else if (trigger->delay > 0) --trigger->delay;
+    else if (trigger->delay == 0)
+    {
         sccroll_hasFlags(trigger->opts, SCCMFLUSH)
             ? sccroll_mockFlush()
             : --trigger->delay;
         return true;
     }
+    else if (trigger->delay < 0 && sccroll_hasFlags(trigger->opts, SCCMABORT))
+        sccroll_mockFatal();
+
     return false;
 }
 

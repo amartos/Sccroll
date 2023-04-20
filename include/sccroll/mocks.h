@@ -38,6 +38,7 @@
 #define SCCROLL_MOCKS_H_
 
 #include "sccroll/helpers.h"
+#include "sccroll/assert.h"
 
 #include <stdbool.h>
 #include <stdio.h>

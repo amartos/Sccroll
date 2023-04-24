@@ -27,6 +27,33 @@
 // clang-format off
 
 /******************************************************************************
+ * @name Gestion des messages
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @def sccroll_variadic
+ * @since 0.1.0
+ * @brief Facilite la gestion des fonctions variadiques.
+ * @alert La macro présuppose que l'argument variadique `...` est
+ * situé immédiatement après l'argument @p arg.
+ * @param arg Le dernier argument avant `...`.
+ * @param list Le nom pour la @c va_list des arguments.
+ * @param ... Les actions à effectuer avec les arguments.
+ */
+#define sccroll_variadic(arg, list, ...)        \
+    {                                           \
+        va_list list;                           \
+        va_start(list, arg);                    \
+        __VA_ARGS__;                            \
+        va_end(list);                           \
+    }
+
+// clang-format off
+
+/******************************************************************************
+ * @}
  * @name Gestion des drapeaux
  * @{
  ******************************************************************************/

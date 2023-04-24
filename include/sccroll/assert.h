@@ -37,6 +37,8 @@
 #ifndef SCCROLL_ASSERT_H_
 #define SCCROLL_ASSERT_H_
 
+#include "sccroll/helpers.h"
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +62,35 @@
  * @param s L'expression testée.
  */
 #define SCCASSERTFMT "%s (l. %i): Assertion `%s' failed."
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ * @name Levées d'erreurs
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief Affiche un message et lève une erreur @c SIGABRT.
+ * @param stream Le flux sur lequel afficher le message.
+ * @param fmt La chaîne de formatage du message.
+ * @param args Les arguments de la chaîne de formatage.
+ */
+void sccroll_vfatal(FILE* stream, const char* restrict fmt, va_list args)
+    __attribute__((noreturn,format(printf,2,0)));
+
+/**
+ * @since 0.1.0
+ * @brief Affiche un message sur @c stderr et lève une erreur
+ * @c SIGABRT.
+ * @param fmt La chaîne de formatage du message.
+ * @param ... Les arguments de la chaîne de formatage.
+ */
+void sccroll_fatal(const char* restrict fmt, ...)
+    __attribute__((noreturn, format(printf,1,2)));
 
 // clang-format off
 

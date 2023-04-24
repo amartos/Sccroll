@@ -78,12 +78,11 @@ static bool assertMock(SccrollMockFlags mock, int delay)
     // On vérifie que les simulacres n'ont pas envoyé SIGABRT; ce
     // serait le signe que l'erreur du simulacre appelée à delay n'a
     // pas été prise en compte.
-    if (signal == SIGABRT) {
-        fprintf(stderr,
-                "assertMock: %s mock error in call #%i not handled\n",
-                testname, delay);
-        raise(SIGABRT);
-    }
+    if (signal == SIGABRT)
+        sccroll_fatal(
+            "assertMock: %s mock error in call #%i not handled\n",
+            testname, delay
+        );
 
     // Si une erreur est levée (code ou signal), on peut supposer
     // qu'il reste encore des appels à vérifier.

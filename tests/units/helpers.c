@@ -32,7 +32,7 @@
 static const int error = 123;
 
 static void sccroll_success(void) { }
-static void sccroll_fatal(void) { abort(); }
+static void sccroll_test_fatal(void) { abort(); }
 static void sccroll_error(void) { exit(error); }
 
 // clang-format off
@@ -62,7 +62,7 @@ int main(void)
     status = sccroll_simplefork("success", sccroll_success);
     assert(WTERMSIG(status) == 0);
     assert(WEXITSTATUS(status) == EXIT_SUCCESS);
-    status = sccroll_simplefork("fatal", sccroll_fatal);
+    status = sccroll_simplefork("fatal", sccroll_test_fatal);
     assert(WTERMSIG(status) == SIGABRT);
     assert(WEXITSTATUS(status) == 0);
     status = sccroll_simplefork("error", sccroll_error);

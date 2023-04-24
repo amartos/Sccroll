@@ -116,6 +116,16 @@ SCCROLL_TEST(test_assert_str)
     assertNotEqual("foo", "bar", strcmp);
 }
 
+// Teste à la fois sccroll_fatal et sccroll_vfatal
+SCCROLL_TEST(
+    test_fatal,
+    .code = {.type = SCCSIGNAL, .value = SIGABRT},
+    .std  = {
+        [STDERR_FILENO] = {.content.blob = "successfully crashed"}
+    },
+)
+{ sccroll_fatal("successfully %s", "crashed"); }
+
 // clang-format off
 /******************************************************************************
  * Exécution des tests.

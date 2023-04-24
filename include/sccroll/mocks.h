@@ -196,6 +196,28 @@ void sccroll_mockFatal(const char* restrict fmt, ...)
 
 /**
  * @since 0.1.0
+ * @brief Effectue un test d'erreur des simulacres prédéfinis sur une
+ * fonction donnée.
+ *
+ * La fonction inscrit le déclenchement d'un simulacre, et exécute
+ * @p wrapper dans un fork() (insensible au simulacre correspondant).
+ *
+ * La fonction propage ensuite tout signal levé par @p wrapper, mais
+ * pas les code de status d'erreur pour tout simulacre à déclencher ;
+ * si aucun simulacre n'est à déclencher (#SCCENONE) mais qu'un status
+ * autre que nul est renvoyé par @p wrapper, elle le propagera
+ * également. Les signaux ont la priorité sur les codes de status.
+ *
+ * Tous les délais possibles sont testés par la fonction. Le premier
+ * délai ne renvoyant aucune erreur est considéré comme indiquant que
+ * plus aucun simulacre ne sera déclenché par la suite.
+ *
+ * @param wrapper Le wrapper de la fonction à tester.
+ */
+void sccroll_mockPredefined(SccrollFunc wrapper) __attribute__((nonnull));
+
+/**
+ * @since 0.1.0
  * @brief Donne le nom de la fonction originale correspondant au
  * simulacre identifié par @p mock.
  * @return Le nom de la fonction originale correspondant à @p mock. La

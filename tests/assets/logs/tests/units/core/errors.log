@@ -1,78 +1,116 @@
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors: test registration failed for calloc: Success
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: test registration failed for testing errors: Success
+errors: alloc failed for SccrollEffects: Success
+errors: test registration failed for testing errors: Success
 errors: alloc failed for SccrollEffects: Success
 errors: alloc failed for SccrollEffects: Success
+errors: alloc failed for SccrollEffects: Success
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors: open pipe failed for pipe: Success
-errors: open pipe failed for pipe: Success
-errors: open pipe failed for pipe: Success
-errors: open pipe failed for pipe: Success
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
+errors: open pipe failed for testing errors: Success
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors: fork failed for fork: Success
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: fork failed for testing errors: Success
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors: duplicate pipe failed for dup2: Success
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: duplicate pipe failed for testing errors: Success
+errors: duplicate pipe failed for testing errors: Success
+errors: duplicate pipe failed for testing errors: Success
+errors: duplicate pipe failed for testing errors: Success
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors: close pipe failed for close: Success
-errors: close pipe failed for close: Success
-errors: close pipe failed for close: Success
-errors: close pipe failed for close: Success
-errors: close pipe failed for close: Success
-errors: close pipe failed for close: Success
-errors: close pipe failed for close: Success
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
-errors: read pipe failed for read: Success
-errors: read pipe failed for read: Success
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: read pipe failed for testing errors: Success
+errors: read pipe failed for testing errors: Success
+errors: read pipe failed for testing errors: Success
+errors: read pipe failed for testing errors: Success
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+[ [0;1;36mDIFF[0m ] testing errors: stderr
+exp: [0;0;32m[0m
+res: [0;0;31merrors: write pipe failed for testing errors: Success[0m
+[ [0;1;31mFAIL[0m ] testing errors
+
 
 --------------------------------------------------------------------------------
 
-[ [0;1;32mPASS[0m ] success rate: 100.00% [1/1]
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]

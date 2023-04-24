@@ -89,6 +89,29 @@ static unsigned trigger[SCCMMAX] = {0};
 
 /**
  * @since 0.1.0
+ * @brief Exécute une fonction en provoquant une erreur de simulacre
+ * prédéfini, et vérifie que l'erreur a bien été gérée.
+ *
+ * La valeur renvoyée sert d'indicateur de s'il reste des appels à
+ * effectuer pour un simulacre donné. Tant que des erreurs de
+ * simulacres sont émises et gérées, la fonction renverra @c true,
+ * indiquant par là que le simulacre testé a été appelé par
+ * @p wrapper. @c false indiquera que le simulacre n'a pas été appelé,
+ * et on peut donc supposer qu'aucun autre appel n'interviendra par la
+ * suite.
+ *
+ * @param trigger La structure contenant les informations du test du
+ * simulacre.
+ * @param wrapper Le wrapper de la fonction à tester.
+ * @return true si le simulacre testé a émit une erreur qui a été
+ * gérée, ou false si aucune erreur n'a été émise (ni même par une
+ * absence de gestion d'erreur).
+ */
+static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
+    __attribute__((nonnull (1)));
+
+/**
+ * @since 0.1.0
  * @brief Fonction sauvegardant les données utilisées par gcov.
  */
 extern void __gcov_dump(void);
@@ -156,6 +179,47 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEWRITE:  return "write";
     case SCCEMALLOC: return "malloc";
     }
+}
+
+void sccroll_mockPredefined(SccrollFunc wrapper)
+{
+    SccrollMockFlags mock;
+    unsigned delay;
+    for (mock = SCCENONE; mock < SCCEMAX; ++mock) {
+        // Si une erreur est levée (code ou signal), on peut supposer
+        // qu'il reste encore des appels à vérifier, d'où la condition
+        // de sortie. Si aucune erreur n'est levée par le simulacre,
+        // il ne le sera plus, et donc on passe au suivant.
+        for (delay = 0; sccroll_mockAssert(wrapper, mock, delay); ++delay);
+    }
+}
+
+static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
+{
+    bool error = false;
+    int status = 0, code = 0, signal = 0;
+    const char* name = sccroll_mockName(mock);
+
+    // On effectue le test dans un fork pour éviter de crasher le
+    // programme prématurément.
+    sccroll_mockTrigger(mock, delay);
+    status = sccroll_simplefork(name, wrapper);
+    sccroll_mockFlush();
+    code   = WEXITSTATUS(status);
+    signal = WTERMSIG(status);
+    error  = code || signal;
+
+    // On vérifie qu'il n'y a pas d'erreur si aucun simulacre n'est
+    // déclenché, ou que le simulacre n'a pas envoyé SIGABRT; ce
+    // serait le signe que l'erreur du simulacre appelé n'a pas été
+    // prise en compte et a appelé à nouveau le simulacre.
+    if ((!mock && error) || signal == SIGABRT)
+        sccroll_mockFatal(
+            "wrapper error not handled: status %i, signal %s",
+            code, "SIGABRT"
+        );
+
+    return error;
 }
 
 // clang-format off

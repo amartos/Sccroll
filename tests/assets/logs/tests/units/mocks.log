@@ -1,14 +1,30 @@
-malloc (call #1): mock error not handled
-malloc (call #1): mock error not handled
-malloc (call #1): mock error not handled
-malloc (call #2): mock error not handled
-malloc (call #3): mock error not handled
-malloc (call #4): mock error not handled
-malloc (call #5): mock error not handled
-malloc (call #6): mock error not handled
-malloc (call #7): mock error not handled
-malloc (call #8): mock error not handled
-malloc (call #9): mock error not handled
+malloc (call #1): in test_abort_atexit, line 280: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_delay, line 269: error not handled
+malloc (call #1): in test_fullerrors, line 310: error not handled
+Predefined malloc mock error (status 0, signal ABRT)
+calloc (call #1): in test_fullerrors, line 311: error not handled
+Predefined calloc mock error (status 0, signal ABRT)
+pipe (call #1): in test_fullerrors, line 314: error not handled
+Predefined pipe mock error (status 0, signal ABRT)
+fork (call #1): in test_fullerrors, line 312: error not handled
+Predefined fork mock error (status 0, signal ABRT)
+dup2 (call #1): in test_fullerrors, line 330: error not handled
+Predefined dup2 mock error (status 0, signal ABRT)
+close (call #1): in test_fullerrors, line 346: error not handled
+Predefined close mock error (status 0, signal ABRT)
+read (call #1): in test_fullerrors, line 360: error not handled
+Predefined read mock error (status 0, signal ABRT)
+write (call #1): in test_fullerrors, line 376: error not handled
+Predefined write mock error (status 0, signal ABRT)
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

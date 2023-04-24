@@ -40,50 +40,18 @@ attr_rename(extern, abort, __real_abort);
 // Fonction de test réussit quelles que soient les conditions.
 void test_success(void) {};
 
-// Pour identifier le mock en erreur.
-static SccrollMockFlags mock = 0;
-
 // Fonction exécutant sccroll_run avec un test factice, mais avec un
 // déclenchement de simulacre à un délai donné.
 static void run_test(void)
 {
-    const SccrollEffects test = {
+    SccrollEffects test = {
         .wrapper = test_success,
-        .name    = sccroll_mockName(mock),
-        .flags   = mock == SCCEFORK ? 0 : NOFORK,
+        .name    = "testing errors",
     };
     sccroll_register(&test);
+    test.flags |= NOFORK;
+    sccroll_register(&test);
     sccroll_run();
-}
-
-// Effectue un test unitaire test_success dans un fork (la fonction
-// originale), et vérifie qu'une erreur est bien levée par
-// sccroll_run.
-static bool assertMock(SccrollMockFlags mock, unsigned delay)
-{
-    const char* testname = sccroll_mockName(mock);
-    sccroll_mockTrigger(mock, delay);
-    int status    = sccroll_simplefork(testname, run_test);
-    sccroll_mockFlush();
-    int code      = WEXITSTATUS(status);
-    int signal    = WTERMSIG(status);
-
-    // On vérifie qu'il n'y a pas d'erreur si aucun simulacre ne
-    // devrait entrer en erreur.
-    assert(mock || !code);
-
-    // On vérifie que les simulacres n'ont pas envoyé SIGABRT; ce
-    // serait le signe que l'erreur du simulacre appelée à delay n'a
-    // pas été prise en compte.
-    if (signal == SIGABRT)
-        sccroll_fatal(
-            "assertMock: %s mock error in call #%i not handled\n",
-            testname, delay
-        );
-
-    // Si une erreur est levée (code ou signal), on peut supposer
-    // qu'il reste encore des appels à vérifier.
-    return mock && (code || signal);
 }
 
 // clang-format off
@@ -95,8 +63,6 @@ static bool assertMock(SccrollMockFlags mock, unsigned delay)
 
 int main(void)
 {
-    unsigned delay;
-    for (mock = SCCENONE, delay = 0; mock < SCCEMAX; ++mock, delay = 0)
-        while (assertMock(mock, delay++));
+    sccroll_mockPredefined(run_test);
     return EXIT_SUCCESS;
 }

@@ -20,6 +20,7 @@
 // On s'assure d'utiliser l'assert original et non pas celui défini
 // par la librairie.
 #include <assert.h>
+#include <fcntl.h>
 
 #include "sccroll.h"
 
@@ -57,6 +58,7 @@ static unsigned dummy_flag = SCCENONE;
 attr_rename(extern, fork, __real_fork);
 attr_rename(extern, close, __real_close);
 attr_rename(extern, pipe, __real_pipe);
+attr_rename(extern, dup2, __real_dup2);
 
 // clang-format off
 
@@ -232,6 +234,106 @@ void test_flush(void)
     free(blob);
 }
 
+void test_fullerrors(void)
+{
+    int fd           = 0;
+    int oldfd        = 0;
+    int pipefd[2]    = {0};
+    void* blob       = NULL;
+    char template[]  = "/tmp/sccroll.errors.XXXXXX";
+    char* errmsg     = NULL;
+
+    // On veut controller le moment de l'erreur, donc on s'assure
+    // d'être synschrone avec le déclencheur.
+    if (dummy_flag != sccroll_mockGetTrigger()) exit(0);
+
+    switch(dummy_flag)
+    {
+    case SCCEMALLOC: free(malloc(1)); break;
+    case SCCECALLOC: free(calloc(1, 1)); break;
+    case SCCEFORK:   fork() == 0 ? exit(0) : 0; break;
+    case SCCEPIPE:
+        pipe(pipefd) > 0
+            ? close(pipefd[0]), close(pipefd[1])
+            : 0;
+        break;
+    case SCCEDUP2:
+        mkstemp(template);
+        fd = open(template, O_RDWR);
+        if (fd < 0) {
+            errmsg = template;
+            break;
+        }
+        oldfd = dup(STDOUT_FILENO);
+        if (oldfd < 0) {
+            errmsg = "could not dupsave STDOUT";
+            break;
+        }
+        if (dup2(STDOUT_FILENO, fd) > 0)
+            // on évite de re-déclencher le simulacre en utilisant la
+            // version originale.
+            if (__real_dup2(STDOUT_FILENO, oldfd) < 0) {
+                errmsg = "could not reset STDOUT";
+                break;
+            }
+        close(fd);
+        break;
+    case SCCECLOSE:
+        mkstemp(template);
+        fd = open(template, O_RDWR);
+        if (fd < 0) {
+            errmsg = template;
+            break;
+        }
+        close(fd);
+        break;
+    case SCCEREAD:
+        mkstemp(template);
+        fd = open(template, O_RDWR);
+        if (fd < 0) {
+            errmsg = template;
+            break;
+        }
+        blob = calloc(1,1);
+        if (!blob) {
+            errmsg = "could not allocate for blob";
+            break;
+        }
+        read(fd, blob, 1);
+        free(blob);
+        close(fd);
+        break;
+    case SCCEWRITE:
+        mkstemp(template);
+        fd = open(template, O_RDWR);
+        if (fd < 0) {
+            errmsg = template;
+            break;
+        }
+        blob = calloc(1,1);
+        if (!blob) {
+            errmsg = "could not allocate for blob";
+            break;
+        }
+        write(fd, blob, 1);
+        free(blob);
+        close(fd);
+        break;
+    case SCCENONE: exit(0); break;
+    default:
+        // default s'assure qu'on oublie pas de test
+        errmsg = "missing test";
+        break;
+    }
+
+    assertMsg(!errmsg, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
+}
+
+void test_mockPredefined(void)
+{
+    sccroll_mockPredefined(test_fullerrors);
+}
+
 // clang-format off
 
 /******************************************************************************
@@ -251,6 +353,13 @@ int main(void)
     for (delay = 0; delay < MAX; ++delay) {
         status = sccroll_simplefork("test delay", test_delay);
         assert(WTERMSIG(status) == SIGABRT);
+    }
+    sccroll_mockFlush();
+    for (dummy_flag = SCCENONE; dummy_flag < SCCEMAX; ++dummy_flag) {
+        status = sccroll_simplefork("test predefined", test_mockPredefined);
+        assert((!dummy_flag && !status) || WTERMSIG(status) == SIGABRT);
+        // On s'assure que la fonction n'affecte pas l'état actuel.
+        assert(!sccroll_mockGetTrigger());
     }
 
     // On teste les constructions de mocks

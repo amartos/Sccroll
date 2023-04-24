@@ -23,7 +23,6 @@
  ******************************************************************************/
 // clang-format on
 
-__attribute__((format(printf,2,3)))
 void sccroll_assert(int expr, const char* restrict fmt, ...)
 {
     if (!expr) {

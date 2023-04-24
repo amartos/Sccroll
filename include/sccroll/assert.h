@@ -84,7 +84,7 @@
  * @since 0.1.0
  */
 void sccroll_assert(int expr, const char* restrict fmt, ...)
-    __attribute__((nonnull(2)));
+    __attribute__((nonnull (2), format(printf,2,3)));
 
 /**
  * @def assertMsg

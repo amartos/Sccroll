@@ -198,6 +198,16 @@ void sccroll_mockFlush(void);
 
 /**
  * @since 0.1.0
+ * @brief Invoque sccroll_mockFlush(), affiche un message sur stderr,
+ * sauvegarde les données pour gcov et lève SIGABRT.
+ * @param fmt La chaîne de formatage du message
+ * @param ... Les arguments de la chaîne de formatage.
+ */
+void sccroll_mockFatal(const char* restrict fmt, ...)
+    __attribute__((noreturn,format(printf,1,2)));
+
+/**
+ * @since 0.1.0
  * @brief Donne le nom de la fonction originale correspondant au
  * simulacre identifié par @p mock.
  * @return Le nom de la fonction originale correspondant à @p mock. La

@@ -1,3 +1,4 @@
+malloc (call #1): mock error not handled
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

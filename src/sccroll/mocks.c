@@ -40,21 +40,6 @@
 #define SCCROLL_MOCKERRFMT "%s (call #%u): %s"
 
 /**
- * @def sccroll_mockFatal
- * @since 0.1.0
- * @brief Nullifie #trigger, sauvegarde les données pour gcov et
- * termine le programme.
- */
-#define sccroll_mockFatal()                     \
-    sccroll_mockFlush(),                        \
-        assertMsg(0,                            \
-            SCCROLL_MOCKERRFMT,                 \
-            sccroll_mockName(trigger->mock),    \
-            trigger->delay*-1,                  \
-            "mock error not handled"            \
-        )
-
-/**
  * @since 0.1.0
  * @brief Détermine s'il faut déclencher une erreur du simulacre
  * ou lever une erreur générale si l'erreur précédente n'a pas été
@@ -129,9 +114,19 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
         return true;
     }
     else if (trigger->delay < 0 && sccroll_hasFlags(trigger->opts, SCCMABORT))
-        sccroll_mockFatal();
+        sccroll_mockFatal("mock error not handled");
 
     return false;
+}
+
+void sccroll_mockFatal(const char* restrict fmt, ...)
+{
+    int calls = trigger->delay*-1;
+    const char* name = sccroll_mockName(trigger->mock);
+    char msg[BUFSIZ] = {0};
+    sccroll_mockFlush();
+    sccroll_variadic(fmt, list, vsprintf(msg, fmt, list));
+    sccroll_fatal(SCCROLL_MOCKERRFMT, name, calls, msg);
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)

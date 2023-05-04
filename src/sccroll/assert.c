@@ -23,23 +23,26 @@
  ******************************************************************************/
 // clang-format on
 
-void sccroll_vfatal(FILE* stream, const char* restrict fmt, va_list args)
+void sccroll_vfatal(int sigint, const char* restrict fmt, va_list args)
 {
-    vfprintf(stream, fmt, args);
+    vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
-    abort();
+
+    // L'exit final est là pour contenter le compilateur, mais ne sera
+    // jamais appelé.
+    __gcov_dump(), raise(sigint), raise(SIGABRT), exit(1);
 }
 
-void sccroll_fatal(const char* restrict fmt, ...)
+void sccroll_fatal(int sigint, const char* restrict fmt, ...)
 {
     // L'exit final est là pour contenter le compilateur, mais ne sera
     // jamais appelé.
-    sccroll_variadic(fmt, list, sccroll_vfatal(stderr, fmt, list), exit(1));
+    sccroll_variadic(fmt, list, sccroll_vfatal(sigint, fmt, list), exit(1));
 }
 
 void sccroll_assert(int expr, const char* restrict fmt, ...)
 {
-    if (!expr) sccroll_variadic(fmt, list, sccroll_vfatal(stderr, fmt, list));
+    if (!expr) sccroll_variadic(fmt, list, sccroll_vfatal(SIGABRT, fmt, list));
 }
 
 /** @} @} */

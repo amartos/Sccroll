@@ -26,9 +26,6 @@
  ******************************************************************************/
 // clang-format on
 
-static int count = 0; // compte le nombre de tests effectués.
-void sccroll_before(void) { ++count; }
-
 static const char* a = "foo";
 static const char* b = "foo";
 static const char* c = "bar";
@@ -61,6 +58,9 @@ int intcmp(int a, int b) { return a == b ? 0 : a < b ? -1 : 1; };
 // clang-format on
 
 // 1 test /2 en échec.
+enum {
+    FAILED = 12,
+};
 
 SCCROLL_TEST(test_sccroll_assert_success) { sccroll_assert(true, "invisible line"); }
 SCCROLL_TEST(test_sccroll_assert_fail) { sccroll_assert(false, "this test must fail successfully"); }
@@ -124,7 +124,17 @@ SCCROLL_TEST(
         [STDERR_FILENO] = {.content.blob = "successfully crashed"}
     },
 )
-{ sccroll_fatal("successfully %s", "crashed"); }
+{ sccroll_fatal(SIGABRT, "successfully %s", "crashed"); }
+
+SCCROLL_TEST(
+    test_fatal_other_code,
+    .code = {.type = SCCSIGNAL, .value = SIGTERM},
+    .std  = {
+        [STDERR_FILENO] = {.content.blob = "successfully terminated"}
+    },
+)
+{ sccroll_fatal(SIGTERM, "successfully %s", "terminated"); }
+
 
 // clang-format off
 /******************************************************************************
@@ -134,7 +144,6 @@ SCCROLL_TEST(
 
 int main(void)
 {
-    // count-2 pour prendre en compte les tests qui n'échouent pas.
-    assert(sccroll_run() == (count-2)/2);
+    assert(sccroll_run() == FAILED);
     return EXIT_SUCCESS;
 }

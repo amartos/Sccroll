@@ -46,6 +46,21 @@
 // clang-format off
 
 /******************************************************************************
+ * @name Sauvegarde des données de couverture.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief Fonction sauvegardant les données utilisées par gcov.
+ */
+extern void __gcov_dump(void);
+
+// clang-format off
+
+/******************************************************************************
+ * @}
  * @name Format des messages d'assertion.
  * @{
  ******************************************************************************/
@@ -74,23 +89,25 @@
 
 /**
  * @since 0.1.0
- * @brief Affiche un message et lève une erreur @c SIGABRT.
- * @param stream Le flux sur lequel afficher le message.
+ * @brief Affiche un message sur stderr et lève un signal d'erreur.
+ * @param sigint Le signal à lever (@c SIGABRT si le signal est
+ * ignoré).
  * @param fmt La chaîne de formatage du message.
  * @param args Les arguments de la chaîne de formatage.
  */
-void sccroll_vfatal(FILE* stream, const char* restrict fmt, va_list args)
+void sccroll_vfatal(int sigint, const char* restrict fmt, va_list args)
     __attribute__((noreturn,format(printf,2,0)));
 
 /**
  * @since 0.1.0
- * @brief Affiche un message sur @c stderr et lève une erreur
- * @c SIGABRT.
+ * @brief Affiche un message sur @c stderr, sauvegarde les données
+ * pour gcov et lève le signal donné (puis lève @c SIGABRT).
+ * @param sigint Le code du signal.
  * @param fmt La chaîne de formatage du message.
  * @param ... Les arguments de la chaîne de formatage.
  */
-void sccroll_fatal(const char* restrict fmt, ...)
-    __attribute__((noreturn, format(printf,1,2)));
+void sccroll_fatal(int sigint, const char* restrict fmt, ...)
+    __attribute__((noreturn, format(printf,2,3)));
 
 // clang-format off
 

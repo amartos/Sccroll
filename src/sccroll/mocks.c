@@ -110,12 +110,6 @@ static unsigned trigger[SCCMMAX] = {0};
 static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
     __attribute__((nonnull (1)));
 
-/**
- * @since 0.1.0
- * @brief Fonction sauvegardant les données utilisées par gcov.
- */
-extern void __gcov_dump(void);
-
 // clang-format off
 
 /******************************************************************************
@@ -162,7 +156,7 @@ void sccroll_mockFatal(const char* restrict fmt, ...)
     char msg[BUFSIZ] = {0};
     sccroll_mockFlush();
     sccroll_variadic(fmt, list, vsprintf(msg, fmt, list));
-    sccroll_fatal(SCCROLL_MOCKERRFMT, name, calls, msg);
+    sccroll_fatal(SIGABRT, SCCROLL_MOCKERRFMT, name, calls, msg);
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)

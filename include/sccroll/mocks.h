@@ -154,6 +154,32 @@ void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay);
 
 /**
  * @since 0.1.0
+ * @brief Donne le code SccrollMockFlags du simulacre prévu au
+ * déclenchement.
+ * @return Le code SccrollMockFlags du simulacre prévu au
+ * déclenchement.
+ */
+SccrollMockFlags sccroll_mockGetTrigger(void);
+
+/**
+ * @since 0.1.0
+ * @brief Donne le délai restant avant déclenchement du simulacre.
+ * @return Le nombre d'appels restants du simulacre avant le
+ * déclemenchement d'une erreur.
+ */
+unsigned sccroll_mockGetDelay(void);
+
+/**
+ * @since 0.1.0
+ * @brief Donne le nombre d'appels effectués depuis le déclenchement
+ * de l'erreur du simulacre.
+ * @return Le nombre d'appels à partir du déclemenchement du simulacre
+ * (le déclenchement compte pour le premier appel).
+ */
+unsigned sccroll_mockGetCalls(void);
+
+/**
+ * @since 0.1.0
  * @brief Désactive le simulacre courant.
  */
 void sccroll_mockFlush(void);

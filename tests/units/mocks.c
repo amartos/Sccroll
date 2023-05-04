@@ -93,6 +93,44 @@ SCCROLL_MOCK(void, sccroll_before, void)
     assert(false && "sccroll_before mocked, but should not be executed...");
 }
 
+void test_getters(void)
+{
+    void* blob = NULL;
+    sccroll_mockFlush();
+
+    assert(sccroll_mockGetTrigger() == SCCENONE);
+    assert(sccroll_mockGetDelay() == 0);
+    assert(sccroll_mockGetCalls() == 0);
+
+    sccroll_mockTrigger(SCCEMALLOC, 0);
+    assert(sccroll_mockGetTrigger() == SCCEMALLOC);
+    assert(sccroll_mockGetDelay() == 0);
+    assert(sccroll_mockGetCalls() == 0);
+    sccroll_mockFlush();
+    assert(sccroll_mockGetTrigger() == SCCENONE);
+    assert(sccroll_mockGetDelay() == 0);
+    assert(sccroll_mockGetCalls() == 0);
+
+    sccroll_mockTrigger(SCCEMALLOC, 13);
+    assert(sccroll_mockGetTrigger() == SCCEMALLOC);
+    assert(sccroll_mockGetDelay() == 13);
+    assert(sccroll_mockGetCalls() == 0);
+    sccroll_mockFlush();
+
+    sccroll_mockTrigger(SCCEMALLOC, 1);
+    assert(sccroll_mockGetTrigger() == SCCEMALLOC);
+    assert(sccroll_mockGetDelay() == 1);
+    assert(sccroll_mockGetCalls() == 0);
+    assert((blob = malloc(1)));
+    free(blob);
+    assert(sccroll_mockGetDelay() == 0);
+    assert(sccroll_mockGetCalls() == 0);
+    assert(!malloc(1));
+    assert(sccroll_mockGetDelay() == 0);
+    assert(sccroll_mockGetCalls() == 1);
+    sccroll_mockFlush();
+}
+
 // Tests des mocks prédéfinis.
 void test_predefined_mocks(void)
 {
@@ -206,6 +244,7 @@ int main(void)
     // On teste les réactions des mocks prédéfinis.
     test_predefined_mocks();
     test_notrigger();
+    test_getters();
     int status = sccroll_simplefork("test_abort", test_abort);
     assert(WTERMSIG(status) == SIGABRT);
     test_flush();

@@ -107,6 +107,10 @@ void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay) {
 
 void sccroll_mockFlush(void) { memset(trigger, 0, sizeof(trigger)); }
 
+SccrollMockFlags sccroll_mockGetTrigger(void) { return trigger[SCCMMOCK]; }
+unsigned sccroll_mockGetDelay(void) { return trigger[SCCMDELAY]; }
+unsigned sccroll_mockGetCalls(void) { return trigger[SCCMCALLS]; }
+
 static bool sccroll_mockFire(SccrollMockFlags mock)
 {
     if (!trigger[SCCMMOCK]) return false;

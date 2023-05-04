@@ -136,6 +136,7 @@ void test_getters(void)
 // Tests des mocks prédéfinis.
 void test_predefined_mocks(void)
 {
+    sccroll_mockFlush();
     pid_t pid = -1;
     int signal, code, status;
     int pipefd[2] = { 0 };
@@ -199,6 +200,8 @@ void test_predefined_mocks(void)
 
 void test_notrigger(void)
 {
+    sccroll_mockFlush();
+
     void* blob;
     sccroll_mockTrigger(0,0);
     assert((blob = malloc(1)));
@@ -207,6 +210,8 @@ void test_notrigger(void)
 
 void test_delay(void)
 {
+    sccroll_mockFlush();
+
     sccroll_mockTrigger(SCCEMALLOC, delay);
     for (unsigned i = 0; i <= delay+1; ++i)
         free(malloc(1));
@@ -384,5 +389,7 @@ int main(void)
     dummy_flag = SCCESCCRUN;
     sccroll_run();
 
+    // Pour éviter des erreurs à l'exit.
+    sccroll_mockFlush();
     return EXIT_SUCCESS;
 }

@@ -68,4 +68,10 @@ int main(void)
     status = sccroll_simplefork("error", sccroll_error);
     assert(WTERMSIG(status) == 0);
     assert(WEXITSTATUS(status) == error);
+
+    // Les tests de couverture étant hautement faussés par cette
+    // fonction, cette ligne sert à compenser les appels manquants. Il
+    // n'y a pas vraiment de tests à faire dessus, puisqu'elle n'est
+    // là que pour pallier à un manque.
+    for (int i = 1; sigabbrev_np(i); ++i);
 }

@@ -79,6 +79,23 @@ typedef enum SccrollMockIndex {
 static unsigned trigger[SCCMMAX] = {0};
 
 /**
+ * @struct SccrollMockTrace
+ * @since 0.1.0
+ * @brief Permet de conserver la trace d'appelants de fonctions.
+ */
+typedef struct SccrollMockTrace {
+    const char* caller; /**< Le nom de la fonction appelante. */
+    int line;           /**< La ligne d'appel. */
+} SccrollMockTrace;
+
+/**
+ * @var trace
+ * @since 0.1.0
+ * @brief Conserve la trace du dernier appelant d'un simulacre.
+ */
+static SccrollMockTrace trace = {0};
+
+/**
  * @since 0.1.0
  * @brief Exécute une fonction en provoquant une erreur de simulacre
  * prédéfini, et vérifie que l'erreur a bien été gérée.
@@ -119,6 +136,14 @@ SccrollMockFlags sccroll_mockGetTrigger(void) { return trigger[SCCMMOCK]; }
 unsigned sccroll_mockGetDelay(void) { return trigger[SCCMDELAY]; }
 unsigned sccroll_mockGetCalls(void) { return trigger[SCCMCALLS]; }
 
+void sccroll_mockTrace(const char* funcname, int line, SccrollMockFlags mock)
+{
+    if (trigger[SCCMMOCK] == mock) {
+        trace.caller = funcname;
+        trace.line   = line;
+    }
+}
+
 static bool sccroll_mockFire(SccrollMockFlags mock)
 {
     if (!trigger[SCCMMOCK]) return false;
@@ -145,9 +170,10 @@ static void sccroll_mockAbortNotHandled(void)
     if (trigger[SCCMCALLS]) {
         sccroll_mockFatal(
             SIGABRT,
-            "%s call #%u: error not handled",
+            "%s (in %s l. %i): error not handled",
             sccroll_mockName(trigger[SCCMMOCK]),
-            trigger[SCCMCALLS]
+            trace.caller,
+            trace.line
         );
     }
 }

@@ -266,6 +266,16 @@ const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnu
     __typeof__(name) sccroll_mock##name
 
 /**
+ * @since 0.1.0
+ * @brief Sauvegarde les informations sur le dernier appel d'un
+ * simulacre.
+ * @param funcname @c __FUNCTION__.
+ * @param line @c __LINE__.
+ * @param mock Le drapeau SccrollMockFlags du simulacre.
+ */
+void sccroll_mockTrace(const char* funcname, int line, SccrollMockFlags mock);
+
+/**
  * @def sccroll_mockCall
  * @since 0.1.0
  * @brief Macro facilitant la construction des simulacres avec
@@ -275,7 +285,11 @@ const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnu
  * simulacre.
  * @return Le résultat de `sccroll_mockname`.
  */
-#define sccroll_mockCall(name, flag, ...) sccroll_mock##name(__VA_ARGS__)
+#define sccroll_mockCall(name, flag, ...)                               \
+    (                                                                   \
+        sccroll_mockTrace(__FUNCTION__, __LINE__, flag),                \
+        sccroll_mock##name(__VA_ARGS__)                                 \
+    )
 
 /**
  * @name Prototypes des simulacres prédéfinis.

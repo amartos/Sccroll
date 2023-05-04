@@ -135,6 +135,11 @@ SCCROLL_TEST(
 )
 { sccroll_fatal(SIGTERM, "successfully %s", "terminated"); }
 
+SCCROLL_TEST(
+    test_fatal_nomsg,
+    .code = {.type = SCCSIGNAL, .value = SIGABRT},
+)
+{ sccroll_fatal(SIGABRT, NULL); }
 
 // clang-format off
 /******************************************************************************

@@ -967,14 +967,16 @@ static void sccroll_codes(SccrollEffects* restrict result, int pipefd[2], int st
         sccroll_pipes(PIPEREAD, result->name, pipefd, &result->code.value, sizeof(int));
         break;
     case SCCSTATUS:
-        result->code.value = sccroll_hasFlags(result->flags, NOFORK)
-            ? status
-            : WEXITSTATUS(status);
+        if (sccroll_hasFlags(result->flags, NOFORK))
+            result->code.value = status;
+        else if (WIFEXITED(status))
+            result->code.value = WEXITSTATUS(status);
         break;
     default: // SCCSIGNAL
-        result->code.value = sccroll_hasFlags(result->flags, NOFORK)
-            ? status
-            : WTERMSIG(status);
+        if (sccroll_hasFlags(result->flags, NOFORK))
+            result->code.value = status;
+        else if (WIFSIGNALED(status))
+            result->code.value = WTERMSIG(status);
         break;
     }
 }

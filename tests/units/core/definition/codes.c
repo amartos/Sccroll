@@ -67,6 +67,17 @@ void test_signals(void)
     }
 }
 
+void test_nofork(void)
+{
+    SccrollEffects test_success = {
+        .wrapper = test_signals,
+        .name = "signal nofork",
+        .code ={.type = type, .value = code},
+        .flags = NOFORK,
+    };
+    sccroll_register(&test_success);
+    if (sccroll_run()) exit(1);
+}
 
 // Teste l'ensemble des valeurs définies pour le code de type t
 // correspondant à index dans SccrollEffects::codes.
@@ -104,5 +115,14 @@ int main(void)
     test_errstat(SCCSTATUS, "test status");
     test_errstat(SCCSIGNAL, "test signal");
 
+    type = SCCERRNUM;
+    int status = sccroll_simplefork("test errno nofork", test_nofork);
+    assert(!status);
+    type = SCCSTATUS;
+    status = sccroll_simplefork("test status nofork", test_nofork);
+    assert(!status);
+    type = SCCSIGNAL;
+    status = sccroll_simplefork("test signal nofork", test_nofork);
+    assert(!status);
     return EXIT_SUCCESS;
 }

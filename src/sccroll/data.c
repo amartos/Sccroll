@@ -65,7 +65,9 @@ void* sccroll_rndalloc(size_t nmemb, size_t size)
 {
     size_t real_size = nmemb*size;
     void* randomized = malloc(real_size);
-    if (randomized) sccroll_monkey(randomized, real_size);
+    if (!randomized)
+        err(EXIT_FAILURE, "could not allocate for random blob");
+    sccroll_monkey(randomized, real_size);
     return randomized;
 }
 

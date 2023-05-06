@@ -61,6 +61,16 @@ static float bitratio(const void* blob, size_t size)
     return ones/(size*8);
 }
 
+void crash_test(void)
+{
+    void* data;
+    for (int i = 0; i < 2; ++i) {
+        data = sccroll_rndalloc(1, sizeof(int));
+        assert(data);
+        free(data), data = NULL;
+    }
+}
+
 // clang-format off
 
 /******************************************************************************
@@ -94,11 +104,8 @@ int main(void)
     ratio /= MAX;
     assert(fabs(ratio - expected) < sigma);
 
-    // sccroll_rndalloc ne gère pas les erreurs.
-    sccroll_mockTrigger(SCCEMALLOC, 0);
-    data = sccroll_rndalloc(1, sizeof(int));
-    sccroll_mockFlush();
-    assert(data == NULL);
+    // tests des gestions d'erreurs
+    sccroll_mockPredefined(crash_test);
 
     return EXIT_SUCCESS;
 }

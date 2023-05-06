@@ -8,10 +8,14 @@
 [ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
 errors: test registration failed for testing errors: Success
 errors: alloc failed for SccrollEffects: Success
+errors: could not copy blob: Success
 errors: test registration failed for testing errors: Success
 errors: alloc failed for SccrollEffects: Success
+errors: could not copy blob: Success
 errors: alloc failed for SccrollEffects: Success
+errors: could not copy blob: Success
 errors: alloc failed for SccrollEffects: Success
+errors: could not copy blob: Success
 
 --------------------------------------------------------------------------------
 
@@ -37,24 +41,29 @@ errors: duplicate pipe failed for testing errors: Success
 errors: duplicate pipe failed for testing errors: Success
 errors: duplicate pipe failed for testing errors: Success
 errors: duplicate pipe failed for testing errors: Success
+[ [0;1;36mDIFF[0m ] testing errors: stdout
+exp: [0;0;32mfoobar[0m
+res: [0;0;31m[0m
+[ [0;1;31mFAIL[0m ] testing errors
+
+
+--------------------------------------------------------------------------------
+
+[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
+errors: close pipe failed for testing errors: Success
 
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-errors: close pipe failed for testing errors: Success
-
---------------------------------------------------------------------------------
-
-[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
 errors: read pipe failed for testing errors: Success
 errors: read pipe failed for testing errors: Success
 errors: read pipe failed for testing errors: Success
@@ -63,6 +72,9 @@ errors: read pipe failed for testing errors: Success
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+[ [0;1;36mDIFF[0m ] testing errors: stdout
+exp: [0;0;32mfoobar[0m
+res: [0;0;31m[0m
 [ [0;1;36mDIFF[0m ] testing errors: stderr
 exp: [0;0;32m[0m
 res: [0;0;31merrors: write pipe failed for testing errors: Success[0m

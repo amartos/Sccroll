@@ -31,7 +31,7 @@
 // clang-format on
 
 // Fonction de test réussit quelles que soient les conditions.
-void test_success(void) {};
+void test_success(void) { puts("foobar"); };
 
 // Fonction exécutant sccroll_run avec un test factice, mais avec un
 // déclenchement de simulacre à un délai donné.
@@ -40,6 +40,9 @@ static void run_test(void)
     SccrollEffects test = {
         .wrapper = test_success,
         .name    = "testing errors",
+        // On déclenche la lecture d'un fichier pour les fonctions de
+        // stream type f*.
+        .std[STDOUT_FILENO].path = "tests/assets/blobs/textfile",
     };
     sccroll_register(&test);
     test.flags |= NOFORK;

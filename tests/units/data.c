@@ -64,10 +64,14 @@ static float bitratio(const void* blob, size_t size)
 void crash_test(void)
 {
     void* data;
+    void* copy;
     for (int i = 0; i < 2; ++i) {
         data = sccroll_rndalloc(1, sizeof(int));
         assert(data);
+        copy = blobdup(data, 1 * sizeof(int));
+        assert(copy);
         free(data), data = NULL;
+        free(copy), copy = NULL;
     }
 }
 
@@ -92,6 +96,7 @@ int main(void)
     // deux tests d'affilées est exceptionnel, et donc indiquerait
     // plus un bug qu'une malchance).
     void* data = NULL;
+    void* copy = NULL;
     int i;
     size_t size;
     float ratio = 0.0f;
@@ -103,6 +108,21 @@ int main(void)
     }
     ratio /= MAX;
     assert(fabs(ratio - expected) < sigma);
+
+    // test de blobdup
+    data = sccroll_rndalloc(MAXSIZE, sizeof(int));
+    copy = blobdup(data, MAXSIZE * sizeof(int));
+    char* a = (char*) data;
+    char* b = (char*) copy;
+    for (int i = 0; i < MAXSIZE; ++i, ++a, ++b) {
+        assertMsg(a != b, "a and b are the same pointers");
+        assertMsg(*a == *b, "different values for index %i: %c,%c", i, *a, *b);
+    }
+    assert(blobdup(data, 0) == NULL);
+    free(data);
+    data = NULL;
+    assert((data = blobdup(NULL, 10)));
+    free(data);
 
     // tests des gestions d'erreurs
     sccroll_mockPredefined(crash_test);

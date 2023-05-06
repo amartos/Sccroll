@@ -164,6 +164,7 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
             switch(trigger[SCCMMOCK])
             {
             default: break;
+            case SCCEFSCANF: __attribute__((fallthrough));
             case SCCEFWRITE: __attribute__((fallthrough));
             case SCCEFREAD:  __attribute__((fallthrough));
             case SCCEFTELL: __attribute__((fallthrough));
@@ -222,6 +223,7 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEFTELL:  return "ftell";
     case SCCEFREAD:  return "fread";
     case SCCEFWRITE: return "fwrite";
+    case SCCEFSCANF: return "fscanf";
     }
 }
 
@@ -355,6 +357,22 @@ SCCROLL_MOCK(
     const void* ptr SCCCOMMA size_t size SCCCOMMA size_t nmemb SCCCOMMA FILE* restrict stream,
     ptr, size, nmemb, stream
 );
+
+// On utilise pas fscanf du fait de sa nature variadique, mais le
+// code source utilise de toute manière vscanf lui aussi.
+// cf. (lien coupé pour plus de lisibilité)
+// https://sourceware.org/git/?p=glibc.git;a=blob;f=stdio-common/fscanf.c
+// ;h=caca780f0982cbb6d46aa41a79460a01b906eec8;hb=dee2bea048b688b643a9a3b44b26ca9f7a706fe8#l36
+int sccroll_mockfscanf(FILE* restrict stream, const char* restrict format, ...)
+{
+
+    if (sccroll_mockFire(SCCEFSCANF)) return EOF;
+    va_list args;
+    va_start(args, format);
+    int status = vfscanf(stream, format, args);
+    va_end(args);
+    return status;
+}
 
 // clang-format off
 

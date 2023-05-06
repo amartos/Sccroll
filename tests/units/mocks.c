@@ -155,6 +155,20 @@ void test_predefined_mocks(void)
 
     testMock(SCCEFOPEN, 0, (textfile=fopen(textfilepath, "r")), (fopen(textfilepath, "r") == NULL));
     assert(textfile);
+    clearerr(textfile);
+    rewind(textfile);
+    testMock(
+        SCCEFSCANF, 0,
+        (clearerr(textfile), rewind(textfile),
+         fscanf(textfile, "%s", buf) == 1   && ferror(textfile) == 0),
+        (clearerr(textfile), rewind(textfile),
+         fscanf(textfile, "%s", buf) == EOF && ferror(textfile) != 0)
+    );
+    assert(buf[0]);
+    buf[strlen(buf)] = '\n';
+    assert(!strcmp(buf, text));
+    memset(buf, 0, sizeof(buf));
+    clearerr(textfile);
 
     testMock(SCCEFERROR, 0, (ferror(textfile) == 0), (ferror(textfile) != 0));
     testMock(SCCEFORK, 0, (ferror(textfile) == 0), (ferror(textfile) == 0));
@@ -295,6 +309,7 @@ void test_fullerrors(void)
     int fd           = 0;
     int oldfd        = 0;
     int pipefd[2]    = {0};
+    char buf[10]     = {0};
     void* blob       = NULL;
     char template[]  = "/tmp/sccroll.errors.XXXXXX";
     char* errmsg     = NULL;
@@ -438,6 +453,22 @@ void test_fullerrors(void)
             break;
         }
         fwrite(blob,1,1,tmp);
+        free(blob);
+        fclose(tmp);
+        break;
+    case SCCEFSCANF:
+        mkstemp(template);
+        tmp = fopen(template, "w+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        blob = calloc(1,1);
+        if (!blob) {
+            errmsg = "could not allocate for blob";
+            break;
+        }
+        fscanf(blob, "%c", buf);
         free(blob);
         fclose(tmp);
         break;

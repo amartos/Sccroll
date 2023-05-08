@@ -95,9 +95,9 @@ int main(void)
     assert(fabs(ratio - expected) < sigma);
 
     // sccroll_rndalloc ne gère pas les erreurs.
-    SccrollMockTrigger trigger = { .mock = SCCEMALLOC, };
-    sccroll_mockTrigger(&trigger);
+    sccroll_mockTrigger(SCCEMALLOC, 0);
     data = sccroll_rndalloc(1, sizeof(int));
+    sccroll_mockFlush();
     assert(data == NULL);
 
     return EXIT_SUCCESS;

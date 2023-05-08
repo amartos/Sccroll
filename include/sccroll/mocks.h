@@ -43,6 +43,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -107,18 +108,14 @@
  * @}
  * @name Simulacres prédéfinis.
  *
- * Le comportement des simulacres fournis est déterminé par la
- * structure SccrollMockTrigger passée à sccroll_mockTrigger(). Des
- * options définies par SccrollMockOptions sont disponibles en les
- * passant à SccrollMockTrigger::opts à l'aide d'un OR.
+ * Divers simulacres sont prédéfinis par le module. Il est possible de
+ * les déclencher (un par un) avec un appel à sccroll_mockTrigger(),
+ * qui peut également délayer l'erreur d'un certain nombre d'appels.
  *
- * Par défaut, le module conserve le dernier SccrollMockTrigger passé
- * à sccroll_mockTrigger(). Une option permet de l'oublier à la
- * première erreur, mais l'appel de sccroll_mockFlush() est également
- * dédié à cette opération.
- *
- * Certains simulacres fournissent également d'autres options et
- * capacités décrites dans leur documentation.
+ * Les simulacres dont l'erreur n'est pas prise en charge lèvent une
+ * erreur d'assertion à leur prochain appel. Le simulacre est
+ * désactivé avant de lever cette erreur ; de même, __gcov_dump() est
+ * appelé avant de quitter.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -126,7 +123,7 @@
 /**
  * @enum SccrollMockFlags
  * @since 0.1.0
- * @brief Drapeaux pour SccrollMockTrigger::mock afin d'indiquer quel
+ * @brief Drapeaux pour sccroll_mockTrigger() afin d'indiquer quel
  * simulacre pré-fourni doit être en erreur.
  * @attention Les drapeaux **ne peuvent pas** être combinés pour
  * déclencher plusieurs erreurs simultanément.
@@ -145,54 +142,19 @@ typedef enum SccrollMockFlags {
 } SccrollMockFlags;
 
 /**
- * @enum SccrollMockOptions
- * @since 0.1.0
- * @brief Options pour les simulacres prédéfinis.
- */
-typedef enum SccrollMockOptions {
-    SCCMNONE  = 0, /**< Pas d'options. */
-    SCCMFLUSH = 2, /**< Effacer du module le pointeur de la structure
-                    * SccrollMockTrigger après le premier appel de simulacre
-                    * en erreur. */
-    SCCMABORT = 4, /**< Lever une erreur au prochain appel de
-                    * simulacre après celui en erreur (ou si delay est
-                    * négatif). */
-} SccrollMockOptions;
-
-/**
- * @struct SccrollMockTrigger
- * @since 0.1.0
- * @brief Structure contenant les informations nécessaires au
- * déclenchement d'un simulacre prédéfini.
- * @note SccrollMockTrigger::abort à @c true déclenche une erreur si
- * SccrollMockTrigger::delay est négatif.
- */
-typedef struct SccrollMockTrigger {
-    SccrollMockFlags mock;   /**< Drapeau correspondant au simulacre à déclencher. */
-    SccrollMockOptions opts; /**< Options pour le déclenchement des simulacres. */
-    int delay;               /**< Nombre d'appels du simulacre à ignorer. */
-} SccrollMockTrigger;
-
-/**
  * @since 0.1.0
  * @brief Fonction utilisée pour provoquer une erreur dans le
  * simulacre fourni par la bibliothèque et correspondant à la valeur
  * de @p mock.
- * @param trigger SccrollMockTrigger contenant les informations sur le
- * déclenchement de l'erreur, ou NULL pour ne rien déclencher.
- * @attention La structure @p trigger est réutilisée tant que le
- * pointeur est encore valable, sauf si SccrollMockTrigger::abort vaut
- * @c true et lève une erreur ou que la fonction @c abort est
- * utilisée. Ces deux cas reviennent à utiliser sccroll_mockFlush().
+ * @param mock Le simulacre à déclencher.
+ * @param delay Le délai avant déclenchement du simulacre, en nombre
+ * d'appels ; 0 indique un déclenchement immédiat.
  */
-void sccroll_mockTrigger(SccrollMockTrigger * trigger);
+void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay);
 
 /**
  * @since 0.1.0
- * @brief Efface le pointeur de la dernière structure
- * SccrollMockTrigger donnée *via* sccroll_mockTrigger().
- * @note La structure en soi n'est pas effacée, juste sa référence
- * pour le module.
+ * @brief Désactive le simulacre courant.
  */
 void sccroll_mockFlush(void);
 

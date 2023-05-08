@@ -40,10 +40,8 @@ attr_rename(extern, abort, __real_abort);
 // Fonction de test réussit quelles que soient les conditions.
 void test_success(void) {};
 
-// Le déclencheur des simulaces.
-// On utilise SCCMABORT pour bien vérifier les gestions d'erreur de la
-// librairie.
-static SccrollMockTrigger trigger = {.opts = SCCMABORT,};
+// Pour identifier le mock en erreur.
+static SccrollMockFlags mock = 0;
 
 // Fonction exécutant sccroll_run avec un test factice, mais avec un
 // déclenchement de simulacre à un délai donné.
@@ -51,10 +49,9 @@ static void run_test(void)
 {
     const SccrollEffects test = {
         .wrapper = test_success,
-        .name = sccroll_mockName(trigger.mock),
-        .flags = sccroll_hasFlags(trigger.mock, SCCEFORK) ? 0 : NOFORK,
+        .name    = sccroll_mockName(mock),
+        .flags   = mock == SCCEFORK ? 0 : NOFORK,
     };
-    sccroll_mockTrigger(&trigger);
     sccroll_register(&test);
     sccroll_run();
 }
@@ -62,12 +59,12 @@ static void run_test(void)
 // Effectue un test unitaire test_success dans un fork (la fonction
 // originale), et vérifie qu'une erreur est bien levée par
 // sccroll_run.
-static bool assertMock(SccrollMockFlags mock, int delay)
+static bool assertMock(SccrollMockFlags mock, unsigned delay)
 {
-    trigger.mock  = mock;
-    trigger.delay = delay;
-    const char* testname = sccroll_mockName(trigger.mock);
+    const char* testname = sccroll_mockName(mock);
+    sccroll_mockTrigger(mock, delay);
     int status    = sccroll_simplefork(testname, run_test);
+    sccroll_mockFlush();
     int code      = WEXITSTATUS(status);
     int signal    = WTERMSIG(status);
 
@@ -98,8 +95,7 @@ static bool assertMock(SccrollMockFlags mock, int delay)
 
 int main(void)
 {
-    SccrollMockFlags mock;
-    int delay;
+    unsigned delay;
     for (mock = SCCENONE, delay = 0; mock < SCCEMAX; ++mock, delay = 0)
         while (assertMock(mock, delay++));
     return EXIT_SUCCESS;

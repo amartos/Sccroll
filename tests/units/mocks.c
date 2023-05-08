@@ -37,6 +37,8 @@ enum {
     SCCEFREE = 4,   // identifiant du simulacre interne de free
 };
 
+// Variable utilisée pour les délais dans les levées d'erreurs.
+static unsigned delay = 0;
 
 // Variable utilisée comme drapeau pour déclencher les erreurs des
 // simulacres interne au test.
@@ -44,12 +46,11 @@ static unsigned dummy_flag = SCCENONE;
 
 // Teste le déclenchement de l'erreur du simulacre, puis le reset du
 // déclencheur.
-#define testMock(flag, testOK, testFail)        \
-    assert(testOK);                             \
-    trigger.mock = flag;                        \
-    trigger.delay = 0;                          \
-    assert(testFail);                           \
-    trigger.mock = SCCENONE
+#define testMock(flag, delay, testOK, testFail)                         \
+    assert(testOK);                                                     \
+    sccroll_mockTrigger(flag, delay);                                   \
+    assert(testFail);                                                   \
+    sccroll_mockFlush()
 
 // Fonctions utilisées pour maintenance du test (on ne cherche pas à
 // les tester).
@@ -103,41 +104,35 @@ void test_predefined_mocks(void)
     const char* teststr = "foobar test 123";
     ssize_t lenstr = strlen(teststr);
 
-    SccrollMockTrigger trigger = { 0 };
-    sccroll_mockTrigger(&trigger);
-
-    testMock(SCCECALLOC, (dummy=calloc(1,sizeof(char))), calloc(1, sizeof(char)) == NULL);
+    testMock(SCCECALLOC, 0, (dummy=calloc(1,sizeof(char))), calloc(1, sizeof(char)) == NULL);
     __real_free(dummy);
 
-    testMock(SCCEMALLOC, (dummy=malloc(1)), malloc(1) == NULL);
+    testMock(SCCEMALLOC, 0, (dummy=malloc(1)), malloc(1) == NULL);
     __real_free(dummy);
 
-    testMock(SCCEPIPE, pipe(pipefd) >= 0, pipe(pipefd) < 0);
+    testMock(SCCEPIPE, 0, pipe(pipefd) >= 0, pipe(pipefd) < 0);
     __real_close(pipefd[0]), __real_close(pipefd[1]);
 
-    testMock(SCCEFORK, (pid = fork()) >= 0, fork() < 0);
+    testMock(SCCEFORK, 0, (pid = fork()) >= 0, fork() < 0);
     if (pid == 0) exit(0);
     wait(&status);
     code = WEXITSTATUS(status);
     signal = WTERMSIG(status);
     assert(!code && ! signal);
 
-    trigger.mock = SCCENONE;
     __real_pipe(pipefd);
     pid = __real_fork();
     if (pid == 0) {
-        testMock(SCCEDUP2,
+        testMock(SCCEDUP2, 0,
                  dup2(pipefd[1], STDOUT_FILENO) >= 0,
                  dup2(STDERR_FILENO, STDOUT_FILENO) < 0);
-        testMock(SCCEWRITE,
+        testMock(SCCEWRITE, 0,
                  write(STDOUT_FILENO, teststr, strlen(teststr)) == lenstr,
                  write(pipefd[1], teststr, lenstr) < 0);
-        testMock(SCCECLOSE, close(pipefd[1]) >= 0, close(pipefd[0]) < 0);
-        testMock(SCCEREAD,
+        testMock(SCCECLOSE, 0, close(pipefd[1]) >= 0, close(pipefd[0]) < 0);
+        testMock(SCCEREAD, 0,
                  read(pipefd[0], buf, SCCMAX) == lenstr,
                  read(pipefd[0], buf, SCCMAX) < 0);
-
-        sccroll_mockTrigger(NULL);
         assert(!strcmp(buf, teststr));
         exit(5);
     }
@@ -151,8 +146,6 @@ void test_predefined_mocks(void)
 
     pid = __real_fork();
     if (pid == 0) {
-        trigger.mock = SCCEMALLOC;
-        trigger.delay = 0;
         abort();
         raise(SIGTERM); // au cas où le simulacre échoue à quitter.
     }
@@ -167,64 +160,36 @@ void test_predefined_mocks(void)
 void test_notrigger(void)
 {
     void* blob;
-    sccroll_mockTrigger(NULL);
+    sccroll_mockTrigger(0,0);
     assert((blob = malloc(1)));
     __real_free(blob);
 }
 
-void test_delay(int delay)
+void test_delay(void)
 {
-    SccrollMockTrigger trigger = {
-        .mock = SCCEMALLOC,
-        .delay = delay,
-    };
-    sccroll_mockTrigger(&trigger);
-    void* blob = NULL;
-    for (int i = 0; i <= delay; ++i) {
-        if (i == delay) assert(malloc(1) == NULL);
-        assert((blob = malloc(1)));
-        __real_free(blob);
-    }
+    sccroll_mockTrigger(SCCEMALLOC, delay);
+    for (unsigned i = 0; i <= delay+1; ++i)
+        free(malloc(1));
+    exit(1);
 }
 
 void test_abort(void)
 {
-    SccrollMockTrigger trigger = {
-        .mock = SCCEMALLOC,
-        .delay = 0,
-        .opts = SCCMABORT,
-    };
-    sccroll_mockTrigger(&trigger);
+    sccroll_mockTrigger(SCCEMALLOC, 0);
     assert(malloc(1) == NULL);
-    assert(trigger.delay == -1);
-
-    pid_t pid = __real_fork();
-    if (pid == 0) free(malloc(1)), exit(1);
-    assert(pid > 0);
-
-    int status;
-    wait(&status);
-    assert(WTERMSIG(status) == SIGABRT);
+    void* blob = malloc(1); // error raised...
+    // ... but in case
+    sccroll_mockFlush();
+    free(blob);
+    fprintf(stderr, "should not print\n");
+    exit(1);
 }
 
 void test_flush(void)
 {
-    void* blob;
-    SccrollMockTrigger trigger = {
-        .mock = SCCEMALLOC,
-        .delay = -1,
-        .opts = SCCMABORT,
-    };
-    sccroll_mockTrigger(&trigger);
+    void* blob = NULL;
+    sccroll_mockTrigger(SCCEMALLOC, 0);
     sccroll_mockFlush();
-    assert((blob = malloc(1)));
-    free(blob);
-
-    trigger.delay = 0;
-    trigger.opts |= SCCMFLUSH;
-    sccroll_mockTrigger(&trigger);
-    assert(malloc(1) == NULL);
-    // Cet appel devrait lancer un abort.
     assert((blob = malloc(1)));
     free(blob);
 }
@@ -241,9 +206,13 @@ int main(void)
     // On teste les réactions des mocks prédéfinis.
     test_predefined_mocks();
     test_notrigger();
-    test_abort();
+    int status = sccroll_simplefork("test_abort", test_abort);
+    assert(WTERMSIG(status) == SIGABRT);
     test_flush();
-    for (unsigned delay = 0; delay < MAX; ++delay) test_delay(delay);
+    for (delay = 0; delay < MAX; ++delay) {
+        status = sccroll_simplefork("test delay", test_delay);
+        assert(WTERMSIG(status) == SIGABRT);
+    }
 
     // On teste les constructions de mocks
 

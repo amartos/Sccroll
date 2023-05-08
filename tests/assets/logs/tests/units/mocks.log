@@ -1,4 +1,14 @@
 malloc (call #1): mock error not handled
+malloc (call #1): mock error not handled
+malloc (call #1): mock error not handled
+malloc (call #2): mock error not handled
+malloc (call #3): mock error not handled
+malloc (call #4): mock error not handled
+malloc (call #5): mock error not handled
+malloc (call #6): mock error not handled
+malloc (call #7): mock error not handled
+malloc (call #8): mock error not handled
+malloc (call #9): mock error not handled
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

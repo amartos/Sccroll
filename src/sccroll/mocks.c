@@ -47,19 +47,29 @@
  * @param mock Le code SccrollMockFlags du simulacre.
  * @return true si le simulacre doit déclencher une erreur, sinon
  * false.
- * @attention Si l'option SCCMABORT est donnée, que
- * SccrollMockTrigger::delay de #trigger est négatif, et que le
- * simulacre correspondant est appelé, la fonction termine le
- * programme (@c SIGABRT).
  */
 static bool sccroll_mockFire(SccrollMockFlags mock);
 
 /**
- * @var mock_trigger
+ * @enum SccrollMockIndex
  * @since 0.1.0
- * @brief Variable indiquant le nombre d'appels du simulacre à ignorer.
+ * @brief Liste des index de #trigger.
  */
-static SccrollMockTrigger * trigger = NULL;
+typedef enum SccrollMockIndex {
+    SCCMMOCK,  /**< Index du code du simulacre à déclencher. */
+    SCCMDELAY, /**< Index du délai à applique. */
+    SCCMCALLS, /**< Index du nombre d'appels effectués à partir de
+                * l'erreur du simulacre. */
+    SCCMMAX,   /**< Valeur maximale des index. */
+} SccrollMockIndex;
+
+/**
+ * @var trigger
+ * @since 0.1.0
+ * @brief Variable contenant les informations sur le simulacre à
+ * déclencher.
+ */
+static unsigned trigger[SCCMMAX] = {0};
 
 /**
  * @def sccroll_mockError
@@ -90,14 +100,17 @@ extern void __gcov_dump(void);
  ******************************************************************************/
 // clang-format on
 
-void sccroll_mockTrigger(SccrollMockTrigger * mock_trigger) { trigger = mock_trigger; }
+void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay) {
+    trigger[SCCMMOCK]  = mock;
+    trigger[SCCMDELAY] = delay;
+}
 
-void sccroll_mockFlush(void) { trigger = NULL; }
+void sccroll_mockFlush(void) { memset(trigger, 0, sizeof(trigger)); }
 
 static bool sccroll_mockFire(SccrollMockFlags mock)
 {
-    if (!trigger) return false;
-    else if (trigger->mock != mock)
+    if (!trigger[SCCMMOCK]) return false;
+    else if (trigger[SCCMMOCK] != mock)
     {
         // Actions coordonnées entre simulacres.
         switch(mock)
@@ -105,24 +118,20 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
         default: return false;
         }
     }
-    else if (trigger->delay > 0) --trigger->delay;
-    else if (trigger->delay == 0)
-    {
-        sccroll_hasFlags(trigger->opts, SCCMFLUSH)
-            ? sccroll_mockFlush()
-            : --trigger->delay;
-        return true;
-    }
-    else if (trigger->delay < 0 && sccroll_hasFlags(trigger->opts, SCCMABORT))
+    else if (trigger[SCCMDELAY] > 0)
+        --trigger[SCCMDELAY];
+    else if (trigger[SCCMCALLS] > trigger[SCCMDELAY])
         sccroll_mockFatal("mock error not handled");
+    else if (trigger[SCCMDELAY] == 0 && trigger[SCCMCALLS] == 0)
+        return ++trigger[SCCMCALLS];
 
     return false;
 }
 
 void sccroll_mockFatal(const char* restrict fmt, ...)
 {
-    int calls = trigger->delay*-1;
-    const char* name = sccroll_mockName(trigger->mock);
+    int calls = trigger[SCCMCALLS];
+    const char* name = sccroll_mockName(trigger[SCCMMOCK]);
     char msg[BUFSIZ] = {0};
     sccroll_mockFlush();
     sccroll_variadic(fmt, list, vsprintf(msg, fmt, list));

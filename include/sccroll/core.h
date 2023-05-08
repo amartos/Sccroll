@@ -22,6 +22,11 @@
 #include "sccroll/helpers.h"
 #include "sccroll/data.h"
 
+#ifdef _SCCUNITTESTS
+// Permet de tester aisément les gestions d'erreurs.
+#include "sccroll/mocks.h"
+#endif
+
 #include <argz.h>
 #include <err.h>
 #include <errno.h>

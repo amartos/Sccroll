@@ -2,48 +2,6 @@
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
-[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
-[ [0;1;31mFAIL[0m ] testing errors
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
-[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
-[ [0;1;31mFAIL[0m ] testing errors
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
-[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
-[ [0;1;31mFAIL[0m ] testing errors
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
-[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
-[ [0;1;31mFAIL[0m ] testing errors
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
-[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
-[ [0;1;31mFAIL[0m ] testing errors
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
-[ [0;1;36mDIFF[0m ] testing errors: signal: expected 0 (no signal), got 11 (SIGSEGV)
-[ [0;1;31mFAIL[0m ] testing errors
-
-
---------------------------------------------------------------------------------
-
-[ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
 
 --------------------------------------------------------------------------------
 

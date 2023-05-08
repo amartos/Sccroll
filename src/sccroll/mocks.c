@@ -51,6 +51,13 @@
 static bool sccroll_mockFire(SccrollMockFlags mock);
 
 /**
+ * @since 0.1.0
+ * @brief Vérifie qu'une éventuelle erreur d'un simulacre déclenché a
+ * été gérée, et si non termine le programme (@c SIGABRT).
+ */
+static void sccroll_mockAbortNotHandled(void);
+
+/**
  * @enum SccrollMockIndex
  * @since 0.1.0
  * @brief Liste des index de #trigger.
@@ -70,22 +77,6 @@ typedef enum SccrollMockIndex {
  * déclencher.
  */
 static unsigned trigger[SCCMMAX] = {0};
-
-/**
- * @def sccroll_mockError
- * @since 0.1.0
- * @brief Renvoie la valeur d'erreur si sccroll_mockTrigger correspond
- * au simulacre, sinon renvoie la valeur de @c __real_name(...).
- * @param name Le nom de la fonction originale.
- * @param errtrig Le code SccrollMockFlags du simulacre.
- * @param errval La valeur à renvoyer pour simuler l'erreur de @p name.
- * @param ... Les arguments pour la fonction originale (vide pour
- * "sans arguments").
- * @return @p errval si sccroll_mockTrigger correspond au simulacre,
- * sinon la valeur renvoyée par @p __real_name(...).
- */
-#define sccroll_mockError(name, errtrig, errval, ...)               \
-    sccroll_mockFire(errtrig) ? errval : __real_##name(__VA_ARGS__)
 
 /**
  * @since 0.1.0
@@ -136,17 +127,29 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
         // Actions coordonnées entre simulacres.
         switch(mock)
         {
-        default: return false;
+        default: sccroll_mockAbortNotHandled(); break;
         }
     }
     else if (trigger[SCCMDELAY] > 0)
         --trigger[SCCMDELAY];
-    else if (trigger[SCCMCALLS] > trigger[SCCMDELAY])
-        sccroll_mockFatal(SIGABRT, "mock error not handled");
-    else if (trigger[SCCMDELAY] == 0 && trigger[SCCMCALLS] == 0)
-        return ++trigger[SCCMCALLS];
+    else if (!trigger[SCCMDELAY] && !trigger[SCCMCALLS])
+        ++trigger[SCCMCALLS];
+    else
+        sccroll_mockAbortNotHandled();
 
-    return false;
+    return trigger[SCCMMOCK] == mock && trigger[SCCMCALLS];
+}
+
+static void sccroll_mockAbortNotHandled(void)
+{
+    if (trigger[SCCMCALLS]) {
+        sccroll_mockFatal(
+            SIGABRT,
+            "%s call #%u: error not handled",
+            sccroll_mockName(trigger[SCCMMOCK]),
+            trigger[SCCMCALLS]
+        );
+    }
 }
 
 void sccroll_mockFatal(int sigint, const char* restrict fmt, ...)
@@ -224,45 +227,53 @@ static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsig
  ******************************************************************************/
 // clang-format on
 
-SCCROLL_MOCK(void*, calloc, size_t nmemb, size_t size)
-{
-    return sccroll_mockError(calloc, SCCECALLOC, NULL, nmemb, size);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCECALLOC),
+    NULL, void*, calloc,
+    size_t nmemb SCCCOMMA size_t size,
+    nmemb, size
+);
 
-SCCROLL_MOCK(void*, malloc, size_t size)
-{
-    return sccroll_mockError(malloc, SCCEMALLOC, NULL, size);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEMALLOC),
+    NULL, void*, malloc, size_t size,
+    size
+);
 
-SCCROLL_MOCK(int, pipe, int pipefd[2])
-{
-    return sccroll_mockError(pipe, SCCEPIPE, -1, pipefd);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEPIPE),
+    -1, int, pipe, int pipefd[2],
+    pipefd
+);
 
-SCCROLL_MOCK(pid_t, fork, void)
-{
-    return sccroll_mockError(fork, SCCEFORK, -1,);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEFORK),
+    -1, int, fork, void,
+);
 
-SCCROLL_MOCK(int, dup2, int oldfd, int newfd)
-{
-    return sccroll_mockError(dup2, SCCEDUP2, -1, oldfd, newfd);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEDUP2),
+    -1, int, dup2, int oldfd SCCCOMMA int newfd,
+    oldfd, newfd
+);
 
-SCCROLL_MOCK(int, close, int fd)
-{
-    return sccroll_mockError(close, SCCECLOSE, -1, fd);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCECLOSE),
+    -1, int, close, int fd, fd
+);
 
-SCCROLL_MOCK(ssize_t, read, int fd, void* buf, size_t count)
-{
-    return sccroll_mockError(read, SCCEREAD, -1, fd, buf, count);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEREAD),
+    -1, ssize_t, read, int fd SCCCOMMA void* buf SCCCOMMA size_t count,
+    fd, buf, count
+);
 
-SCCROLL_MOCK(ssize_t, write, int fd, const void* buf, size_t count)
-{
-    return sccroll_mockError(write, SCCEWRITE, -1, fd, buf, count);
-}
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEWRITE),
+    -1, ssize_t, write, int fd SCCCOMMA const void* buf SCCCOMMA size_t count,
+    fd, buf, count
+);
+
 
 // clang-format off
 
@@ -277,4 +288,9 @@ SCCROLL_MOCK(ssize_t, write, int fd, const void* buf, size_t count)
 // ne sera jamais appelé.
 void abort(void) { sccroll_mockFlush(), __gcov_dump(), raise(SIGABRT), exit(SIGABRT); }
 
+void exit(int status)
+{
+    if (!status) sccroll_mockAbortNotHandled();
+    __gcov_dump(), _exit(status);
+}
 /** @} @} */

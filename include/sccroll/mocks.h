@@ -40,6 +40,8 @@
 #include "sccroll/helpers.h"
 #include "sccroll/assert.h"
 
+#define _GNU_SOURCE
+#include <dlfcn.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,36 +73,45 @@
  * @since 0.1.0
  * @brief Génère un simulacre d'une fonction.
  *
- * Comme pour SCCROLL_TEST(), cette macro s'utilise de manière analogue
- * à la définition d'une fonction. Le prototype est passé à la macro
- * et le code du simulacre et inclus dans des crochets suivant
- * directement la macro. La fonction originelle est toujours
- * disponible *via* l'appel de @c __real_name .
+ * Générer un simulacre se fait avec deux définitions.
  *
- * La syntaxe d'une définition de simulacre est particulère pour les
- * paramètres dans le sens où un paramètre doit contenir à la fois le
- * type et le nom de la variable (ce dernier peut être différent de
- * celui de la fonction originelle) non séparés par une virgule.
+ * La première est celle de cette macro, qui donne les informations
+ * nécessaires au fonctionnement du simulacre et à son déclenchement
+ * d'erreurs.
  *
- * Les attributs de la fonction originelle sont copiés
- * automatiquement.
+ * La seconde est celle d'une macro de remplacement dans une en-tête
+ * importée par le code à tester. Cette macro redéfinit la fonction
+ * remplacée par l'équivalente générée par la macro #SCCROLL_MOCK ; la
+ * syntaxe est la suivante: `#define fonction sccroll_mockfonction`.
  *
- * @attention Cette macro est conçue pour une compilation avec GCC.
- * @attention L'utilisation de cette macro nécessite de passer le
- * paramètre `--wrap name` au linker @c ld .
- * L'option @c -Wl de GCC est utile en ce sens. De plus, le script
- * @c mocks.awk de la librairie facilite la compilation de sources
- * avec cette macro.
+ * Le simulacre est ensuite déclenché quand @p expr vaut @c true, et
+ * renvoie @p errval. Il est déconseillé d'utiliser la fonction
+ * `libfonction` (qui correspond à la fonction originale), car elle
+ * n'est initialisée qu'après le premier appel du simulacre.
+ *
+ * @param expr Une expression booléenne déclenchant une erreur du
+ * simulacre quand @c true.
+ * @param errval La valeur renvoyée en cas d'erreur.
  * @param retval Le type des données renvoyées par la fonction
  * originelle.
  * @param name Le nom de la fonction originelle.
- * @param ... Les paramètres de la fonction originelle ou @c void si
- * le simulacre ne prend aucun paramètre.
+ * @param protoargs Les paramètres du prototype ; la macro #SCCCOMMA
+ * facilite la construction de cet argument.
+ * @param ... Les paramètres de la fonction originelle sans les type
+ * de données (rien pour @c void).
+ * @return @p errval si @p expr vaut @c true, sinon la valeur renvoyée
+ * par la fonction originelle.
  */
-#define SCCROLL_MOCK(retval, name, ...)         \
-    attr_rename(extern, name, __real_##name);   \
-    attr_rename(extern, name, __wrap_##name);   \
-    retval __wrap_##name(__VA_ARGS__)
+#define SCCROLL_MOCK(expr, errval, retval, name, protoargs, ...)        \
+    __typeof__(name) (*lib##name) = NULL;                               \
+    retval sccroll_mock##name(protoargs)                                \
+    {                                                                   \
+        if (!lib##name) {                                               \
+            lib##name = dlsym(RTLD_NEXT, #name);                        \
+            if (!lib##name) err(EXIT_FAILURE, "%s", dlerror());         \
+        }                                                               \
+        return (expr) ? errval : lib##name(__VA_ARGS__);                \
+    }
 
 // clang-format off
 
@@ -226,6 +237,73 @@ void sccroll_mockPredefined(SccrollFunc wrapper) __attribute__((nonnull));
  * être libérée.
  */
 const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnull));
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ * @name Prototypes et macros des simulacres prédéfinis.
+ *
+ * Cette méthode est utilisée à la place de #SCCROLL_MOCK car des
+ * simulacres de ces fonctions de la librairie standard provoquent des
+ * erreurs lors des appels dans les librairies partagées, notamment la
+ * standard.
+ *
+ * Cette section n'est pas destinée à être utilisée directement, mais
+ * sert à rediriger les simulacres prédéfinis vers les fonctions de la
+ * librairie.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @def sccroll_mockPrototype
+ * @since 0.1.0
+ * @brief Définit les prototypes des simulacres.
+ */
+#define sccroll_mockPrototype(name)           \
+    extern __typeof__(name) (*lib##name);     \
+    __typeof__(name) sccroll_mock##name
+
+/**
+ * @def sccroll_mockCall
+ * @since 0.1.0
+ * @brief Macro facilitant la construction des simulacres avec
+ * traçage.
+ * @param name Le nom de la fonction remplacée.
+ * @param flag Le drapeau SccrollMockFlags qui correspond au
+ * simulacre.
+ * @return Le résultat de `sccroll_mockname`.
+ */
+#define sccroll_mockCall(name, flag, ...) sccroll_mock##name(__VA_ARGS__)
+
+/**
+ * @name Prototypes des simulacres prédéfinis.
+ * @{
+ */
+sccroll_mockPrototype(malloc);
+sccroll_mockPrototype(calloc);
+sccroll_mockPrototype(pipe);
+sccroll_mockPrototype(fork);
+sccroll_mockPrototype(dup2);
+sccroll_mockPrototype(close);
+sccroll_mockPrototype(read);
+sccroll_mockPrototype(write);
+/** @} */
+
+/**
+ * @name Définition des simulacres *via* macros.
+ * @{
+ */
+#define malloc(...) sccroll_mockCall(malloc, SCCEMALLOC, __VA_ARGS__)
+#define calloc(...) sccroll_mockCall(calloc, SCCECALLOC, __VA_ARGS__)
+#define pipe(...)   sccroll_mockCall(pipe, SCCEPIPE, __VA_ARGS__)
+#define fork(...)   sccroll_mockCall(fork, SCCEFORK, __VA_ARGS__)
+#define dup2(...)   sccroll_mockCall(dup2, SCCEDUP2, __VA_ARGS__)
+#define close(...)  sccroll_mockCall(close, SCCECLOSE, __VA_ARGS__)
+#define read(...)   sccroll_mockCall(read, SCCEREAD, __VA_ARGS__)
+#define write(...)  sccroll_mockCall(write, SCCEWRITE, __VA_ARGS__)
+/** @} */
 
 // clang-format off
 /******************************************************************************

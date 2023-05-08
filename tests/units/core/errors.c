@@ -30,13 +30,6 @@
  ******************************************************************************/
 // clang-format on
 
-// Le test courant utilise fork, on s'assure donc d'utiliser
-// l'originale et non le mock prédéfini.
-attr_rename(extern, fork, __real_fork);
-
-// On s'assure d'utiliser la version originale de abort.
-attr_rename(extern, abort, __real_abort);
-
 // Fonction de test réussit quelles que soient les conditions.
 void test_success(void) {};
 

@@ -74,7 +74,7 @@ STD			= gnu99
 CFLAGS		= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) -fpic
 DFLAGS		= -MMD -MP -MF
 SFLAGS		= -shared
-LDLIBS	 	= -L $(LIBS) -l $(PROJECT)
+LDLIBS	 	= -L $(LIBS) -l$(PROJECT) -ldl
 
 
 ###############################################################################
@@ -103,7 +103,6 @@ COVOPTSHTML	= --html-details $(COVHTML) \
 # Fonctions d'aide
 ###############################################################################
 
-MOCKS		= $(SCRIPTS)/mocks.awk
 INFO	 	= $(SCRIPTS)/pinfo
 PDOC		= $(SCRIPTS)/pdoc.awk
 
@@ -123,7 +122,7 @@ endef
 $(OBJS)/%.o: %.c
 	@$(CC) $(CFLAGS) $(DFLAGS) $(DEPS)/$*.d -c $< -o $@
 
-$(LIBS)/lib%.so: SFLAGS += $(shell $(MOCKS) $(CDEPS)),-soname,lib$*.so
+$(LIBS)/lib%.so: SFLAGS += -Wl,-soname,lib$*.so
 $(LIBS)/lib%.so: $(CDEPS:%.c=$(OBJS)/%.o)
 	@$(CC) $(SFLAGS) $^ -o $@.$(VERSION)
 	@ln -s $(@:$(LIBS)/%=%).$(VERSION) $@
@@ -165,7 +164,6 @@ tests: coverage
 
 # Compile, exécute et vérifie les tests unitaires
 unit-tests: CFLAGS += -g -O0
-unit-tests: LDLIBS += $(shell $(MOCKS) $*.c $(CDEPS))
 unit-tests: ARGS    = 0 1 2 3 4 5
 unit-tests: tests-init $(LIBS)/$(TARGET) $(CUNITS:%.c=$(LOGS)/%.difflog)
 	@rm -rf $(BIN)/*
@@ -173,7 +171,7 @@ unit-tests: tests-init $(LIBS)/$(TARGET) $(CUNITS:%.c=$(LOGS)/%.difflog)
 	@$(INFO) ok $@
 
 # Calcule la couverture de code des tests unitaires
-coverage: CFLAGS += --coverage
+coverage: CFLAGS += -D_SCCUNITTESTS --coverage
 coverage: SFLAGS += --coverage
 coverage: LDLIBS += --coverage
 coverage: unit-tests

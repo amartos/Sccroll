@@ -34,8 +34,8 @@
 // Constantes du test
 enum {
     MAX = 10,       // Nombre de tests de délai max
-    SCCESCCRUN = 2, // identifiant du simulacre interne de sccroll_run
-    SCCEFREE = 4,   // identifiant du simulacre interne de free
+    SCCESCCRUN = SCCEMAX,   // identifiant du simulacre interne de sccroll_run
+    SCCEFREE   = SCCEMAX+1, // identifiant du simulacre interne de free
 };
 
 // Variable utilisée pour les délais dans les levées d'erreurs.
@@ -53,13 +53,6 @@ static unsigned dummy_flag = SCCENONE;
     assert(testFail);                                                   \
     sccroll_mockFlush()
 
-// Fonctions utilisées pour maintenance du test (on ne cherche pas à
-// les tester).
-attr_rename(extern, fork, __real_fork);
-attr_rename(extern, close, __real_close);
-attr_rename(extern, pipe, __real_pipe);
-attr_rename(extern, dup2, __real_dup2);
-
 // clang-format off
 
 /******************************************************************************
@@ -70,30 +63,37 @@ attr_rename(extern, dup2, __real_dup2);
 // simulacre de free n'interférant pas avec la fonction.
 // free na pas été intégré avec les simulacres préfournis car la
 // fonction ne lève aucune erreur qui puisse être prévue.
-SCCROLL_MOCK(void, free, void* ptr)
-{
-    if (sccroll_hasFlags(dummy_flag, SCCEFREE))
-        puts("free mocked");
-    __real_free(ptr);
-}
+SCCROLL_MOCK(
+    dummy_flag == SCCEFREE,
+    puts("free mocked") SCCCOMMA libfree(ptr),
+    void, free, void* ptr, ptr
+);
+#define free sccroll_mockfree
 
 // mock de sccroll_run qui annule les effets de la fonction si
-// #dummy_flag est défini.
-SCCROLL_MOCK(int, sccroll_run, void)
-{
-    sccroll_hasFlags(dummy_flag, SCCESCCRUN)
-        ? puts("sccroll_run mocked: flag seen.")
-        : puts("sccroll_run mocked: nothing executed.");
-    return 0;
-}
+// #dummy_flag est défini, et qui renvoie 0 dans le reste des cas.
+// La syntaxe de la valeur retour est complexe ici car c'est un hack
+// de l'expression `expr ? retval : sccroll_run();`, forçant le renvoi
+// de 0 au lieu d'appeler l'originale (ce qu'on ne veut pas ici).
+SCCROLL_MOCK(
+    dummy_flag == SCCESCCRUN,
+    puts("sccroll_run mocked: flag seen.") SCCCOMMA 0
+    : puts("sccroll_run mocked: nothing executed.") SCCCOMMA 0;
+    true ? 0,
+    int, sccroll_run, void,
+);
+#define sccroll_run sccroll_mocksccroll_run
 
 // mock de sccroll_before, mais qui provoque une erreur en cas
 // d'exécution. Puisque sccroll_run est mockée et n'exécute aucun
 // test, sccroll_before ne devrait pas être exécutée.
-SCCROLL_MOCK(void, sccroll_before, void)
-{
-    assert(false && "sccroll_before mocked, but should not be executed...");
-}
+SCCROLL_MOCK(
+    true,
+    assert(false && "sccroll_before mocked, but should not be executed..."),
+    void, sccroll_before, void
+);
+#define sccroll_before sccroll_mocksccroll_before
+
 
 void test_getters(void)
 {
@@ -145,13 +145,13 @@ void test_predefined_mocks(void)
     ssize_t lenstr = strlen(teststr);
 
     testMock(SCCECALLOC, 0, (dummy=calloc(1,sizeof(char))), calloc(1, sizeof(char)) == NULL);
-    __real_free(dummy);
+    free(dummy);
 
     testMock(SCCEMALLOC, 0, (dummy=malloc(1)), malloc(1) == NULL);
-    __real_free(dummy);
+    free(dummy);
 
     testMock(SCCEPIPE, 0, pipe(pipefd) >= 0, pipe(pipefd) < 0);
-    __real_close(pipefd[0]), __real_close(pipefd[1]);
+    close(pipefd[0]), close(pipefd[1]);
 
     testMock(SCCEFORK, 0, (pid = fork()) >= 0, fork() < 0);
     if (pid == 0) exit(0);
@@ -160,8 +160,8 @@ void test_predefined_mocks(void)
     signal = WTERMSIG(status);
     assert(!code && ! signal);
 
-    __real_pipe(pipefd);
-    pid = __real_fork();
+    pipe(pipefd);
+    pid = fork();
     if (pid == 0) {
         testMock(SCCEDUP2, 0,
                  dup2(pipefd[1], STDOUT_FILENO) >= 0,
@@ -184,7 +184,7 @@ void test_predefined_mocks(void)
     assert(close(pipefd[0]) >= 0);
     assert(close(pipefd[1]) >= 0);
 
-    pid = __real_fork();
+    pid = fork();
     if (pid == 0) {
         abort();
         raise(SIGTERM); // au cas où le simulacre échoue à quitter.
@@ -202,7 +202,7 @@ void test_notrigger(void)
     void* blob;
     sccroll_mockTrigger(0,0);
     assert((blob = malloc(1)));
-    __real_free(blob);
+    free(blob);
 }
 
 void test_delay(void)
@@ -213,16 +213,15 @@ void test_delay(void)
     exit(1);
 }
 
-void test_abort(void)
+void test_abort_atexit(void)
 {
-    sccroll_mockTrigger(SCCEMALLOC, 0);
-    assert(malloc(1) == NULL);
-    void* blob = malloc(1); // error raised...
-    // ... but in case
     sccroll_mockFlush();
-    free(blob);
-    fprintf(stderr, "should not print\n");
-    exit(1);
+
+    sccroll_mockTrigger(SCCEMALLOC, 0);
+    // Cet appel **doit** faire échouer le programme quel que soit le
+    // contexte.
+    void* blob = malloc(1);
+    (void) blob;
 }
 
 void test_flush(void)
@@ -272,7 +271,7 @@ void test_fullerrors(void)
         if (dup2(STDOUT_FILENO, fd) > 0)
             // on évite de re-déclencher le simulacre en utilisant la
             // version originale.
-            if (__real_dup2(STDOUT_FILENO, oldfd) < 0) {
+            if (libdup2(STDOUT_FILENO, oldfd) < 0) {
                 errmsg = "could not reset STDOUT";
                 break;
             }
@@ -347,7 +346,7 @@ int main(void)
     test_predefined_mocks();
     test_notrigger();
     test_getters();
-    int status = sccroll_simplefork("test_abort", test_abort);
+    int status = sccroll_simplefork("test_abort_atexit", test_abort_atexit);
     assert(WTERMSIG(status) == SIGABRT);
     test_flush();
     for (delay = 0; delay < MAX; ++delay) {

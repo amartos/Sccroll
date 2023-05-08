@@ -27,6 +27,26 @@
 // clang-format off
 
 /******************************************************************************
+ * @name Construction de macros
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @def SCCCOMMA
+ * @since 0.1.0
+ * @brief Génère une virgule.
+ *
+ * Cette macro est à utiliser dans d'autres macros, quand un des
+ * paramètres a besoin d'une virgule qui ne doit pas être interprétée
+ * par la macro.
+ */
+#define SCCCOMMA ,
+
+// clang-format off
+
+/******************************************************************************
+ * @}
  * @name Gestion des messages
  * @{
  ******************************************************************************/

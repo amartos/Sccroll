@@ -1,30 +1,30 @@
-malloc (call #1): in test_abort_atexit, line 280: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_delay, line 269: error not handled
-malloc (call #1): in test_fullerrors, line 310: error not handled
-Predefined malloc mock error (status 0, signal ABRT)
-calloc (call #1): in test_fullerrors, line 311: error not handled
-Predefined calloc mock error (status 0, signal ABRT)
-pipe (call #1): in test_fullerrors, line 314: error not handled
-Predefined pipe mock error (status 0, signal ABRT)
-fork (call #1): in test_fullerrors, line 312: error not handled
-Predefined fork mock error (status 0, signal ABRT)
-dup2 (call #1): in test_fullerrors, line 330: error not handled
-Predefined dup2 mock error (status 0, signal ABRT)
-close (call #1): in test_fullerrors, line 346: error not handled
-Predefined close mock error (status 0, signal ABRT)
-read (call #1): in test_fullerrors, line 360: error not handled
-Predefined read mock error (status 0, signal ABRT)
-write (call #1): in test_fullerrors, line 376: error not handled
-Predefined write mock error (status 0, signal ABRT)
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+malloc (call #1): malloc call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+calloc (call #1): calloc call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+pipe (call #1): pipe call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+fork (call #1): fork call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+dup2 (call #1): dup2 call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+close (call #1): close call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+read (call #1): read call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
+write (call #1): write call #1: error not handled
+none (call #0): wrapper error not handled: status 0, signal SIGABRT
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

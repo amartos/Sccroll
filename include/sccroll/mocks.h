@@ -187,12 +187,13 @@ void sccroll_mockFlush(void);
 /**
  * @since 0.1.0
  * @brief Invoque sccroll_mockFlush(), affiche un message sur stderr,
- * sauvegarde les données pour gcov et lève SIGABRT.
+ * sauvegarde les données pour gcov et lève un signal.
+ * @param sigint Le signal d'erreur.
  * @param fmt La chaîne de formatage du message
  * @param ... Les arguments de la chaîne de formatage.
  */
-void sccroll_mockFatal(const char* restrict fmt, ...)
-    __attribute__((noreturn,format(printf,1,2)));
+void sccroll_mockFatal(int sigint, const char* restrict fmt, ...)
+    __attribute__((noreturn,format(printf,2,3)));
 
 /**
  * @since 0.1.0

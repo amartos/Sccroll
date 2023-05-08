@@ -142,21 +142,21 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
     else if (trigger[SCCMDELAY] > 0)
         --trigger[SCCMDELAY];
     else if (trigger[SCCMCALLS] > trigger[SCCMDELAY])
-        sccroll_mockFatal("mock error not handled");
+        sccroll_mockFatal(SIGABRT, "mock error not handled");
     else if (trigger[SCCMDELAY] == 0 && trigger[SCCMCALLS] == 0)
         return ++trigger[SCCMCALLS];
 
     return false;
 }
 
-void sccroll_mockFatal(const char* restrict fmt, ...)
+void sccroll_mockFatal(int sigint, const char* restrict fmt, ...)
 {
     int calls = trigger[SCCMCALLS];
     const char* name = sccroll_mockName(trigger[SCCMMOCK]);
     char msg[BUFSIZ] = {0};
     sccroll_mockFlush();
     sccroll_variadic(fmt, list, vsprintf(msg, fmt, list));
-    sccroll_fatal(SIGABRT, SCCROLL_MOCKERRFMT, name, calls, msg);
+    sccroll_fatal(sigint, SCCROLL_MOCKERRFMT, name, calls, msg);
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)
@@ -209,6 +209,7 @@ static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsig
     // prise en compte et a appelé à nouveau le simulacre.
     if ((!mock && error) || signal == SIGABRT)
         sccroll_mockFatal(
+            SIGABRT,
             "wrapper error not handled: status %i, signal %s",
             code, "SIGABRT"
         );

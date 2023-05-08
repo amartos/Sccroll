@@ -144,6 +144,26 @@ void test_predefined_mocks(void)
     char buf[SCCMAX] = { 0 };
     const char* teststr = "foobar test 123";
     ssize_t lenstr = strlen(teststr);
+    const char* textfilepath = "tests/assets/blobs/textfile";
+    char text[SCCMAX] = { 0 };
+    FILE* textfile = fopen(textfilepath, "r");
+    if (!textfile) err(EXIT_FAILURE, "%s", textfilepath);
+    size_t textlen;
+    assert((textlen = fread(text, sizeof(char), SCCMAX, textfile)) > 0);
+    fclose(textfile), textfile = NULL;
+
+    testMock(SCCEFOPEN, 0, (textfile=fopen(textfilepath, "r")), (fopen(textfilepath, "r") == NULL));
+    assert(textfile);
+
+    testMock(SCCEFERROR, 0, (ferror(textfile) == 0), (ferror(textfile) != 0));
+    testMock(SCCEFORK, 0, (ferror(textfile) == 0), (ferror(textfile) == 0));
+    // On teste que ferror renvoie une erreur si une fonction de la
+    // famille f* est en erreur.
+    testMock(SCCEFOPEN, 0, true, (fopen(textfilepath, "r"), ferror(textfile) != 0));
+    assert(fread(buf, sizeof(char), SCCMAX, textfile) == textlen);
+    assert(!strcmp(buf, text));
+    memset(buf, 0, sizeof(buf));
+    fclose(textfile), textfile = NULL;
 
     testMock(SCCECALLOC, 0, (dummy=calloc(1,sizeof(char))), calloc(1, sizeof(char)) == NULL);
     free(dummy);
@@ -246,6 +266,7 @@ void test_fullerrors(void)
     void* blob       = NULL;
     char template[]  = "/tmp/sccroll.errors.XXXXXX";
     char* errmsg     = NULL;
+    FILE* tmp        = NULL;
 
     // On veut controller le moment de l'erreur, donc on s'assure
     // d'être synschrone avec le déclencheur.
@@ -322,6 +343,21 @@ void test_fullerrors(void)
         write(fd, blob, 1);
         free(blob);
         close(fd);
+        break;
+    case SCCEFERROR:
+        mkstemp(template);
+        tmp = fopen(template, "r+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        (void)ferror(tmp);
+        fclose(tmp);
+        break;
+    case SCCEFOPEN:
+        mkstemp(template);
+        tmp = fopen(template, "r+");
+        if (tmp) fclose(tmp);
         break;
     case SCCENONE: exit(0); break;
     default:

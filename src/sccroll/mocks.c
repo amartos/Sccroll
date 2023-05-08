@@ -157,6 +157,17 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
         switch(mock)
         {
         default: sccroll_mockAssert(); break;
+        case SCCEFERROR:
+            // On déclenche aussi le simulacre avec les autres fonctions
+            // f* de la librairie standard, car ferror doit être synchrone
+            // avec leur déclenchement.
+            switch(trigger[SCCMMOCK])
+            {
+            default: break;
+            case SCCEFOPEN:
+                return trigger[SCCMCALLS] > trigger[SCCMDELAY];
+            }
+            break;
         }
     }
     else if (trigger[SCCMDELAY] > 0)
@@ -201,6 +212,8 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEREAD:   return "read";
     case SCCEWRITE:  return "write";
     case SCCEMALLOC: return "malloc";
+    case SCCEFERROR: return "ferror";
+    case SCCEFOPEN:  return "fopen";
     }
 }
 
@@ -301,6 +314,16 @@ SCCROLL_MOCK(
     fd, buf, count
 );
 
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEFERROR),
+    1, int, ferror, FILE* stream, stream
+);
+
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEFOPEN),
+    NULL, FILE*, fopen, const char* restrict pathname SCCCOMMA const char* restrict mode,
+    pathname, mode
+);
 
 // clang-format off
 

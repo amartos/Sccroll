@@ -1,30 +1,34 @@
-malloc (call #1 in test_abort_atexit l. 228): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_delay l. 217): error not handled
-malloc (call #1 in test_fullerrors l. 256): error not handled
+malloc (call #1 in test_abort_atexit l. 248): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_delay l. 237): error not handled
+malloc (call #1 in test_fullerrors l. 277): error not handled
 Predefined malloc mock error (status 0, signal ABRT)
-calloc (call #1 in test_fullerrors l. 257): error not handled
+calloc (call #1 in test_fullerrors l. 278): error not handled
 Predefined calloc mock error (status 0, signal ABRT)
-pipe (call #1 in test_fullerrors l. 260): error not handled
+pipe (call #1 in test_fullerrors l. 281): error not handled
 Predefined pipe mock error (status 0, signal ABRT)
-fork (call #1 in test_fullerrors l. 258): error not handled
+fork (call #1 in test_fullerrors l. 279): error not handled
 Predefined fork mock error (status 0, signal ABRT)
-dup2 (call #1 in test_fullerrors l. 276): error not handled
+dup2 (call #1 in test_fullerrors l. 297): error not handled
 Predefined dup2 mock error (status 0, signal ABRT)
-close (call #1 in test_fullerrors l. 292): error not handled
+close (call #1 in test_fullerrors l. 313): error not handled
 Predefined close mock error (status 0, signal ABRT)
-read (call #1 in test_fullerrors l. 306): error not handled
+read (call #1 in test_fullerrors l. 327): error not handled
 Predefined read mock error (status 0, signal ABRT)
-write (call #1 in test_fullerrors l. 322): error not handled
+write (call #1 in test_fullerrors l. 343): error not handled
 Predefined write mock error (status 0, signal ABRT)
+ferror (call #1 in test_fullerrors l. 354): error not handled
+Predefined ferror mock error (status 0, signal ABRT)
+fopen (call #1 in test_fullerrors l. 359): error not handled
+Predefined fopen mock error (status 0, signal ABRT)
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

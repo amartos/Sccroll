@@ -84,3 +84,15 @@ res: [0;0;31merrors: write pipe failed for testing errors: Success[0m
 --------------------------------------------------------------------------------
 
 [ [0;1;31mFAIL[0m ] success rate: 50.00% [1/2]
+
+--------------------------------------------------------------------------------
+
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
+errors: tests/assets/blobs/textfile failed for testing errors: Success
+errors: tests/assets/blobs/textfile failed for testing errors: Success
+errors: tests/assets/blobs/textfile failed for testing errors: Success
+errors: tests/assets/blobs/textfile failed for testing errors: Success
+
+--------------------------------------------------------------------------------
+
+[ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]

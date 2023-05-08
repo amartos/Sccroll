@@ -138,6 +138,7 @@
  * simulacre pré-fourni doit être en erreur.
  * @attention Les drapeaux **ne peuvent pas** être combinés pour
  * déclencher plusieurs erreurs simultanément.
+ * @attention Certains drapeaux déclenchent l'erreur d'un autre.
  */
 typedef enum SccrollMockFlags {
     SCCENONE = 0, /**< Drapeau ne provoquant pas d'erreurs. */
@@ -149,6 +150,8 @@ typedef enum SccrollMockFlags {
     SCCECLOSE,    /**< Drapeau de close(). */
     SCCEREAD,     /**< Drapeau de read(). */
     SCCEWRITE,    /**< Drapeau de write(). */
+    SCCEFERROR,   /**< Drapeau de ferror(). */
+    SCCEFOPEN,    /**< Drapeau de fopen() et ferror(). */
     SCCEMAX,      /**< Valeur maximale des mocks individuels. */
 } SccrollMockFlags;
 
@@ -303,6 +306,8 @@ sccroll_mockPrototype(dup2);
 sccroll_mockPrototype(close);
 sccroll_mockPrototype(read);
 sccroll_mockPrototype(write);
+sccroll_mockPrototype(ferror);
+sccroll_mockPrototype(fopen);
 /** @} */
 
 /**
@@ -317,6 +322,8 @@ sccroll_mockPrototype(write);
 #define close(...)  sccroll_mockCall(close, SCCECLOSE, __VA_ARGS__)
 #define read(...)   sccroll_mockCall(read, SCCEREAD, __VA_ARGS__)
 #define write(...)  sccroll_mockCall(write, SCCEWRITE, __VA_ARGS__)
+#define ferror(...) sccroll_mockCall(ferror, SCCEFERROR, __VA_ARGS__)
+#define fopen(...)  sccroll_mockCall(fopen, SCCEFOPEN, __VA_ARGS__)
 /** @} */
 
 // clang-format off

@@ -325,7 +325,12 @@ void test_fullerrors(void)
         break;
     }
 
-    assertMsg(!errmsg, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
+    if (errmsg)
+        // SIGABRT est utilisé par les simulacres or le test ici est
+        // pour les éventuelles erreurs qui ne sont pas provquées par
+        // le simulacre. On s'assure donc de lever un signal autre que
+        // SIGABRT dans ces cas-là.
+        sccroll_fatal(SIGTERM, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
 }
 
 void test_mockPredefined(void)

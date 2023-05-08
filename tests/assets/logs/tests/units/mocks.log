@@ -10,21 +10,21 @@ malloc (call #1): malloc (in test_delay l. 212): error not handled
 malloc (call #1): malloc (in test_delay l. 212): error not handled
 malloc (call #1): malloc (in test_delay l. 212): error not handled
 malloc (call #1): malloc (in test_fullerrors l. 251): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 calloc (call #1): calloc (in test_fullerrors l. 252): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 pipe (call #1): pipe (in test_fullerrors l. 255): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 fork (call #1): fork (in test_fullerrors l. 253): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 dup2 (call #1): dup2 (in test_fullerrors l. 271): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 close (call #1): close (in test_fullerrors l. 287): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 read (call #1): read (in test_fullerrors l. 301): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 write (call #1): write (in test_fullerrors l. 317): error not handled
-none (call #0): wrapper error not handled: status 0, signal SIGABRT
+none (call #0): wrapper error not handled: status 0, signal ABRT
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

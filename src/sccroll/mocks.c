@@ -222,6 +222,7 @@ static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsig
     bool error = false;
     int status = 0, code = 0, signal = 0;
     const char* name = sccroll_mockName(mock);
+    const char* sigstr = NULL;
 
     // On effectue le test dans un fork pour éviter de crasher le
     // programme prématurément.
@@ -230,17 +231,17 @@ static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsig
     sccroll_mockFlush();
     code   = WEXITSTATUS(status);
     signal = WTERMSIG(status);
+    sigstr = sigabbrev_np(signal);
     error  = code || signal;
 
     // On vérifie qu'il n'y a pas d'erreur si aucun simulacre n'est
-    // déclenché, ou que le simulacre n'a pas envoyé SIGABRT; ce
-    // serait le signe que l'erreur du simulacre appelé n'a pas été
-    // prise en compte et a appelé à nouveau le simulacre.
-    if ((!mock && error) || signal == SIGABRT)
+    // déclenché, ou que le simulacre n'a pas envoyé de signaux
+    // d'erreurs (SIGABRT, SIGSEGV, ...).
+    if (signal || (!mock && error))
         sccroll_mockFatal(
             SIGABRT,
             "wrapper error not handled: status %i, signal %s",
-            code, "SIGABRT"
+            code, sigstr ? sigstr : "0"
         );
 
     return error;

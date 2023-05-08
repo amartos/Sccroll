@@ -16,6 +16,9 @@
 
 #include "sccroll/helpers.h"
 
+// On veut le vrai fork, pas le simulacre.
+attr_rename(extern, fork, __real_fork);
+
 // clang-format off
 
 /******************************************************************************
@@ -31,7 +34,7 @@ unsigned sccroll_hasFlags(unsigned flags, unsigned values)
 int sccroll_simplefork(const char* restrict desc, SccrollFunc callback)
 {
     int status = 0;
-    pid_t pid = fork();
+    pid_t pid = __real_fork();
     if (pid < 0) err(EXIT_FAILURE, "%s", desc);
     else if (pid == 0) callback(), exit(EXIT_SUCCESS);
     wait(&status);

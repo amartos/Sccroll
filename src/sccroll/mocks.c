@@ -30,14 +30,18 @@
 // clang-format on
 
 /**
- * @def SCCROLL_MOCKERRFMT
+ * @def SCCROLL_MOCKERROR
  * @since 0.1.0
- * @brief Le format des messages de sccroll_mockPredefined().
- * @param s Le nom du simulacre testé.
- * @param i Le nombre d'appels du simulacre au moment du message.
- * @param s Le message.
+ * @brief Message d'erreur des simulacres prédéfinis.
+ * @param callee Le simulacre en erreur.
+ * @param calls Le nombre d'appels du simulacre effectués.
+ * @param caller La fonction appelante du simulacre.
+ * @param line La ligne d'appel.
+ * @param msg Un message d'erreur.
  */
-#define SCCROLL_MOCKERRFMT "%s (call #%u): %s"
+#define SCCROLL_MOCKERROR(callee, calls, caller, line, msg) \
+    "%s (call #%u in %s l. %i): %s",                        \
+        callee,calls,caller,line,msg
 
 /**
  * @since 0.1.0
@@ -167,15 +171,8 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
 
 static void sccroll_mockAssert(void)
 {
-    if (trigger[SCCMCALLS]) {
-        sccroll_mockFatal(
-            SIGABRT,
-            "%s (in %s l. %i): error not handled",
-            sccroll_mockName(trigger[SCCMMOCK]),
-            trace.caller,
-            trace.line
-        );
-    }
+    if (trigger[SCCMCALLS])
+        sccroll_mockFatal(SIGABRT, "error not handled");
 }
 
 void sccroll_mockFatal(int sigint, const char* restrict fmt, ...)
@@ -185,7 +182,10 @@ void sccroll_mockFatal(int sigint, const char* restrict fmt, ...)
     char msg[BUFSIZ] = {0};
     sccroll_mockFlush();
     sccroll_variadic(fmt, list, vsprintf(msg, fmt, list));
-    sccroll_fatal(sigint, SCCROLL_MOCKERRFMT, name, calls, msg);
+    sccroll_fatal(
+        sigint,
+        SCCROLL_MOCKERROR(name, calls, trace.caller, trace.line, msg)
+    );
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)

@@ -55,7 +55,7 @@ static bool sccroll_mockFire(SccrollMockFlags mock);
  * @brief Vérifie qu'une éventuelle erreur d'un simulacre déclenché a
  * été gérée, et si non termine le programme (@c SIGABRT).
  */
-static void sccroll_mockAbortNotHandled(void);
+static void sccroll_mockAssert(void);
 
 /**
  * @enum SccrollMockIndex
@@ -115,7 +115,7 @@ static SccrollMockTrace trace = {0};
  * gérée, ou false si aucune erreur n'a été émise (ni même par une
  * absence de gestion d'erreur).
  */
-static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
+static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
     __attribute__((nonnull (1)));
 
 // clang-format off
@@ -152,7 +152,7 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
         // Actions coordonnées entre simulacres.
         switch(mock)
         {
-        default: sccroll_mockAbortNotHandled(); break;
+        default: sccroll_mockAssert(); break;
         }
     }
     else if (trigger[SCCMDELAY] > 0)
@@ -160,12 +160,12 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
     else if (!trigger[SCCMDELAY] && !trigger[SCCMCALLS])
         ++trigger[SCCMCALLS];
     else
-        sccroll_mockAbortNotHandled();
+        sccroll_mockAssert();
 
     return trigger[SCCMMOCK] == mock && trigger[SCCMCALLS];
 }
 
-static void sccroll_mockAbortNotHandled(void)
+static void sccroll_mockAssert(void)
 {
     if (trigger[SCCMCALLS]) {
         sccroll_mockFatal(
@@ -213,11 +213,11 @@ void sccroll_mockPredefined(SccrollFunc wrapper)
         // qu'il reste encore des appels à vérifier, d'où la condition
         // de sortie. Si aucune erreur n'est levée par le simulacre,
         // il ne le sera plus, et donc on passe au suivant.
-        for (delay = 0; sccroll_mockAssert(wrapper, mock, delay); ++delay);
+        for (delay = 0; sccroll_mockCrashTest(wrapper, mock, delay); ++delay);
     }
 }
 
-static bool sccroll_mockAssert(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
+static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
 {
     bool error = false;
     int status = 0, code = 0, signal = 0;
@@ -317,7 +317,7 @@ void abort(void) { sccroll_mockFlush(), __gcov_dump(), raise(SIGABRT), exit(SIGA
 
 void exit(int status)
 {
-    if (!status) sccroll_mockAbortNotHandled();
+    if (!status) sccroll_mockAssert();
     __gcov_dump(), _exit(status);
 }
 /** @} @} */

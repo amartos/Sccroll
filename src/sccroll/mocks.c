@@ -240,7 +240,8 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
     if (signal || (!mock && error))
         sccroll_mockFatal(
             SIGABRT,
-            "wrapper error not handled: status %i, signal %s",
+            "Predefined %s mock error (status %i, signal %s)",
+            name,
             code, sigstr ? sigstr : "0"
         );
 

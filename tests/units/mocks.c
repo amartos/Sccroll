@@ -53,9 +53,9 @@ static unsigned dummy_flag = SCCENONE;
 
 // Fonctions utilisées pour maintenance du test (on ne cherche pas à
 // les tester).
-extern __typeof__(fork) __real_fork;
-extern __typeof__(close) __real_close;
-extern __typeof__(pipe) __real_pipe;
+attr_rename(extern, fork, __real_fork);
+attr_rename(extern, close, __real_close);
+attr_rename(extern, pipe, __real_pipe);
 
 // clang-format off
 

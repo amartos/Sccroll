@@ -237,13 +237,12 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
     // On vérifie qu'il n'y a pas d'erreur si aucun simulacre n'est
     // déclenché, ou que le simulacre n'a pas envoyé de signaux
     // d'erreurs (SIGABRT, SIGSEGV, ...).
-    if (signal || (!mock && error))
-        sccroll_mockFatal(
-            SIGABRT,
-            "Predefined %s mock error (status %i, signal %s)",
-            name,
-            code, sigstr ? sigstr : "0"
-        );
+    assertMsg(
+        !signal && (mock || !error),
+        "Predefined %s mock error (status %i, signal %s)",
+        name,
+        code, sigstr ? sigstr : "0"
+    );
 
     return error;
 }

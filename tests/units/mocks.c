@@ -472,6 +472,15 @@ void test_fullerrors(void)
         free(blob);
         fclose(tmp);
         break;
+    case SCCEFILENO:
+        mkstemp(template);
+        tmp = fopen(template, "w+");
+        if (!tmp) {
+            errmsg = template;
+            break;
+        }
+        fd = fileno(tmp);
+        break;
     case SCCENONE: exit(0); break;
     default:
         // default s'assure qu'on oublie pas de test

@@ -157,6 +157,7 @@ typedef enum SccrollMockFlags {
     SCCEFREAD,    /**< Drapeau de fread() et ferror(). */
     SCCEFWRITE,   /**< Drapeau de fwrite() et ferror(). */
     SCCEFSCANF,   /**< Drapeau de fscanf() et ferror(). */
+    SCCEFILENO,   /**< Drapeau de fileno(). */
     SCCEMAX,      /**< Valeur maximale des mocks individuels. */
 } SccrollMockFlags;
 
@@ -318,6 +319,7 @@ sccroll_mockPrototype(ftell);
 sccroll_mockPrototype(fread);
 sccroll_mockPrototype(fwrite);
 sccroll_mockPrototype(fscanf);
+sccroll_mockPrototype(fileno);
 /** @} */
 
 /**
@@ -339,6 +341,7 @@ sccroll_mockPrototype(fscanf);
 #define fread(...)  sccroll_mockCall(fread, SCCEFREAD, __VA_ARGS__)
 #define fwrite(...) sccroll_mockCall(fwrite, SCCEFWRITE, __VA_ARGS__)
 #define fscanf(...) sccroll_mockCall(fscanf, SCCEFSCANF, __VA_ARGS__)
+#define fileno(...) sccroll_mockCall(fileno, SCCEFILENO, __VA_ARGS__)
 /** @} */
 
 // clang-format off

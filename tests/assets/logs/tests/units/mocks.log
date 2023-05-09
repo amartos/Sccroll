@@ -39,6 +39,8 @@ fwrite (call #1 in test_fullerrors l. 455): error not handled
 Predefined fwrite mock error (status 0, signal ABRT)
 fscanf (call #1 in test_fullerrors l. 471): error not handled
 Predefined fscanf mock error (status 0, signal ABRT)
+fileno (call #1 in test_fullerrors l. 482): error not handled
+Predefined fileno mock error (status 0, signal ABRT)
 free mocked
 sccroll_run mocked: nothing executed.
 sccroll_run mocked: flag seen.

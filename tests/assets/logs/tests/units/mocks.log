@@ -9,37 +9,37 @@ malloc (call #1 in test_delay l. 283): error not handled
 malloc (call #1 in test_delay l. 283): error not handled
 malloc (call #1 in test_delay l. 283): error not handled
 malloc (call #1 in test_delay l. 283): error not handled
-malloc (call #1 in test_fullerrors l. 324): error not handled
+malloc (call #1 in test_fullerrors l. 339): error not handled
 Predefined malloc mock error (status 0, signal ABRT)
-calloc (call #1 in test_fullerrors l. 325): error not handled
+calloc (call #1 in test_fullerrors l. 340): error not handled
 Predefined calloc mock error (status 0, signal ABRT)
-pipe (call #1 in test_fullerrors l. 328): error not handled
+pipe (call #1 in test_fullerrors l. 342): error not handled
 Predefined pipe mock error (status 0, signal ABRT)
-fork (call #1 in test_fullerrors l. 326): error not handled
+fork (call #1 in test_fullerrors l. 341): error not handled
 Predefined fork mock error (status 0, signal ABRT)
-dup2 (call #1 in test_fullerrors l. 344): error not handled
+dup2 (call #1 in test_fullerrors l. 347): error not handled
 Predefined dup2 mock error (status 0, signal ABRT)
-close (call #1 in test_fullerrors l. 360): error not handled
+close (call #1 in test_fullerrors l. 355): error not handled
 Predefined close mock error (status 0, signal ABRT)
-read (call #1 in test_fullerrors l. 374): error not handled
+read (call #1 in test_fullerrors l. 356): error not handled
 Predefined read mock error (status 0, signal ABRT)
-write (call #1 in test_fullerrors l. 390): error not handled
+write (call #1 in test_fullerrors l. 357): error not handled
 Predefined write mock error (status 0, signal ABRT)
-ferror (call #1 in test_fullerrors l. 401): error not handled
+ferror (call #1 in test_fullerrors l. 358): error not handled
 Predefined ferror mock error (status 0, signal ABRT)
-fopen (call #1 in test_fullerrors l. 406): error not handled
+fopen (call #1 in test_fullerrors l. 359): error not handled
 Predefined fopen mock error (status 0, signal ABRT)
-fseek (call #1 in test_fullerrors l. 416): error not handled
+fseek (call #1 in test_fullerrors l. 360): error not handled
 Predefined fseek mock error (status 0, signal ABRT)
-ftell (call #1 in test_fullerrors l. 425): error not handled
+ftell (call #1 in test_fullerrors l. 361): error not handled
 Predefined ftell mock error (status 0, signal ABRT)
-fread (call #1 in test_fullerrors l. 439): error not handled
+fread (call #1 in test_fullerrors l. 362): error not handled
 Predefined fread mock error (status 0, signal ABRT)
-fwrite (call #1 in test_fullerrors l. 455): error not handled
+fwrite (call #1 in test_fullerrors l. 363): error not handled
 Predefined fwrite mock error (status 0, signal ABRT)
-fscanf (call #1 in test_fullerrors l. 471): error not handled
+fscanf (call #1 in test_fullerrors l. 364): error not handled
 Predefined fscanf mock error (status 0, signal ABRT)
-fileno (call #1 in test_fullerrors l. 482): error not handled
+fileno (call #1 in test_fullerrors l. 365): error not handled
 Predefined fileno mock error (status 0, signal ABRT)
 free mocked
 sccroll_run mocked: nothing executed.

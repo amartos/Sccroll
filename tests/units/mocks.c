@@ -306,6 +306,7 @@ void test_flush(void)
 
 void test_fullerrors(void)
 {
+    bool fatal       = false;
     int fd           = 0;
     int oldfd        = 0;
     int pipefd[2]    = {0};
@@ -319,181 +320,78 @@ void test_fullerrors(void)
     // d'être synschrone avec le déclencheur.
     if (dummy_flag != sccroll_mockGetTrigger()) exit(0);
 
-    switch(dummy_flag)
-    {
-    case SCCEMALLOC: free(malloc(1)); break;
-    case SCCECALLOC: free(calloc(1, 1)); break;
-    case SCCEFORK:   fork() == 0 ? exit(0) : 0; break;
-    case SCCEPIPE:
-        pipe(pipefd) > 0
-            ? close(pipefd[0]), close(pipefd[1])
-            : 0;
-        break;
-    case SCCEDUP2:
-        mkstemp(template);
-        fd = open(template, O_RDWR);
-        if (fd < 0) {
+    try(test_fullerrors) {
+        if (dummy_flag > SCCEPIPE) {
+            // Tout les simulacres au-dessus de ce code nécessitent un
+            // fichier valide ouvert.
+            fd     = mkstemp(template);
             errmsg = template;
-            break;
-        }
-        oldfd = dup(STDOUT_FILENO);
-        if (oldfd < 0) {
-            errmsg = "could not dupsave STDOUT";
-            break;
-        }
-        if (dup2(STDOUT_FILENO, fd) > 0)
-            // on évite de re-déclencher le simulacre en utilisant la
-            // version originale.
-            if (libdup2(STDOUT_FILENO, oldfd) < 0) {
-                errmsg = "could not reset STDOUT";
-                break;
-            }
-        close(fd);
-        break;
-    case SCCECLOSE:
-        mkstemp(template);
-        fd = open(template, O_RDWR);
-        if (fd < 0) {
-            errmsg = template;
-            break;
-        }
-        close(fd);
-        break;
-    case SCCEREAD:
-        mkstemp(template);
-        fd = open(template, O_RDWR);
-        if (fd < 0) {
-            errmsg = template;
-            break;
-        }
-        blob = calloc(1,1);
-        if (!blob) {
+            if (fd < 0) throw(test_fullerrors, INDEPERROR);
+            tmp    = libfopen(template, "r+");
+            if (!tmp) throw(test_fullerrors, INDEPERROR);
+            blob   = libcalloc(1,1);
             errmsg = "could not allocate for blob";
-            break;
+            if (!blob) throw(test_fullerrors, INDEPERROR);
         }
-        read(fd, blob, 1);
-        free(blob);
-        close(fd);
-        break;
-    case SCCEWRITE:
-        mkstemp(template);
-        fd = open(template, O_RDWR);
-        if (fd < 0) {
-            errmsg = template;
-            break;
-        }
-        blob = calloc(1,1);
-        if (!blob) {
-            errmsg = "could not allocate for blob";
-            break;
-        }
-        write(fd, blob, 1);
-        free(blob);
-        close(fd);
-        break;
-    case SCCEFERROR:
-        mkstemp(template);
-        tmp = fopen(template, "r+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        (void)ferror(tmp);
-        fclose(tmp);
-        break;
-    case SCCEFOPEN:
-        mkstemp(template);
-        tmp = fopen(template, "r+");
-        if (tmp) fclose(tmp);
-        break;
-    case SCCEFSEEK:
-        mkstemp(template);
-        tmp = fopen(template, "r+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        fseek(tmp, 0L, SEEK_SET);
-        break;
-    case SCCEFTELL:
-        mkstemp(template);
-        tmp = fopen(template, "r+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        ftell(tmp);
-        break;
-    case SCCEFREAD:
-        mkstemp(template);
-        tmp = fopen(template, "r+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        blob = calloc(1,1);
-        if (!blob) {
-            errmsg = "could not allocate for blob";
-            break;
-        }
-        fread(blob,1,1,tmp);
-        free(blob);
-        fclose(tmp);
-        break;
-    case SCCEFWRITE:
-        mkstemp(template);
-        tmp = fopen(template, "w+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        blob = calloc(1,1);
-        if (!blob) {
-            errmsg = "could not allocate for blob";
-            break;
-        }
-        fwrite(blob,1,1,tmp);
-        free(blob);
-        fclose(tmp);
-        break;
-    case SCCEFSCANF:
-        mkstemp(template);
-        tmp = fopen(template, "w+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        blob = calloc(1,1);
-        if (!blob) {
-            errmsg = "could not allocate for blob";
-            break;
-        }
-        fscanf(blob, "%c", buf);
-        free(blob);
-        fclose(tmp);
-        break;
-    case SCCEFILENO:
-        mkstemp(template);
-        tmp = fopen(template, "w+");
-        if (!tmp) {
-            errmsg = template;
-            break;
-        }
-        fd = fileno(tmp);
-        break;
-    case SCCENONE: exit(0); break;
-    default:
-        // default s'assure qu'on oublie pas de test
-        errmsg = "missing test";
-        break;
-    }
 
-    if (errmsg)
-        // SIGABRT est utilisé par les simulacres or le test ici est
-        // pour les éventuelles erreurs qui ne sont pas provquées par
-        // le simulacre. On s'assure donc de lever un signal autre que
-        // SIGABRT dans ces cas-là.
-        sccroll_fatal(SIGTERM, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
+        switch(dummy_flag)
+        {
+        case SCCEMALLOC: free(malloc(1)); break;
+        case SCCECALLOC: free(calloc(1, 1)); break;
+        case SCCEFORK:   fork() == 0 ? exit(0) : 0; break;
+        case SCCEPIPE:   pipe(pipefd); break;
+        case SCCEDUP2:
+            oldfd  = dup(STDOUT_FILENO);
+            errmsg = "could not dupsave STDOUT";
+            if (oldfd < 0) throw(test_fullerrors, INDEPERROR);
+            if (dup2(STDOUT_FILENO, fd) > 0) {
+                // on évite de re-déclencher le simulacre en utilisant la
+                // version originale.
+                errmsg = "could not reset STDOUT";
+                if (libdup2(STDOUT_FILENO, oldfd) < 0)
+                    throw(test_fullerrors, INDEPERROR);
+            }
+            break;
+        case SCCECLOSE:  close(fd); break;
+        case SCCEREAD:   read(fd, blob, 1); break;
+        case SCCEWRITE:  write(fd, blob, 1); break;
+        case SCCEFERROR: (void)ferror(tmp); break;
+        case SCCEFOPEN:  fclose(tmp), tmp = fopen(template, "r+"); break;
+        case SCCEFSEEK:  fseek(tmp, 0L, SEEK_SET); break;
+        case SCCEFTELL:  ftell(tmp); break;
+        case SCCEFREAD:  fread(blob,1,1,tmp); break;
+        case SCCEFWRITE: fwrite(blob,1,1,tmp); break;
+        case SCCEFSCANF: fscanf(blob, "%c", buf); break;
+        case SCCEFILENO: close(fd), fd = fileno(tmp); break;
+        case SCCENONE:   throw(test_fullerrors, IGNORE); break;
+        default:
+            // default s'assure qu'on oublie pas de tests
+            throw(test_fullerrors, MISSINGTEST);
+            break;
+        }
+    }
+    catch(test_fullerrors, IGNORE) {}
+    catch(test_fullerrors, INDEPERROR) {
+        warn("%s", errmsg);
+        fatal = true;
+        errmsg = "external error";
+    }
+    catch(test_fullerrors, MISSINGTEST) {
+        fatal = true;
+        errmsg = "missing test";
+    }
+    finally(test_fullerrors) {
+        if (fd) libclose(fd);
+        if (pipefd[0]) libclose(pipefd[0]), libclose(pipefd[1]);
+        free(blob);
+        if (tmp) fclose(tmp);
+        if (fatal)
+            // SIGABRT est utilisé par les simulacres or le test ici est
+            // pour les éventuelles erreurs qui ne sont pas provquées par
+            // le simulacre. On s'assure donc de lever un signal autre que
+            // SIGABRT dans ces cas-là.
+            sccroll_fatal(SIGTERM, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
+    }
 }
 
 void test_mockPredefined(void)

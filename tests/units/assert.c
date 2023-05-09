@@ -141,6 +141,88 @@ SCCROLL_TEST(
 )
 { sccroll_fatal(SIGABRT, NULL); }
 
+SCCROLL_TEST(
+    try_only,
+    .std  = {
+        [STDOUT_FILENO] = {.content.blob = "try executed\nout of try\n"}
+    }
+)
+{
+    try(test) { puts("try executed"); }
+    puts("out of try");
+}
+
+SCCROLL_TEST(
+    try_catch_throw_finally,
+    .std  = {
+        [STDOUT_FILENO] = {
+            .content.blob =
+            "try executed\n"
+            "catch executed\n"
+            "second error catched\n"
+            "finally executed\n"
+        }
+    }
+)
+{
+    try(test) {
+        puts("try executed");
+        throw(test, 18);
+        assertMsg(false, "thow did not break flow !");
+    }
+    catch(test, 36) { puts("second error catched"); }
+    catch(test, 18) {
+        puts("catch executed");
+        throw(test, 36);
+    }
+    finally(test) { puts("finally executed"); }
+}
+
+SCCROLL_TEST(
+    try_catch_test_nested,
+    .std  = {
+        [STDOUT_FILENO] = {
+            .content.blob =
+            "parent try\n"
+            "first child try\n"
+            "second child try\n"
+            "second child catch\n"
+            "second child finally\n"
+            "first child catch\n"
+            "parent catch\n"
+            "parent finally\n"
+            "OK\n"
+        }
+    }
+)
+{
+    try(parent) {
+        puts("parent try");
+        try(first) {
+            puts("first child try");
+            try(second) {
+                puts("second child try");
+                throw(second, 42);
+            }
+            catch(second, 42) { puts("second child catch"); }
+            finally(second) {
+                puts("second child finally");
+                throw(first, 42);
+            }
+        }
+        catch(first, 42) {
+            puts("first child catch");
+            throw(parent, 42);
+        }
+        finally(first)
+            assertMsg(false, "this part should not be executed");
+    }
+    catch(parent, 42) { puts("parent catch"); }
+    finally(parent) { puts("parent finally"); }
+
+    puts("OK");
+}
+
 // clang-format off
 /******************************************************************************
  * Exécution des tests.

@@ -82,7 +82,7 @@ extern void __gcov_dump(void);
 
 /******************************************************************************
  * @}
- * @name Levées d'erreurs
+ * @name Gestions d'erreurs
  * @{
  ******************************************************************************/
 // clang-format on
@@ -108,6 +108,57 @@ void sccroll_vfatal(int sigint, const char* restrict fmt, va_list args)
  */
 void sccroll_fatal(int sigint, const char* restrict fmt, ...)
     __attribute__((noreturn, format(printf,2,3)));
+
+
+/**
+ * @name Try-Catch-Finally
+ *
+ * Groupe de macros fonctionnant ensemble pour attraper des erreurs.
+ *
+ * Ce groupe n'utilise **pas** setjmp() ou longjmp(). Il peut être
+ * imbriqué, et plusieurs try-catch peuvent être mélangés au même
+ * niveau, tant que l'identifiant donné reste unique (ils agissent
+ * comme des labels). Les accolades ne sont pas nécessaires pour
+ * séparer le code.
+ *
+ * Pour chaque #catch, un #throw est nécessaire. #try seul est
+ * utilisable sans problèmes, cependant sans grand intérêt.
+ * @{
+ * @param id L'identifiant correspondant au try-catch voulu, donné à
+ * #try.
+ * @param error Un identifiant d'erreur à lever/attraper. La valeur
+ * n'a pas d'importance, seul le mot l'est.
+ */
+
+/**
+ * @def try
+ * @since 0.1.0
+ * @brief Démarre le block de code à tester.
+ * @param id Un identifiant **unique** (local à la fonction).
+ * @note Cette macro ne fait rien, mais permet de bien identifier le
+ * début du try-catch donné.
+ */
+#define try(id)
+
+/**
+ * @def throw
+ * @since 0.1.0
+ * @brief Lève une erreur à attraper.
+ */
+#define throw(id,error) goto id ## error;
+
+/**
+ * @since 0.1.0
+ * @brief Attrape une erreur levée et exécute un block de code.
+ */
+#define catch(id,error) goto id ## finally; id ## error:
+
+/**
+ * @since 0.1.0
+ * @brief Exécute un bloc de code après tous les autres.
+ */
+#define finally(id)     id ## finally:
+/** @} */
 
 // clang-format off
 

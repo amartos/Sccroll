@@ -41,6 +41,9 @@ enum {
 // Variable utilisée pour les délais dans les levées d'erreurs.
 static unsigned delay = 0;
 
+// Variable utilisée pour tester les erreurs hors simulacres.
+static int none_status = 0;
+
 // Variable utilisée comme drapeau pour déclencher les erreurs des
 // simulacres interne au test.
 static unsigned dummy_flag = SCCENONE;
@@ -391,6 +394,7 @@ void test_fullerrors(void)
             // le simulacre. On s'assure donc de lever un signal autre que
             // SIGABRT dans ces cas-là.
             sccroll_fatal(SIGTERM, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
+        exit(none_status);
     }
 }
 
@@ -426,6 +430,13 @@ int main(void)
         // On s'assure que la fonction n'affecte pas l'état actuel.
         assert(!sccroll_mockGetTrigger());
     }
+
+    sccroll_mockFlush();
+    dummy_flag  = 0;
+    none_status = 1;
+    status = sccroll_simplefork("test errors not predefined", test_mockPredefined);
+    assert(WIFSIGNALED(status));
+    assert(WTERMSIG(status) == SIGABRT);
 
     // On teste les constructions de mocks
 

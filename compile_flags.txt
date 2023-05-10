@@ -4,4 +4,3 @@
 -std=gnu99
 -Iinclude
 -fpic
--shared

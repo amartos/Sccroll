@@ -18,101 +18,98 @@ LOGO		=
 SHELL		= /usr/bin/env bash
 SRCS		= src
 INCLUDES	= include
+
 TESTS		= tests
+UNITS		:= $(TESTS)/units
+ASSETS		:= $(TESTS)/assets
+TLOGS		:= $(ASSETS)/logs
+
 SCRIPTS		= scripts
-PREFIX		= /usr/local
-
-
-###############################################################################
-# Environnement de build
-###############################################################################
-
-TARGET		= lib$(PROJECT).so
-CDEPS		= $(shell find $(SRCS) -type f -name "*.c")
-
-ASSETS		= $(TESTS)/assets
-TLOGS		= $(ASSETS)/logs
-UNITS		= $(TESTS)/units
-CUNITS		= $(shell find $(UNITS) -type f -name "*.c")
+INFO	 	:= $(SCRIPTS)/pinfo
+PDOC		:= $(SCRIPTS)/pdoc.awk
 
 BUILD		= build
-BIN			= $(BUILD)/bin
-DEPS		= $(BUILD)/deps
-OBJS		= $(BUILD)/objs
 LIBS		= $(BUILD)/libs
-REPORTS		= $(BUILD)/reports
-LOGS		= $(BUILD)/logs
-BUILDTREE	= $(BUILD) $(BIN) $(DEPS) $(OBJS) $(LIBS) $(REPORTS) $(LOGS)
+BIN			:= $(BUILD)/bin
+LIBS		:= $(BUILD)/lib
+DEPS		:= $(BUILD)/deps
+OBJS		:= $(BUILD)/objs
+LOGS		:= $(BUILD)/logs
+REPORTS		:= $(BUILD)/reports
+
+PREFIX		?= ~/.local
+LIBINSTALL	:= $(PREFIX)/lib/$(PROJECT)
+INCINSTALL	:= $(PREFIX)/include/$(PROJECT)
 
 
 ###############################################################################
-# Environnement de documentation
+# Chemins des sources
 ###############################################################################
 
-DOCS		= docs
-DOCSLANG	= French
-DOXCONF		= $(DOCS)/doxygen.conf
-EXAMPLES	= $(DOCS)/examples
-HTML		= $(DOCS)/html
-LATEX		= $(DOCS)/latex
-DOCSPDF		= $(LATEX)/refman.pdf
+SRCTREE		:= $(shell find $(SRCS) -type d)
+UNITREE		:= $(shell find $(UNITS) -type d)
+HDRTREE		:= $(shell find $(INCLUDES) -type d)
+CPPTREE		:= $(SRCTREE) $(UNITREE)
+
+vpath %.h    $(HDRTREE)
+vpath %.c    $(CPPTREE)
+vpath %.so   $(LIBS)
+vpath %.log  $(LOGS)
+vpath %.gcno $(BUILD)
 
 
 ###############################################################################
 # Paramètres de compilation
 ###############################################################################
 
-vpath %.c  $(SRCS) $(TESTS)
-vpath %.h  $(INCLUDES)
-vpath %.o  $(OBJS)
-vpath %.so $(LIBS)
-vpath %.d  $(DEPS)
-vpath %.log  $(LOGS)
+CDEPS		:= $(shell find $(SRCS) -type f -name "*.c")
+UDEPS		:= $(shell find $(UNITS) -type f -name "*.c")
 
 CC			= gcc
-STD			= gnu99
-CFLAGS		= -xc -Wall -Wextra -std=$(STD) $(INCLUDES:%=-I%) -fpic
+CFLAGS		:= $(shell cat compile_flags.txt)
 DFLAGS		= -MMD -MP -MF
 SFLAGS		= -shared
 LDLIBS	 	= -L $(LIBS) -l$(PROJECT) -ldl
+LIBPATH		:= $(LIBS):$(LIBINSTALL):/usr/local/lib
 
 
 ###############################################################################
 # Paramètres de couverture de code
 ###############################################################################
 
-vpath %.gcno $(BUILD)
+COVFILE		:= $(REPORTS)/coverage
+COVXML		:= $(COVFILE).xml
+COVHTML		:= $(COVFILE).html
 
-COVFILE		= $(REPORTS)/coverage
-COVXML		= $(COVFILE).xml
-COVHTML		= $(COVFILE).html
 # Limites de couverture de code acceptées en %
 COVHIGH		= 98
 COVLOW		= 75
 
 COV			= gcovr
-COVOPTS		= -r $(SRCS) -u --exclude-directories "$(TESTS)"
-COVOPTSXML	= --xml-pretty --xml $(COVXML)
-COVOPTSHTML	= --html-details $(COVHTML) \
+COVEXCL		:= --exclude-directories "$(TESTS)" \
+				-e ".*\.(tab|yy)\.c" \
+				-e ".*\.l"
+COVOPTS		:= -r $(SRCS) -u $(COVEXCL)
+COVOPTSXML	:= --xml-pretty --xml $(COVXML)
+COVOPTSHTML	:= --html-details $(COVHTML) \
 				--html-medium-threshold $(COVLOW) \
 				--html-high-threshold $(COVHIGH) \
 				--html-title "$(NAME) code coverage report"
 
 
 ###############################################################################
-# Fonctions d'aide
+# Paramètres de documentation
 ###############################################################################
 
-INFO	 	= $(SCRIPTS)/pinfo
-PDOC		= $(SCRIPTS)/pdoc.awk
-
-# Copie l'arbre de répertoires d'un dossier dans la cible
-# $(1) Le répertoire à copier
-# $(2) Le répertoire cible (final $(2)/$(1))
-# $(3) Des options supplémentaires pour rsync
-define copytree=
-rsync -a $(3) --include "*/" --exclude "*" $(1) $(2)/
-endef
+DOCS		= docs
+DOCSLANG	= French
+DOX			= doxygen
+DOXCONF		:= $(DOCS)/$(DOX).conf
+DOXOPTS		:= -q $(DOXCONF)
+EXAMPLES	:= $(DOCS)/examples
+HTML		:= $(DOCS)/html
+LATEX		:= $(DOCS)/latex
+PDF			:= $(LATEX)/refman.pdf
 
 
 ###############################################################################
@@ -120,87 +117,88 @@ endef
 ###############################################################################
 
 $(OBJS)/%.o: %.c
+	@mkdir -p $(dir $@) $(DEPS)/$(dir $*)
 	@$(CC) $(CFLAGS) $(DFLAGS) $(DEPS)/$*.d -c $< -o $@
 
 $(LIBS)/lib%.so: SFLAGS += -Wl,-soname,lib$*.so
 $(LIBS)/lib%.so: $(CDEPS:%.c=$(OBJS)/%.o)
+	@mkdir -p $(dir $@)
 	@$(CC) $(SFLAGS) $^ -o $@.$(VERSION)
 	@ln -s $(@:$(LIBS)/%=%).$(VERSION) $@
 
 $(BIN)/%: $(OBJS)/%.o
-	@$(CC) $(LDLIBS) $< -o $@
+	@mkdir -p $(dir $@)
+	@$(CC) $(LDLIBS) $^ -o $@
 
 $(LOGS)/%.log: $(BIN)/%
-	@LD_LIBRARY_PATH=$(LIBS) $< $(ARGS) &> $@
+	@mkdir -p $(dir $@)
+	@LD_LIBRARY_PATH=$(LIBPATH) $< $(ARGS) &> $@ \
+		&& $(INFO) pass $(notdir $*) \
+		|| ($(INFO) fail $(notdir $*); true)
 
-$(LOGS)/%.difflog: $(LOGS)/%.log
-	@git diff --no-index $(<:$(LOGS)/%=$(TLOGS)/%) $< &> $@
+# Cette recette ne devrait pas être souvent utilisée. Elle existe pour
+# le cas où l'on est en train de construire un test unitaire, et que
+# le premier log est inexistant.
+$(TLOGS)/%.log:
+	@mkdir -p $(dir $@)
+	@touch $@
+
+$(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
+	@mkdir -p $(dir $@)
+	@git diff --no-index $^ > $@ \
+		|| (sed -i "s+$(BUILD)+$(ASSETS)+g" $@ \
+			&& $(INFO) error $(notdir $* log); true)
+	@rm $(BIN)/$* $(LOGS)/$*.log
 
 
 ###############################################################################
 # Autres cibles
 ###############################################################################
 
-.PHONY: all $(PROJECT) install tests unit-tests coverage docs init help
-.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so $(BIN)/%
+.PHONY: all $(PROJECT) install tests docs init help
+.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so $(LOGS)/%.difflog $(TLOGS)/%.log
 
+# @brief Compile la cible principale du project
 all: $(PROJECT)
 
-# @brief Compile la cible principale du project (cible par défaut)
+# Compile la cible principale du project (cible par défaut)
 $(PROJECT): CFLAGS += -O3
-$(PROJECT): init $(LIBS)/$(TARGET)
-	@$(INFO) ok $(TARGET) compiled
+$(PROJECT): %: clean init $(LIBS)/lib%.so
+	@$(INFO) ok $@ compiled
+
+# @brief Compile la cible principale avec fonctionnalités de debuggage
+debug: CFLAGS += -g -DDEBUG
+debug: $(PROJECT)
+	@$(INFO) ok $(PROJECT) $@ version compiled
 
 # @brief Installe le logiciel compilé sur le système.
 install: $(PROJECT)
-	@sudo cp -rf $(LIBS)/* $(PREFIX)/lib/
-	@sudo cp -rf $(INCLUDES)/* $(PREFIX)/include/
-	@$(INFO) ok $@
+	@mkdir -p $(LIBINSTALL) $(INCINSTALL)
+	@rsync -aq $(LIBS)/ $(LIBINSTALL)/
+	@rsync -aq $(INCLUDES)/ $(INCINSTALL)/
+	@$(INFO) ok $(PROJECT) installed
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
-tests: coverage
-	@find $(BUILD) -type d -empty -delete
-	@$(INFO) ok $@
-
-# Compile, exécute et vérifie les tests unitaires
-unit-tests: CFLAGS += -g -O0
-unit-tests: ARGS    = 0 1 2 3 4 5
-unit-tests: tests-init $(LIBS)/$(TARGET) $(CUNITS:%.c=$(LOGS)/%.difflog)
-	@rm -rf $(BIN)/*
-	@find $(BUILD) -type f -name "*.log" -delete
-	@$(INFO) ok $@
-
-# Calcule la couverture de code des tests unitaires
-coverage: CFLAGS += -D_SCCUNITTESTS --coverage
-coverage: SFLAGS += --coverage
-coverage: LDLIBS += --coverage
-coverage: unit-tests
+tests: CFLAGS += -g -O0 -D_SCCUNITTESTS --coverage
+tests: LDLIBS += --coverage
+tests: SFLAGS += --coverage
+tests: ARGS    = 0 1 2 3 4 5
+tests: clean init $(LIBS)/lib$(PROJECT).so $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
-	@find $(BUILD) -type f -name "*.gcno" -delete
-	@find $(BUILD) -type f -name "*.gcda" -delete
-	@$(INFO) ok $@
+	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
+	@$(INFO) ok $(PROJECT) coverage
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
 
 # @brief Génère la documentation automatisée du projet
-docs: init $(DOXCONF)
-	@doxygen -q $(DOXCONF)
-	@bash -c "make -C $(LATEX) pdf" &>/dev/null
-	@mv $(DOCSPDF) $(DOCS)/
-	@$(INFO) ok $@
+docs: $(DOXCONF)
+	@$(DOX) $(DOXOPTS)
+	@$(MAKE) -C $(LATEX) pdf && mv $(PDF) $(DOCS)/
+	@$(INFO) ok $(PROJECT) $@
 
-# @brief Initialise la structure du projet
+# @brief Initialise le dossier de compilation
 init:
-	@mkdir -p $(BUILDTREE)
-	@$(call copytree,$(SRCS),$(OBJS))
-	@$(call copytree,$(SRCS),$(DEPS))
-
-# Initialise la structure de build des tests
-tests-init: init
-	@$(call copytree,$(TESTS),$(BIN),--exclude "$(ASSETS)/")
-	@$(call copytree,$(TESTS),$(OBJS),--exclude "$(ASSETS)/")
-	@$(call copytree,$(TESTS),$(DEPS),--exclude "$(ASSETS)/")
-	@$(call copytree,$(TESTS),$(LOGS),--exclude "$(ASSETS)/")
+	@mkdir -p $(BIN) $(OBJS) $(LOGS) $(DEPS) $(LIBS) $(REPORTS)
 
 # @brief Nettoyage post-compilation
 clean:

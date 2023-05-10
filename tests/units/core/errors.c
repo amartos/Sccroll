@@ -42,7 +42,9 @@ static void run_test(void)
         .name    = "testing errors",
         // On déclenche la lecture d'un fichier pour les fonctions de
         // stream type f*.
-        .std[STDOUT_FILENO].path = "tests/assets/blobs/textfile",
+        .std = {
+            [STDOUT_FILENO] = {.path = "tests/assets/blobs/textfile",},
+        }
     };
     sccroll_register(&test);
     test.flags |= NOFORK;

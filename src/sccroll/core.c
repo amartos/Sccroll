@@ -897,7 +897,10 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
         sccroll_pipes(PIPEWRTE, result->name, pipefd[PIPEERRN], &errno, sizeof(int));
 
         for (int i = STDIN_FILENO, p = PIPEREAD; i < SCCMAXSTD; ++i, p = PIPEWRTE) {
-            if (!dofork) sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
+            if (!dofork) {
+                sccroll_err(dup2(origstd[i], i) < 0, "original std fd restoration", result->name);
+                sccroll_err(close(origstd[i]) < 0, "could not close original std fd", result->name);
+            }
             sccroll_pipes(PIPECLOSE, result->name, pipefd[i], p);
         }
 
@@ -913,6 +916,11 @@ static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)
     sccroll_codes(result, pipefd[PIPEERRN], status);
     sccroll_std(result, pipefd);
     sccroll_files(result);
+
+    for (int i = STDIN_FILENO; i < PIPEMAXFD; ++i) {
+        sccroll_pipes(PIPECLOSE, result->name, pipefd[i], PIPEREAD);
+        sccroll_pipes(PIPECLOSE, result->name, pipefd[i], PIPEWRTE);
+    }
     return result;
 }
 
@@ -944,7 +952,9 @@ static void sccroll_pipes(SccrollPipes type, const char* restrict name, int pipe
         break;
     case PIPECLOSE:
         pipeside = va_arg(args, int);
+        if (!pipefd[pipeside]) break;
         status = close(pipefd[pipeside]);
+        pipefd[pipeside] = 0;
         break;
     default: break;
     }

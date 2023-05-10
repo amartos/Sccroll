@@ -132,7 +132,9 @@ int main(void)
     test.wrapper = test_dummy;
     test.name = "test dummy";
     sccroll_register(&test);
-    assert(sccroll_run() == 1);
+    test.flags |= NODIFF;
+    sccroll_register(&test);
+    assert(sccroll_run() == 2);
     cleantest();
     return EXIT_SUCCESS;
 }

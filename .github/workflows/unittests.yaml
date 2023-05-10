@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Installing dependencies packages
-        run: apt update && apt install -y sudo rsync
+        run: apt update && apt install -y sudo rsync gcovr
       - name: Pulling repo
         uses: actions/checkout@v3
         with:

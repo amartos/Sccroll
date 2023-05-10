@@ -40,7 +40,10 @@
 #include "sccroll/helpers.h"
 #include "sccroll/assert.h"
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
+
 #include <dlfcn.h>
 #include <stdbool.h>
 #include <stdio.h>

@@ -4,3 +4,4 @@
 -std=gnu99
 -Iinclude
 -fpic
+-D_GNU_SOURCE

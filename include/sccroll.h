@@ -23,6 +23,10 @@
 #ifndef SCCROLL_H_
 #define SCCROLL_H_
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "sccroll/core.h"
 #include "sccroll/helpers.h"
 #include "sccroll/data.h"

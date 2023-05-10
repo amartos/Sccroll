@@ -17,7 +17,9 @@
 #ifndef SCCROLL_CORE_H_
 #define SCCROLL_CORE_H_
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include "sccroll/helpers.h"
 #include "sccroll/data.h"

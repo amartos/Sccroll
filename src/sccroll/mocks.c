@@ -225,6 +225,8 @@ const char* sccroll_mockName(SccrollMockFlags mock)
     case SCCEFWRITE: return "fwrite";
     case SCCEFSCANF: return "fscanf";
     case SCCEFILENO: return "fileno";
+    case SCCEHCREATE: return "hcreate";
+    case SCCEHSEARCH: return "hsearch";
     }
 }
 
@@ -376,6 +378,14 @@ int sccroll_mockfscanf(FILE* restrict stream, const char* restrict format, ...)
 }
 
 SCCROLL_MOCK(sccroll_mockFire(SCCEFILENO), -1, int, fileno, FILE* stream, stream);
+
+SCCROLL_MOCK(sccroll_mockFire(SCCEHCREATE), 0, int, hcreate, size_t nel, nel);
+
+SCCROLL_MOCK(
+    sccroll_mockFire(SCCEHSEARCH),
+    NULL, ENTRY*, hsearch, ENTRY item SCCCOMMA ACTION action,
+    item, action
+);
 
 // clang-format off
 

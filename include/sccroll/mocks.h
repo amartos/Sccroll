@@ -45,6 +45,7 @@
 #endif
 
 #include <dlfcn.h>
+#include <search.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -161,6 +162,8 @@ typedef enum SccrollMockFlags {
     SCCEFWRITE,   /**< Drapeau de fwrite() et ferror(). */
     SCCEFSCANF,   /**< Drapeau de fscanf() et ferror(). */
     SCCEFILENO,   /**< Drapeau de fileno(). */
+    SCCEHCREATE,  /**< Drapeau de hcreate(). */
+    SCCEHSEARCH,  /**< Drapeau de hsearch(). */
     SCCEMAX,      /**< Valeur maximale des mocks individuels. */
 } SccrollMockFlags;
 
@@ -323,6 +326,8 @@ sccroll_mockPrototype(fread);
 sccroll_mockPrototype(fwrite);
 sccroll_mockPrototype(fscanf);
 sccroll_mockPrototype(fileno);
+sccroll_mockPrototype(hcreate);
+sccroll_mockPrototype(hsearch);
 /** @} */
 
 /**
@@ -345,6 +350,8 @@ sccroll_mockPrototype(fileno);
 #define fwrite(...) sccroll_mockCall(fwrite, SCCEFWRITE, __VA_ARGS__)
 #define fscanf(...) sccroll_mockCall(fscanf, SCCEFSCANF, __VA_ARGS__)
 #define fileno(...) sccroll_mockCall(fileno, SCCEFILENO, __VA_ARGS__)
+#define hcreate(...) sccroll_mockCall(hcreate, SCCEHCREATE, __VA_ARGS__)
+#define hsearch(...) sccroll_mockCall(hsearch, SCCEHSEARCH, __VA_ARGS__)
 /** @} */
 
 // clang-format off

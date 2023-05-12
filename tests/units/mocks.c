@@ -155,6 +155,8 @@ void test_predefined_mocks(void)
     size_t textlen;
     assert((textlen = fread(text, sizeof(char), SCCMAX, textfile)) > 0);
     fclose(textfile), textfile = NULL;
+    ENTRY item = {0};
+    ENTRY* retitem = NULL;
 
     testMock(SCCEFOPEN, 0, (textfile=fopen(textfilepath, "r")), (fopen(textfilepath, "r") == NULL));
     assert(textfile);
@@ -254,6 +256,23 @@ void test_predefined_mocks(void)
     assert(close(pipefd[0]) >= 0);
     assert(close(pipefd[1]) >= 0);
 
+    testMock(SCCEHCREATE, 0, hcreate(BUFSIZ) > 0, (hdestroy(), hcreate(BUFSIZ) == 0));
+    libhcreate(BUFSIZ);
+    item.key  = template;
+    item.data = (void*)42;
+    testMock(
+        SCCEHSEARCH, 0,
+        hsearch(item, ENTER) != NULL,
+        hsearch(item, FIND) == NULL
+    );
+    testMock(
+        SCCEHSEARCH, 0,
+        (retitem = hsearch(item, FIND)) != NULL,
+        (item.key = (char*)teststr, hsearch(item, ENTER) == NULL)
+    );
+    assert((size_t)retitem->data == 42);
+    hdestroy();
+
     pid = fork();
     if (pid == 0) {
         abort();
@@ -318,6 +337,7 @@ void test_fullerrors(void)
     char template[]  = "/tmp/sccroll.errors.XXXXXX";
     char* errmsg     = NULL;
     FILE* tmp        = NULL;
+    ENTRY dummy      = {0};
 
     // On veut controller le moment de l'erreur, donc on s'assure
     // d'être synschrone avec le déclencheur.
@@ -366,6 +386,15 @@ void test_fullerrors(void)
         case SCCEFWRITE: fwrite(blob,1,1,tmp); break;
         case SCCEFSCANF: fscanf(blob, "%c", buf); break;
         case SCCEFILENO: close(fd), fd = fileno(tmp); break;
+        case SCCEHCREATE: if (hcreate(BUFSIZ)) hdestroy(); break;
+        case SCCEHSEARCH:
+            errmsg = "could not create hash table";
+            if (!hcreate(BUFSIZ))
+                throw(test_fullerrors, INDEPERROR);
+            dummy.key = template;
+            hsearch(dummy, ENTER);
+            hdestroy();
+            break;
         case SCCENONE:   throw(test_fullerrors, IGNORE); break;
         default:
             // default s'assure qu'on oublie pas de tests

@@ -37,9 +37,9 @@ OBJS		:= $(BUILD)/objs
 LOGS		:= $(BUILD)/logs
 REPORTS		:= $(BUILD)/reports
 
-PREFIX		?= ~/.local
-LIBINSTALL	:= $(PREFIX)/lib/$(PROJECT)
-INCINSTALL	:= $(PREFIX)/include/$(PROJECT)
+PREFIX		?= /usr/local
+LIBINSTALL	:= $(PREFIX)/lib
+INCINSTALL	:= $(PREFIX)/include
 
 
 ###############################################################################
@@ -173,9 +173,9 @@ debug: $(PROJECT)
 
 # @brief Installe le logiciel compilé sur le système.
 install: $(PROJECT)
-	@mkdir -p $(LIBINSTALL) $(INCINSTALL)
-	@rsync -aq $(LIBS)/ $(LIBINSTALL)/
-	@rsync -aq $(INCLUDES)/ $(INCINSTALL)/
+	@sudo mkdir -p $(LIBINSTALL) $(INCINSTALL)
+	@sudo rsync -aq $(LIBS)/ $(LIBINSTALL)/
+	@sudo rsync -aq $(INCLUDES)/ $(INCINSTALL)/
 	@$(INFO) ok $(PROJECT) installed
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)

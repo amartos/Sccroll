@@ -273,11 +273,12 @@ const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnu
  * @since 0.1.0
  * @brief Sauvegarde les informations sur le dernier appel d'un
  * simulacre.
+ * @param source  @c __FILE__.
  * @param funcname @c __FUNCTION__.
  * @param line @c __LINE__.
  * @param mock Le drapeau SccrollMockFlags du simulacre.
  */
-void sccroll_mockTrace(const char* funcname, int line, SccrollMockFlags mock);
+void sccroll_mockTrace(const char* source, const char* funcname, int line, SccrollMockFlags mock);
 
 /**
  * @def sccroll_mockCall
@@ -291,7 +292,7 @@ void sccroll_mockTrace(const char* funcname, int line, SccrollMockFlags mock);
  */
 #define sccroll_mockCall(name, flag, ...)                               \
     (                                                                   \
-        sccroll_mockTrace(__FUNCTION__, __LINE__, flag),                \
+        sccroll_mockTrace(__FILE__, __FUNCTION__, __LINE__, flag),      \
         sccroll_mock##name(__VA_ARGS__)                                 \
     )
 

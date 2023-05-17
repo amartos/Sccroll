@@ -33,15 +33,17 @@
  * @def SCCROLL_MOCKERROR
  * @since 0.1.0
  * @brief Message d'erreur des simulacres prédéfinis.
- * @param callee Le simulacre en erreur.
  * @param calls Le nombre d'appels du simulacre effectués.
- * @param caller La fonction appelante du simulacre.
- * @param line La ligne d'appel.
  * @param msg Un message d'erreur.
  */
-#define SCCROLL_MOCKERROR(callee, calls, caller, line, msg) \
-    "%s (call #%u in %s l. %i): %s",                        \
-        callee,calls,caller,line,msg
+#define SCCROLL_MOCKERROR(calls, msg)                               \
+    "%s (call #%u in %s::%s(), l. %i): %s",                         \
+        sccroll_mockName(trace.mock),                               \
+        calls,                                                      \
+        trace.source,                                               \
+        trace.caller,                                               \
+        trace.line,                                                 \
+        msg
 
 /**
  * @since 0.1.0
@@ -88,8 +90,10 @@ static unsigned trigger[SCCMMAX] = {0};
  * @brief Permet de conserver la trace d'appelants de fonctions.
  */
 typedef struct SccrollMockTrace {
+    const char* source; /**< Le chemin du fichier source. */
     const char* caller; /**< Le nom de la fonction appelante. */
     int line;           /**< La ligne d'appel. */
+    SccrollMockFlags mock; /**< Le code du simulacre. */
 } SccrollMockTrace;
 
 /**
@@ -140,11 +144,13 @@ SccrollMockFlags sccroll_mockGetTrigger(void) { return trigger[SCCMMOCK]; }
 unsigned sccroll_mockGetDelay(void) { return trigger[SCCMDELAY]; }
 unsigned sccroll_mockGetCalls(void) { return trigger[SCCMCALLS]; }
 
-void sccroll_mockTrace(const char* funcname, int line, SccrollMockFlags mock)
+void sccroll_mockTrace(const char* source, const char* funcname, int line, SccrollMockFlags mock)
 {
     if (trigger[SCCMMOCK] == mock) {
+        trace.source = source;
         trace.caller = funcname;
         trace.line   = line;
+        trace.mock   = mock;
     }
 }
 
@@ -190,12 +196,8 @@ static void sccroll_mockAssert(void)
     if (!trigger[SCCMCALLS]) return;
 
     int calls = trigger[SCCMCALLS];
-    const char* name = sccroll_mockName(trigger[SCCMMOCK]);
     sccroll_mockFlush();
-    sccroll_fatal(
-        SIGABRT,
-        SCCROLL_MOCKERROR(name, calls, trace.caller, trace.line, "error not handled")
-    );
+    sccroll_fatal(SIGABRT, SCCROLL_MOCKERROR(calls, "error not handled"));
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)

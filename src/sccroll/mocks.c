@@ -187,20 +187,14 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
 
 static void sccroll_mockAssert(void)
 {
-    if (trigger[SCCMCALLS])
-        sccroll_mockFatal(SIGABRT, "error not handled");
-}
+    if (!trigger[SCCMCALLS]) return;
 
-void sccroll_mockFatal(int sigint, const char* restrict fmt, ...)
-{
     int calls = trigger[SCCMCALLS];
     const char* name = sccroll_mockName(trigger[SCCMMOCK]);
-    char msg[BUFSIZ] = {0};
     sccroll_mockFlush();
-    sccroll_variadic(fmt, list, vsprintf(msg, fmt, list));
     sccroll_fatal(
-        sigint,
-        SCCROLL_MOCKERROR(name, calls, trace.caller, trace.line, msg)
+        SIGABRT,
+        SCCROLL_MOCKERROR(name, calls, trace.caller, trace.line, "error not handled")
     );
 }
 

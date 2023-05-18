@@ -33,12 +33,13 @@
  * @def SCCROLL_MOCKERROR
  * @since 0.1.0
  * @brief Message d'erreur des simulacres prédéfinis.
+ * @param name Le nom du simulacre.
  * @param calls Le nombre d'appels du simulacre effectués.
  * @param msg Un message d'erreur.
  */
-#define SCCROLL_MOCKERROR(calls, msg)                               \
+#define SCCROLL_MOCKERROR(name, calls, msg)                         \
     "%s (call #%u in %s::%s(), l. %i): %s",                         \
-        sccroll_mockName(trace.mock),                               \
+        name,                                                       \
         calls,                                                      \
         trace.source,                                               \
         trace.caller,                                               \
@@ -64,27 +65,6 @@ static bool sccroll_mockFire(SccrollMockFlags mock);
 static void sccroll_mockAssert(void);
 
 /**
- * @enum SccrollMockIndex
- * @since 0.1.0
- * @brief Liste des index de #trigger.
- */
-typedef enum SccrollMockIndex {
-    SCCMMOCK,  /**< Index du code du simulacre à déclencher. */
-    SCCMDELAY, /**< Index du délai à applique. */
-    SCCMCALLS, /**< Index du nombre d'appels effectués à partir de
-                * l'erreur du simulacre. */
-    SCCMMAX,   /**< Valeur maximale des index. */
-} SccrollMockIndex;
-
-/**
- * @var trigger
- * @since 0.1.0
- * @brief Variable contenant les informations sur le simulacre à
- * déclencher.
- */
-static unsigned trigger[SCCMMAX] = {0};
-
-/**
  * @struct SccrollMockTrace
  * @since 0.1.0
  * @brief Permet de conserver la trace d'appelants de fonctions.
@@ -94,6 +74,7 @@ typedef struct SccrollMockTrace {
     const char* caller; /**< Le nom de la fonction appelante. */
     int line;           /**< La ligne d'appel. */
     SccrollMockFlags mock; /**< Le code du simulacre. */
+    int calls;             /**< Le nombre d'appels effectués. */
 } SccrollMockTrace;
 
 /**
@@ -134,30 +115,28 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
 // clang-format on
 
 void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay) {
-    trigger[SCCMMOCK]  = mock;
-    trigger[SCCMDELAY] = delay;
+    trace.mock  = mock;
+    trace.calls = delay;
 }
 
-void sccroll_mockFlush(void) { memset(trigger, 0, sizeof(trigger)); }
+void sccroll_mockFlush(void) { trace.mock = 0, trace.calls = 0; }
 
-SccrollMockFlags sccroll_mockGetTrigger(void) { return trigger[SCCMMOCK]; }
-unsigned sccroll_mockGetDelay(void) { return trigger[SCCMDELAY]; }
-unsigned sccroll_mockGetCalls(void) { return trigger[SCCMCALLS]; }
+SccrollMockFlags sccroll_mockGetTrigger(void) { return trace.mock; }
+int sccroll_mockGetCalls(void) { return trace.calls; }
 
 void sccroll_mockTrace(const char* source, const char* funcname, int line, SccrollMockFlags mock)
 {
-    if (trigger[SCCMMOCK] == mock) {
+    if (trace.mock == mock) {
         trace.source = source;
         trace.caller = funcname;
         trace.line   = line;
-        trace.mock   = mock;
     }
 }
 
 static bool sccroll_mockFire(SccrollMockFlags mock)
 {
-    if (!trigger[SCCMMOCK]) return false;
-    else if (trigger[SCCMMOCK] != mock)
+    if (!trace.mock) return false;
+    else if (trace.mock != mock)
     {
         // Actions coordonnées entre simulacres.
         switch(mock)
@@ -167,7 +146,7 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
             // On déclenche aussi le simulacre avec les autres fonctions
             // f* de la librairie standard, car ferror doit être synchrone
             // avec leur déclenchement.
-            switch(trigger[SCCMMOCK])
+            switch(trace.mock)
             {
             default: break;
             case SCCEFSCANF: __attribute__((fallthrough));
@@ -176,28 +155,25 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
             case SCCEFTELL: __attribute__((fallthrough));
             case SCCEFSEEK: __attribute__((fallthrough));
             case SCCEFOPEN:
-                return trigger[SCCMCALLS] > trigger[SCCMDELAY];
+                return trace.calls <= 0;
             }
             break;
         }
+        return false;
     }
-    else if (trigger[SCCMDELAY] > 0)
-        --trigger[SCCMDELAY];
-    else if (!trigger[SCCMDELAY] && !trigger[SCCMCALLS])
-        ++trigger[SCCMCALLS];
-    else
-        sccroll_mockAssert();
+    else if (trace.calls < 0) sccroll_mockAssert();
 
-    return trigger[SCCMMOCK] == mock && trigger[SCCMCALLS];
+    return !trace.calls--;
 }
 
 static void sccroll_mockAssert(void)
 {
-    if (!trigger[SCCMCALLS]) return;
+    if (trace.calls >= 0) return;
 
-    int calls = trigger[SCCMCALLS];
+    const char* name = sccroll_mockName(trace.mock);
+    int calls        = -1*trace.calls;
     sccroll_mockFlush();
-    sccroll_fatal(SIGABRT, SCCROLL_MOCKERROR(calls, "error not handled"));
+    sccroll_fatal(SIGABRT, SCCROLL_MOCKERROR(name, calls, "error not handled"));
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)

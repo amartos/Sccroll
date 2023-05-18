@@ -189,20 +189,13 @@ SccrollMockFlags sccroll_mockGetTrigger(void);
 
 /**
  * @since 0.1.0
- * @brief Donne le délai restant avant déclenchement du simulacre.
+ * @brief Donne le nombre d'appels restant avant déclenchement du
+ * simulacre.
  * @return Le nombre d'appels restants du simulacre avant le
- * déclemenchement d'une erreur.
+ * déclemenchement d'une erreur. Un nombre négatif indique le nombre
+ * d'appels effectués au-delà.
  */
-unsigned sccroll_mockGetDelay(void);
-
-/**
- * @since 0.1.0
- * @brief Donne le nombre d'appels effectués depuis le déclenchement
- * de l'erreur du simulacre.
- * @return Le nombre d'appels à partir du déclemenchement du simulacre
- * (le déclenchement compte pour le premier appel).
- */
-unsigned sccroll_mockGetCalls(void);
+int sccroll_mockGetCalls(void);
 
 /**
  * @since 0.1.0

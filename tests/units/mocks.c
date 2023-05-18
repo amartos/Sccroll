@@ -104,35 +104,28 @@ void test_getters(void)
     sccroll_mockFlush();
 
     assert(sccroll_mockGetTrigger() == SCCENONE);
-    assert(sccroll_mockGetDelay() == 0);
     assert(sccroll_mockGetCalls() == 0);
 
     sccroll_mockTrigger(SCCEMALLOC, 0);
     assert(sccroll_mockGetTrigger() == SCCEMALLOC);
-    assert(sccroll_mockGetDelay() == 0);
     assert(sccroll_mockGetCalls() == 0);
     sccroll_mockFlush();
     assert(sccroll_mockGetTrigger() == SCCENONE);
-    assert(sccroll_mockGetDelay() == 0);
     assert(sccroll_mockGetCalls() == 0);
 
     sccroll_mockTrigger(SCCEMALLOC, 13);
     assert(sccroll_mockGetTrigger() == SCCEMALLOC);
-    assert(sccroll_mockGetDelay() == 13);
-    assert(sccroll_mockGetCalls() == 0);
+    assert(sccroll_mockGetCalls() == 13);
     sccroll_mockFlush();
 
     sccroll_mockTrigger(SCCEMALLOC, 1);
     assert(sccroll_mockGetTrigger() == SCCEMALLOC);
-    assert(sccroll_mockGetDelay() == 1);
-    assert(sccroll_mockGetCalls() == 0);
+    assert(sccroll_mockGetCalls() == 1);
     assert((blob = malloc(1)));
     free(blob);
-    assert(sccroll_mockGetDelay() == 0);
     assert(sccroll_mockGetCalls() == 0);
     assert(!malloc(1));
-    assert(sccroll_mockGetDelay() == 0);
-    assert(sccroll_mockGetCalls() == 1);
+    assert(sccroll_mockGetCalls() == -1);
     sccroll_mockFlush();
 }
 

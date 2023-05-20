@@ -23,6 +23,7 @@
 
 #include "sccroll/helpers.h"
 #include "sccroll/data.h"
+#include "sccroll/lists.h"
 
 #ifdef _SCCUNITTESTS
 // Permet de tester aisément les gestions d'erreurs.

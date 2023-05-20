@@ -166,60 +166,11 @@ static void sccroll_void(void) __attribute__((unused));
 // clang-format on
 
 /**
- * @struct SccrollNode
- * @since 0.1.0
- * @brief Structure d'un noeud de la liste de tests.
- * @note SccrollNode::nth est utilisable pour déterminer le nombre
- * total de tests: le dernier test inscrit étant en tête de liste, son
- * numéro correspond au nombre total de tests.
- */
-struct SccrollNode {
-    int nth;                   /**< Numéro du noeud dans la liste. */
-    const SccrollEffects* car; /**< Le test et ses effets attendus. */
-    struct SccrollNode* cdr;   /**< Le prochain noeud de la liste. */
-};
-
-/**
- * @typedef SccrollList
- * @since 0.1.0
- * @brief Structure de la liste de tests.
- */
-typedef struct SccrollNode* SccrollList;
-
-/**
- * @def sccroll_car
- * @since 0.1.0
- * @brief Accède au test du noeud.
- */
-#define sccroll_car(list) (list)->car
-
-/**
- * @def sccroll_nth
- * @since 0.1.0
- * @brief Accède au numéro du noeud.
- */
-#define sccroll_nth(list) (list)->nth
-
-/**
- * @def sccroll_cdr
- * @since 0.1.0
- * @brief Accède au reste de la liste.
- */
-#define sccroll_cdr(list) (list)->cdr
-
-/**
- * @since 0.1.0
- * @brief Ajoute le test en tête de la liste #tests.
- * @param expected Le SccrollEffects attendu pour le test.
- */
-static void sccroll_push(const SccrollEffects* restrict expected) __attribute__((nonnull));
-
-/**
  * @since 0.1.0
  * @var tests
  * @brief Liste des tests à exécuter.
  */
-static SccrollList tests = NULL;
+static List* tests = NULL;
 
 // clang-format off
 
@@ -317,14 +268,6 @@ static int sccroll_main(void);
  * @return 0 si le test réussit, 1 s'il échoue.
  */
 static int sccroll_test(void);
-
-/**
- * @since 0.1.0
- * @brief Retire le premier noeud de la liste de tests et renvoie le
- * pointeur du test qui y est stocké.
- * @return Le test du premier noeud de la liste.
- */
-static const SccrollEffects* sccroll_pop(void);
 
 /**
  * @since 0.1.0
@@ -712,18 +655,9 @@ static void sccroll_void(void) {}
  ******************************************************************************/
 // clang-format on
 
-// Pas de classe de stockage ici car sccroll_register fait partie de
-// l'API.
-strong_alias(, sccroll_push, sccroll_register);
-static void sccroll_push(const SccrollEffects* restrict expected)
+void sccroll_register(const SccrollEffects* restrict expected)
 {
-    struct SccrollNode* node = calloc(1, sizeof(struct SccrollNode));
-    sccroll_err(!node, "test registration", expected->name);
-
-    node->car = sccroll_prepare(expected);
-    node->nth = !tests ? 1 : sccroll_nth(tests) + 1;
-    node->cdr = tests;
-    tests = node;
+    tests = lpush(sccroll_prepare(expected), tests);
 }
 
 static SccrollEffects* sccroll_prepare(const SccrollEffects* restrict effects)
@@ -834,10 +768,10 @@ int sccroll_run(void)
     setbuf(stdout, NULL);
 
     int report[REPORTMAX] = { 0 };
-    report[REPORTTOTAL]   = sccroll_nth(tests);
+    report[REPORTTOTAL]   = tests->len;
 
     sccroll_init();
-    while (tests) {
+    while (tests->len) {
         sccroll_before();
         report[REPORTFAIL] += sccroll_test();
         sccroll_after();
@@ -845,12 +779,14 @@ int sccroll_run(void)
     sccroll_review(report);
     sccroll_clean();
 
+    lfree(tests);
+    tests = NULL;
     return report[REPORTFAIL];
 }
 
 static int sccroll_test(void)
 {
-    const SccrollEffects* expected = sccroll_pop();
+    const SccrollEffects* expected = lpop(tests);
     const SccrollEffects* result   = sccroll_exe(sccroll_dup(expected));
     int failed = sccroll_diff(expected, result);
     if (failed) {
@@ -860,15 +796,6 @@ static int sccroll_test(void)
     sccroll_free(expected);
     sccroll_free(result);
     return failed;
-}
-
-static const SccrollEffects* sccroll_pop(void)
-{
-    const SccrollEffects* expected = sccroll_car(tests);
-    struct SccrollNode* popped = tests;
-    tests = sccroll_cdr(popped);
-    free(popped);
-    return expected;
 }
 
 static const SccrollEffects* sccroll_exe(SccrollEffects* restrict result)

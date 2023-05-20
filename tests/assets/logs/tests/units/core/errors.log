@@ -6,12 +6,13 @@
 --------------------------------------------------------------------------------
 
 [ [0;1;32mPASS[0m ] success rate: 100.00% [2/2]
-errors: test registration failed for testing errors: Success
 errors: alloc failed for SccrollEffects: Success
 errors: could not copy blob: Success
-errors: test registration failed for testing errors: Success
+errors: could not create Node: Success
+errors: could not create List: Success
 errors: alloc failed for SccrollEffects: Success
 errors: could not copy blob: Success
+errors: could not create Node: Success
 errors: alloc failed for SccrollEffects: Success
 errors: could not copy blob: Success
 errors: alloc failed for SccrollEffects: Success

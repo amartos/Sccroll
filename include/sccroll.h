@@ -29,6 +29,7 @@
 
 #include "sccroll/core.h"
 #include "sccroll/helpers.h"
+#include "sccroll/lists.h"
 #include "sccroll/data.h"
 #include "sccroll/assert.h"
 #include "sccroll/mocks.h"

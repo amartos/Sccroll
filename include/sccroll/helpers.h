@@ -52,6 +52,16 @@
  ******************************************************************************/
 // clang-format on
 
+#ifdef DEBUG
+/**
+ * @since 0.1.0
+ * @brief Affiche un simple message de debuggage sur stderr indiquant
+ * que la ligne d'appel a été atteinte.
+ */
+#define sccroll_dbgline()                                               \
+    fprintf(stderr, "[ DEBUG ] %s::%s l.%i\n", __FILE__, __FUNCTION__, __LINE__)
+#endif
+
 /**
  * @def sccroll_variadic
  * @since 0.1.0

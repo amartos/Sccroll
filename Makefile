@@ -179,7 +179,7 @@ install: $(PROJECT)
 	@$(INFO) ok $(PROJECT) installed
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
-tests: CFLAGS += -g -O0 -D_SCCUNITTESTS --coverage
+tests: CFLAGS += -g -O0 -DDEBUG -D_SCCUNITTESTS --coverage
 tests: LDLIBS += --coverage
 tests: SFLAGS += --coverage
 tests: ARGS    = 0 1 2 3 4 5

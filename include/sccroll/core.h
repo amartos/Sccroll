@@ -128,23 +128,13 @@ typedef enum SccrollFlags {
 } SccrollFlags;
 
 /**
- * @struct SccrollBlob
- * @since 0.1.0
- * @brief Gère une structure de donnée quelconque.
- */
-typedef struct SccrollBlob {
-    void* blob;  /**< Le blob de données. */
-    size_t size; /**< La taille du blob. */
-} SccrollBlob;
-
-/**
  * @struct SccrollFile
  * @since 0.1.0
  * @brief Structure stockant le chemin d'un fichier et son contenu.
  */
 typedef struct SccrollFile {
     const char* path; /**< Le chemin du fichier. */
-    SccrollBlob content; /**< Le contenu du fichier. */
+    Data content;     /**< Le contenu du fichier. */
 } SccrollFile;
 
 /**

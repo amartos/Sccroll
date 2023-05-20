@@ -55,6 +55,21 @@ static void sccroll_peanuts(void) { srandom(time(NULL)); }
 // arc4random_buf remplit déjà le rôle de sccroll_monkey.
 weak_alias(,arc4random_buf, sccroll_monkey);
 
+Data* mkdata(void* blob, size_t size, int type)
+{
+    Data* new = calloc(1, sizeof(Data));
+    if (!new) err(EXIT_FAILURE, "could not create Data for blob");
+    new->blob = blob;
+    new->size = size;
+    new->type = type;
+    return new;
+}
+
+Data* datadup(const Data* restrict data)
+{
+    return mkdata(data->blob, data->size, data->type);
+}
+
 void arc4random_buf(void* blob, size_t size)
 {
     for (size_t b = 0; b < size; ++b, ++blob)

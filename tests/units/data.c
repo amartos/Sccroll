@@ -46,6 +46,9 @@ const float sigma = 0.05f;
 // ratio de bits 0/1 attendu pour un nombre aléatoire.
 const float expected = 0.50f;
 
+// Donnée test pour Data
+static const char* foobar = "foobar";
+
 // Cette fonction calcule le ratio de bits 1 et 0 de l'espace mémoire
 // blob de size octets.
 __attribute__((nonnull(1)))
@@ -73,6 +76,28 @@ void crash_test(void)
         free(data), data = NULL;
         free(copy), copy = NULL;
     }
+}
+
+void tests_datas(void)
+{
+    Data* data = NULL;
+    Data* copy = NULL;
+    assert((data = mkdata((void*)foobar, strlen(foobar)+1, 42)));
+    assert(!strcmp((const char*)data->blob, foobar));
+    assert(data->size == strlen(foobar)+1);
+    assert(data->type == 42);
+    assert((copy = datadup(data)) != data);
+    assert(copy->blob == data->blob);
+    assert(copy->type == data->type);
+    assert(copy->size == data->size);
+    free(data);
+    free(copy);
+
+    assert((data = mkdata(NULL, 0, 0)));
+    assert(!data->blob);
+    assert(!data->size);
+    assert(!data->type);
+    free(data);
 }
 
 // clang-format off
@@ -126,6 +151,9 @@ int main(void)
 
     // tests des gestions d'erreurs
     sccroll_mockPredefined(crash_test);
+
+    tests_datas();
+    sccroll_mockPredefined(tests_datas);
 
     return EXIT_SUCCESS;
 }

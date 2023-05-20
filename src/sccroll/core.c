@@ -208,7 +208,7 @@ static SccrollEffects* sccroll_gen(void);
  * @param dest La structure SccrollBlob de destination.
  * @param src La structure SccrollBlob à dupliquer.
  */
-static void sccroll_blobcpy(SccrollBlob* restrict dest, const SccrollBlob* restrict src)
+static void sccroll_blobcpy(Data* restrict dest, const Data* restrict src)
     __attribute__((nonnull));
 
 /**
@@ -561,8 +561,8 @@ static void sccroll_pcodes(const SccrollEffects* restrict expected, const Sccrol
  * l'affichage de différences entre deux blobs d'un test.
  */
 typedef struct SccrollBlobDiff {
-    const SccrollBlob* expected; /**< Le blob attendu. */
-    const SccrollBlob* result;   /**< Le blob obtenu. */
+    const Data* expected; /**< Le blob attendu. */
+    const Data* result;   /**< Le blob obtenu. */
     const char* name;     /**< Le nom du test. */
     const char* desc;     /**< La description des blobs. */
 } SccrollBlobDiff;
@@ -705,7 +705,7 @@ static SccrollEffects* sccroll_gen(void)
     return effects;
 }
 
-static void sccroll_blobcpy(SccrollBlob* restrict dest, const SccrollBlob* restrict src)
+static void sccroll_blobcpy(Data* restrict dest, const Data* restrict src)
 {
     if (!src->blob) dest->blob = strdup("");
     else if (!src->size) dest->blob = strdup(src->blob);

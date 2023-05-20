@@ -31,7 +31,51 @@
 
 // clang-format off
 
+/*******************************************************************************
+ * @name Gestion de données
+ * @{
+ *******************************************************************************/
+// clang-format on
+
+/**
+ * @struct Data
+ * @since 0.1.0
+ * @brief Structure des éléments de la liste.
+ * @note Data::type est à définir par l'utilisateur.
+ */
+typedef struct Data {
+    void* blob;  /**< Le pointeur de la donnée. */
+    size_t size; /**< La taille de la donnée en octets. */
+    int type;    /**< Le type de la donnée. */
+} Data;
+
+/**
+ * @since 0.1.0
+ * @brief Construit une structure Data.
+ * @alert Utilise malloc.
+ * @param blob Le pointeur de la donnée.
+ * @param size La taille de la donnée en octets.
+ * @param type Le type de la donnée définit par l'utilisateur.
+ * @return Un pointeur vers la structure Data construite, ou @c NULL
+ * en cas d'erreur.
+ */
+Data* mkdata(void* blob, size_t size, int type);
+
+/**
+ * @since 0.1.0
+ * @brief Duplique une structure Data (mais pas la donnée qu'il
+ * contient).
+ * @alert Utilise malloc pour construire Data*.
+ * @param data La donnée à dupliquer.
+ * @return Un pointeur vers la copie de la structure Data construite,
+ * ou @c NULL en cas d'erreur.
+ */
+Data* datadup(const Data* restrict data);
+
+// clang-format off
+
 /******************************************************************************
+ * @}
  * @name Générateurs de données aléatoires
  * @{
  ******************************************************************************/

@@ -1,5 +1,5 @@
 ###############################################################################
-# Informations sur le projet
+# Project infos
 ###############################################################################
 
 LICENSEFILE	= LICENSE
@@ -12,7 +12,7 @@ LOGO		=
 
 
 ###############################################################################
-# Environnement
+# Environment
 ###############################################################################
 
 SHELL		= /usr/bin/env bash
@@ -43,7 +43,7 @@ INCINSTALL	:= $(PREFIX)/include
 
 
 ###############################################################################
-# Chemins des sources
+# Sources
 ###############################################################################
 
 SRCTREE		:= $(shell find $(SRCS) -type d)
@@ -59,7 +59,7 @@ vpath %.gcno $(BUILD)
 
 
 ###############################################################################
-# Paramètres de compilation
+# Compilation parameters
 ###############################################################################
 
 CDEPS		:= $(shell find $(SRCS) -type f -name "*.c")
@@ -74,7 +74,7 @@ LIBPATH		:= $(LIBS):$(LIBINSTALL):/usr/local/lib
 
 
 ###############################################################################
-# Paramètres de couverture de code
+# Code coverage
 ###############################################################################
 
 COVFILE		:= $(REPORTS)/coverage
@@ -98,11 +98,11 @@ COVOPTSHTML	:= --html-details $(COVHTML) \
 
 
 ###############################################################################
-# Paramètres de documentation
+# Documentation
 ###############################################################################
 
 DOCS		= docs
-DOCSLANG	= French
+DOCSLANG	= English
 DOX			= doxygen
 DOXCONF		:= $(DOCS)/$(DOX).conf
 DOXOPTS		:= -q $(DOXCONF)
@@ -113,7 +113,7 @@ PDF			:= $(LATEX)/refman.pdf
 
 
 ###############################################################################
-# Cibles à patterns
+# Patterns recipes
 ###############################################################################
 
 $(OBJS)/%.o: %.c
@@ -136,9 +136,8 @@ $(LOGS)/%.log: $(BIN)/%
 		&& $(INFO) pass $(notdir $*) \
 		|| ($(INFO) fail $(notdir $*); true)
 
-# Cette recette ne devrait pas être souvent utilisée. Elle existe pour
-# le cas où l'on est en train de construire un test unitaire, et que
-# le premier log est inexistant.
+# This recipe is used when building a unit test and the test log is
+# not yet available.
 $(TLOGS)/%.log:
 	@mkdir -p $(dir $@)
 	@touch $@
@@ -152,33 +151,32 @@ $(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
 
 
 ###############################################################################
-# Autres cibles
+# Other recipes
 ###############################################################################
 
 .PHONY: all $(PROJECT) install tests docs init help
 .PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LIBS)/%.so $(LOGS)/%.difflog $(TLOGS)/%.log
 
-# @brief Compile la cible principale du project
+# @brief Compile the library
 all: $(PROJECT)
 
-# Compile la cible principale du project (cible par défaut)
 $(PROJECT): CFLAGS += -O3
 $(PROJECT): %: clean init $(LIBS)/lib%.so
 	@$(INFO) ok $@ compiled
 
-# @brief Compile la cible principale avec fonctionnalités de debuggage
+# @brief Compile the debug version of the library
 debug: CFLAGS += -g -DDEBUG
 debug: $(PROJECT)
 	@$(INFO) ok $(PROJECT) $@ version compiled
 
-# @brief Installe le logiciel compilé sur le système.
+# @brief Compile and install the library
 install: $(PROJECT)
 	@sudo mkdir -p $(LIBINSTALL) $(INCINSTALL)
 	@sudo rsync -aq $(LIBS)/ $(LIBINSTALL)/
 	@sudo rsync -aq $(INCLUDES)/ $(INCINSTALL)/
 	@$(INFO) ok $(PROJECT) installed
 
-# @brief Exécute les tests du projet (unitaires, couverture, etc...)
+# @brief Execute the tests: units tests, coverage
 tests: CFLAGS += -g -O0 -DDEBUG -D_SCCUNITTESTS --coverage
 tests: LDLIBS += --coverage
 tests: SFLAGS += --coverage
@@ -190,24 +188,24 @@ tests: clean init $(LIBS)/lib$(PROJECT).so $(UDEPS:%.c=$(LOGS)/%.difflog)
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
 
-# @brief Génère la documentation automatisée du projet
+# @brief Build the project documentation
 docs: $(DOXCONF)
 	@$(DOX) $(DOXOPTS)
 	@$(MAKE) -C $(LATEX) pdf && mv $(PDF) $(DOCS)/
 	@$(INFO) ok $(PROJECT) $@
 
-# @brief Initialise le dossier de compilation
+# @brief Initialize the compilation directory
 init:
 	@mkdir -p $(BIN) $(OBJS) $(LOGS) $(DEPS) $(LIBS) $(REPORTS)
 
-# @brief Nettoyage post-compilation
+# @brief Nuke all files not in VCS
 clean:
 	@git clean -q -d -f
 
-# @brief Affiche la documentation du Makefile
+# @brief Print the Makefile documentation
 help:
 	@head -n 5 $(LICENSEFILE)
-	@echo "Cibles disponibles:"
+	@echo "Available recipes:"
 	@$(PDOC) Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 
 -include $(wildcard $(DEPS)/*/*.d)

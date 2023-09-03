@@ -1,18 +1,18 @@
 #!/usr/bin/awk -f
 # @file        pdoc.awk
 # @version     0.1.0
-# @brief       Script d'affichage de l'aide du Makefile.
+# @brief       Makefile documentation parser.
 # @date        2022
 # @author      Alexandre Martos
 # @copyright   MIT License
 #
-# Ce script analyse le Makefile du projet et affiche l'aide issue de
-# la documentation.
+# This script parses a Makefile and prints the recipes documentation.
 #
-# Les lignes considérées sont les commentaires dont la syntaxe est
-# - "^#!.*" Pour la documentation générale
-# - "# @brief.*" Pour la documentation d'une recette (le nom de la
-# recette est capturé automatiquement à la ligne suivante.)
+# The printed lines are comments with the following regular
+# expressions syntax:
+# - "^#!.*" for generic documentation
+# - "# @brief.*" for recipes descriptions (the recipe name is captued
+# on the next line)
 
 BEGIN { FS="(#!|# @brief)"; }
 

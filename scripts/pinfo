@@ -1,82 +1,84 @@
 #!/usr/bin/env bash
 # @file        pinfo
 # @version     0.1.0
-# @brief       Script d'affichage de messages de status.
+# @brief       Status printer script.
 # @date        2022
 # @author      Alexandre Martos
 # @copyright   MIT License
 #
 # @parblock
-# Ce script affiche un message de status qui lui a été confié et
-# renvoie un code dépendant du status (1 pour une erreur, 0 sinon).
+# This script prints given status messages and returns a status code
+# depending on it (1 for errors, otherwise 0).
 #
-# Le script utilise des couleurs avec les codes ANSI.
+# It uses ANSI codes for colors.
 #
-# L'aide du script est disponible avec l'option -h/--help
+# The script takes at least two arguments, a keyword among
+# {error,fail,ok,pass,info,debug} (error and fail will make the script
+# return a status code of 1), and a short message. It can take third
+# or more arguments, in which case the second is the title and the
+# remaining ones are the message.
+#
+# Use the option -h/--help for more details.
 # @endparblock
 
 # @var ERROR
 # @since 0.1.0
-# @brief Liste des mots-clés d'erreurs.
+# @brief Error keywords.
 ERROR="error|fail"
 
 # @var SUCCESS
 # @since 0.1.0
-# @brief Liste des mots-clés de succès.
+# @brief Success keywords.
 SUCCESS="ok|pass"
 
 # @var INFO
 # @since 0.1.0
-# @brief Liste des mots-clés d'information.
+# @brief Information keywords.
 INFO="info|debug"
 
 # @var KEYWORDS
 # @since 0.1.0
-# @brief Liste des mots-clés du script.
+# @brief Full list of keywords.
 KEYWORDS="$ERROR|$SUCCESS|$INFO"
 
 # @var EXCODE
 # @since 0.1.0
-# @brief Code de status du script par défaut.
+# @brief Store the exit code.
 EXCODE=0
 
 # @var MAX
 # @since 0.1.0
-# @brief Taille maximale de l'indicateur de status.
+# @brief Max size for the status label.
 MAX=6
 
-# @brief Affiche le message d'aide du script puis quitte.
+# @brief Print the script help and exit.
 # @since 0.1.0
-# @param $1 Le code de status.
+# @param $1 The exit status code.
 function usage {
-    echo -e "usage: pinfo [-h,--help] status short [desc]\n\n"\
-         "status\ta status keyword among [$KEYWORDS]\n" \
-         "short\ta short description of the status\n" \
-         "desc\tan optional long description of the status\n" \
+    echo -e "usage: pinfo [-h,--help] STATUS SHORT [DESC]\n\n"\
+         "STATUS\tA status keyword among [$KEYWORDS].\n" \
+         "SHORT\tA short description/title.\n" \
+         "DESC\tLong description.\n" \
          "\nOPTIONS:\n" \
-         "-h,--help\tprint this help and exit\n"
+         "-h,--help\tPrint this help and exit.\n"
     exit $1
 }
 
-# @brief Vérifie les arguments donnés au script.
+# @brief Check the command line arguments arguments.
 # @since 0.1.0
-# @param $@ Les arguments donnés au script.
+# @param $@ The command line arguments.
 function check_args {
-    [ -z "$1" ] && >&2 echo "status cannot be emtpy" && return 1
+    [ -z "$1" ] && >&2 echo "STATUS cannot be emtpy" && return 1
     echo "$KEYWORDS" | grep -q "$1" || return $(>&2 echo "unkown keyword: $1" && return 1)
-    [ -z "$2" ] && >&2 echo "short cannot be empty" && return 1
+    [ -z "$2" ] && >&2 echo "SHORT cannot be empty" && return 1
     return 0
 }
 
-# @brief Centre une chaîne de caractère en ajoutant un caractère autour
-# de la chaîne.
+# @brief Center a string.
 # @since 0.1.0
-# @param $1 La chaîne à centrer.
-# @param $2 La longueur totale maximale de la chaîne finale.
-# @param $3 Caractère utilisé pour centrer (espace par défaut).
-# @print La chaîne centrée avec #$3 jusqu'à atteindre #$2 caractères.
-# @exit Si la longueur totale demandée est inférieure à celle de la
-# chaîne de départ.
+# @param $1 The string to center.
+# @param $2 The final string max length.
+# @param $3 The padding character.
 # @see https://unix.stackexchange.com/a/267730
 function center {
     local SIZE=${#1}
@@ -87,48 +89,43 @@ function center {
     printf "%*s%s%*s" $LEFT "$CPAD" $1 $RIGHT "$CPAD"
 }
 
-# @brief Convertit la chaîne en majuscules.
+# @brief Print an uppercased string.
 # @since 0.1.0
-# @param $1 Chaîne à convertir.
-# @print La chaîne en majuscules.
+# @param $1 The string to print.
 function upper {
     echo $(echo $1 | tr "[:lower:]" "[:upper:]")
 }
 
-# @brief Affiche un indicateur coloré de status.
+# @brief Print a colored status label.
 # @since 0.1.0
-# @param $1 Le mot-clé de status parmi $KEYWORDS.
-# @print L'indicateur de status coloré correspondant au mot-clé.
+# @param $1 The status keyword; must be listed in #KEYWORDS.
 function status {
     local STATUS="info"
     local CODE=7
     eval "case $1 in
-        $ERROR)
-            CODE=1
-            EXCODE=1;;
-        $SUCCESS) CODE=2;;
-        $INFO) CODE=6;;
+        $ERROR) CODE=1; EXCODE=1;; # red
+        $SUCCESS) CODE=2;;         # green
+        $INFO) CODE=6;;            # cyan
         *);;
     esac"
     STATUS="$(upper $1)"
     printf "[ \e[0;1;3%im%-*s\e[0m]" $CODE $MAX $STATUS
 }
 
-# @brief Affiche un message de status.
+# @brief Print a status message.
 # @since 0.1.0
-# @param $1 Un mot-clé de status parmi $KEYWORDS.
-# @param $2 Une description courte du message.
-# @param $3 Une description longue du message.
+# @param $1 A keyword listed in #KEYWORDS.
+# @param $2 The message title or short description.
+# @param $3 (optional) The message long description.
 function pstatus {
     status $1
     printf " %s" "$2"
     [ ! -z "$3" ] && echo : ${@:3} || echo ""
 }
 
-# @brief main du script
+# @brief Main function.
 # @since 0.1.0
-# @param $@ arguments de la ligne de commande.
-# @exit 1 en cas d'erreur, sinon 0.
+# @param $@ Command line arguments.
 function main {
     case $1 in
         -h|--help) usage 0;;

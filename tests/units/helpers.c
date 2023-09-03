@@ -1,20 +1,11 @@
 /**
  * @file        helpers.c
  * @version     0.1.0
- * @brief       Test unitaire des aides à la programmation.
+ * @brief       Helper unit tests.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/helpers.c -o build/objs/tests/units/helpers.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/helpers.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c)              \
- *     -o build/bin/tests/helpers
- * @endcode
  */
 
 // On s'assure d'utiliser celui de la librairie.
@@ -25,7 +16,7 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
@@ -38,7 +29,7 @@ static void sccroll_error(void) { exit(error); }
 // clang-format off
 
 /******************************************************************************
- * Exécution des tests
+ * Execution
  ******************************************************************************/
 // clang-format on
 
@@ -69,9 +60,8 @@ int main(void)
     assert(WTERMSIG(status) == 0);
     assert(WEXITSTATUS(status) == error);
 
-    // Les tests de couverture étant hautement faussés par cette
-    // fonction, cette ligne sert à compenser les appels manquants. Il
-    // n'y a pas vraiment de tests à faire dessus, puisqu'elle n'est
-    // là que pour pallier à un manque.
+    // The coverage calculations are biased for this module due to
+    // this function, which is not called oftent. This line is used to
+    // compensate.
     for (int i = 1; sigabbrev_np(i); ++i);
 }

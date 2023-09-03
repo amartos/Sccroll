@@ -1,16 +1,15 @@
 /**
  * @file        helpers.c
  * @version     0.1.0
- * @brief       Fichier source pour les aides à la programmation.
+ * @brief       Source code of the helper module.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
  *
  * @addtogroup Internals
  * @{
- * @addtogroup Helpers Aides à la programmation.
+ * @addtogroup Helpers Helpers functions and macros internals.
  * @{
  */
 
@@ -19,7 +18,7 @@
 // clang-format off
 
 /******************************************************************************
- * Implémentation
+ * Implementation
  ******************************************************************************/
 // clang-format on
 

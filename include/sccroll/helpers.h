@@ -1,16 +1,15 @@
 /**
  * @file        helpers.h
  * @version     0.1.0
- * @brief       Macros d'aides à la programmation.
+ * @brief       Helper macros and functions.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
  *
  * @addtogroup Internals
  * @{
- * @addtogroup Helpers Macros d'aides à la programmation
+ * @addtogroup Helpers Helper macros and functions
  * @{
  */
 
@@ -27,7 +26,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name Construction de macros
+ * @name Macros building
  * @{
  ******************************************************************************/
 // clang-format on
@@ -35,11 +34,10 @@
 /**
  * @def SCCCOMMA
  * @since 0.1.0
- * @brief Génère une virgule.
+ * @brief Generates a comma.
  *
- * Cette macro est à utiliser dans d'autres macros, quand un des
- * paramètres a besoin d'une virgule qui ne doit pas être interprétée
- * par la macro.
+ * This macro is used as argument of other macros, when a comma is
+ * needed in the result but must be ignored by the parent macro.
  */
 #define SCCCOMMA ,
 
@@ -47,16 +45,19 @@
 
 /******************************************************************************
  * @}
- * @name Gestion des messages
+ * @name Messages handling
  * @{
  ******************************************************************************/
 // clang-format on
 
 #ifdef DEBUG
 /**
+ * @def sccroll_dbgline
  * @since 0.1.0
- * @brief Affiche un simple message de debuggage sur stderr indiquant
- * que la ligne d'appel a été atteinte.
+ * @brief Print a simple debug message on stderr indicating the
+ * source, function and line number.
+ *
+ * This macro is used to ensure that its call point has been reached.
  */
 #define sccroll_dbgline()                                               \
     fprintf(stderr, "[ DEBUG ] %s::%s l.%i\n", __FILE__, __FUNCTION__, __LINE__)
@@ -65,12 +66,12 @@
 /**
  * @def sccroll_variadic
  * @since 0.1.0
- * @brief Facilite la gestion des fonctions variadiques.
- * @alert La macro présuppose que l'argument variadique `...` est
- * situé immédiatement après l'argument @p arg.
- * @param arg Le dernier argument avant `...`.
- * @param list Le nom pour la @c va_list des arguments.
- * @param ... Les actions à effectuer avec les arguments.
+ * @brief Facilitate variadic functions usage.
+ * @alert The macro assumes that the variadic arguments of the caller
+ * functions is located after @p arg.
+ * @param arg The last named argument of the caller function.
+ * @param list The @c va_list variable name.
+ * @param ... The actions to perform on @p list.
  */
 #define sccroll_variadic(arg, list, ...)        \
     {                                           \
@@ -84,18 +85,19 @@
 
 /******************************************************************************
  * @}
- * @name Gestion des drapeaux
+ * @name Flags handling
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Détermine si les drapeaux @p flags contiennent les valeurs
- * @p values.
- * @param flags Les drapeaux combinés avec OR.
- * @param values Une liste de drapeaux regroupées par OR.
- * @return @p values si @p flags les contient, sinon 0.
+ * @brief Indicate if the given flags intersect with the given
+ * values.
+ * @param flags The or'ed flags.
+ * @param values The or'ed values.
+ * @return @p values if @p flags contains all @p values bits, @c 0
+ * otherwise.
  */
 unsigned sccroll_hasFlags(unsigned flags, unsigned values);
 
@@ -103,7 +105,7 @@ unsigned sccroll_hasFlags(unsigned flags, unsigned values);
 
 /******************************************************************************
  * @}
- * @name Gestion de fonctions de rappel.
+ * @name Callbacks handling.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -111,18 +113,18 @@ unsigned sccroll_hasFlags(unsigned flags, unsigned values);
 /**
  * @typedef SccrollFunc
  * @since 0.1.0
- * @brief Prototype des fonctions de test unitaires.
+ * @brief Wrapper functions prototype.
  */
 typedef void (*SccrollFunc)(void);
 
 /**
  * @since 0.1.0
- * @brief Exécute une fonction de rappel dans un fork.
- * @param desc La description de la fonction de rappel.
- * @param callback La fonction de rappel.
- * @return Le status obtenu avec l'appel de wait(). Si la fonction de
- * rappel ne fait pas s'arrêter le programme, le fork quitte avec pour
- * status EXIT_SUCCESS.
+ * @brief Execute a callback function within a fork.
+ * @param desc Description of the callback function (used in case of
+ * errors).
+ * @param callback The callback wrapper function.
+ * @return The wait() status. If the callback does not exits,
+ * sccroll_simplefork() exits itself with status #EXIT_SUCCESS.
  */
 int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attribute__((nonnull));
 
@@ -130,27 +132,27 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
 
 /******************************************************************************
  * @}
- * @name Alias Macros générant des alias de fonctions
+ * @name Alias definitions
  * @{
- * @note Les attributs de la fonction originelle sont automatiquement
- * copiés.
- * @param storage Un spécificateur de classe de stockage (@c extern,
- * @c static, @c register, @c auto, ou rien).
- * @param name Nom de la fonction d'origine.
- * @param aliasname Nom de l'alias.
- * @param ... Attributs supplémentaires pour l'alias.
+ * @note The aliased functions attributes are all copied by these
+ * macros.
+ * @param storage A storage type specifier (@c extern, @c static, @c
+ * register, @c auto, or nothing).
+ * @param name Aliased function name.
+ * @param aliasname Alias name.
+ * @param ... Additional attributes for the alias.
  ******************************************************************************/
 // clang-format on
 
 /**
  * @def attr_rename
  * @since 0.1.0
- * @brief Génère une fonction alias d'une autre fonctions.
- * @attention "Alias" signifie ici une fonction quasi-identique, mais
- * avec un nom différent. Ce n'est pas la définition exacte des
- * "alias" de la librairie GNU C.
- * @note Les attributes de la fonction originelle sont automatiquement
- * copiés.
+ * @brief Generate a function alias.
+ * @attention The alias is a mere rename of the aliased function,
+ * which is not the exact definition of an alias used in the GNU C
+ * library. In the C library, aliases are defined using the
+ * @code alias(name) @endcode attribute, which is not the case of this
+ * macro.
  */
 #define attr_rename(storage, name, aliasname, ...)     \
     storage __typeof__(name) aliasname                 \
@@ -159,7 +161,8 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
 /**
  * @def attr_alias
  * @since 0.1.0
- * @brief Génère un alias du type de la librairie GNU C.
+ * @brief Generate an alias the same way aliases are defined in the
+ * GNU C library.
  */
 #define attr_alias(storage, name, aliasname, ...)      \
     attr_rename(storage, name, aliasname, alias(#name))
@@ -167,7 +170,7 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
 /**
  * @def strong_alias
  * @since 0.1.0
- * @brief Génère un alias fort.
+ * @brief Generate a strong alias.
  */
 #define strong_alias(storage, name, aliasname)  \
     attr_alias(storage, name, aliasname)
@@ -175,18 +178,17 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
 /**
  * @def weak_alias
  * @since 0.1.0
- * @brief Génère un alias faible.
+ * @brief Generate a weak alias.
  */
 #define weak_alias(storage, name, aliasname)    \
     attr_alias(storage, name, aliasname, weak)
 
 /**
- * @def weak_alias
+ * @def extern_alias
  * @since 0.1.0
- * @brief Génère un alias d'une fonction d'un autre module.
- * @param aliasmacro La macro d'alias à utiliser pour générer
- * l'alias et qui prend les paramètres @c storage, @c name et
- * @c aliasname.
+ * @brief Generate an alias of an external library function.
+ * @param aliasmacro The alias macro of the present module to use to
+ * generate the alias. Its parameters are the same as attr_rename().
  */
 #define extern_alias(aliasmacro, name, aliasname)   \
     aliasmacro(extern, name, aliasname)
@@ -195,41 +197,35 @@ int sccroll_simplefork(const char* restrict desc, SccrollFunc callback) __attrib
 
 /******************************************************************************
  * @}
- * @name CodeNames Fonctions traduisant les codes d'erreurs et signaux
- * en nom descriptif.
+ * @name Error codes translations
  *
- * Ces fonctions sont en réalité intégrée dans la librairie C de
- * GNU. Cependant, leur intégration est récente, et donc n'est pas
- * dans toutes les versions trouvables; de plus, d'autres librairies C
- * peuvent ne pas les intégrer (ou ne pas être installées).
+ * These functions are integrated in the GNU C library, at least in
+ * recent versions. However, the variety of versions in the wild would
+ * provoke errors.
  *
- * Elles ont donc été redéfinies ici afin de garantir leur
- * présence. Elles sont définies comme des versions faibles, pouvant
- * donc être suplantées si la librairie C utilisée les définit
- * elle-même.
+ * While support of these is not widespread, they are redefined. If
+ * the C library defines them, the functions below are ignored.
  *
- * @todo supprimer ces fonctions lorsque le support global par la
- * librairie C sera assuré.
+ * @todo Delete these functions when their support is sufficient enough.
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Renvoie le nom du code d'erreur errno correspondant.
- * @param errnum La valeur du code d'erreur errno.
- * @return Le nom du code d'erreur errno correspondant à la valeur @p
- * errnum ou @c NULL si la valeur ne correspond à aucun code.
+ * @brief Give the errno code corresponding name.
+ * @param errnum The errno value.
+ * @return The name of the given errno code, or @c NULL if no name
+ * corresponds to @p errnum.
  */
 const char* strerrorname_np(int errnum) __attribute__((weak));
 
 /**
  * @since 0.1.0
- * @brief Renvoie le nom abrégé du signal.
- * @param sig La valeur du signal.
- * @return Le nom abrégé (le 'XXX' de 'SIGXXX') du signal
- * correspondant à la valeur @p sig ou @c NULL si la valeur ne
- * correspond à aucun signal.
+ * @brief Give the short signal name (the "XXX" of "SIGXXX").
+ * @param sig The signal code.
+ * @return The short name of the signal, or @c NULL if @p sig does not
+ * corresponds to any.
  */
 const char* sigabbrev_np(int sig) __attribute__((weak));
 

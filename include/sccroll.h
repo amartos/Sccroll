@@ -1,23 +1,13 @@
 /**
  * @file        sccroll.h
  * @version     0.1.0
- * @brief       Ficher en-tête de la librairie Sccroll.
+ * @brief       Sccroll - A Units Tests library for C.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
  *
- * Ce fichier est l'entête à intégrer dans les fichiers de
- * définition de tests. La définition des structures et fonctions se
- * trouve dans les fichiers en-tête situés dans `include/sccroll`.
- *
- * @compilation
- * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -I include \
- *     -fpic -shared $(scripts/mocks.awk src) \
- *     src/sccroll/\*.c \
- *     -o build/libs/libsccroll.so
- * @endcode
+ * You can include this header to use all features of the library.
  */
 
 #ifndef SCCROLL_H_

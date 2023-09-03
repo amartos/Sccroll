@@ -1,36 +1,34 @@
 /**
  * @file        assert.h
  * @version     0.1.0
- * @brief       Ficher en-tête des assertions de Sccroll.
+ * @brief       Assertions functions and macros.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
  *
  * @addtogroup API
  * @{
- * @addtogroup AssertAPI Assertions
+ * @addtogroup AssertAPI Assertions functions and macros
  *
- * La bibliothèque définit sa propre macro assert() et/ou remplace celle
- * de la bibliothèque standard @c assert.h dans deux cas:
- * - la librairie @c assert.h n'est pas incluse;
- * - la librairie @c assert.h est incluse, mais @c NDEBUG est défini.
+ * The library defines its own assert() macros and overrides the
+ * C library standard assert() macro in two cases:
  *
- * Ceci assure que l'ensemble des assertions des tests unitaires
- * seront bien effectuées dans tous les cas. De même, les tests
- * unitaires deviennent donc insensibles à la définition de @c NDEBUG.
+ * - @c assert.h is not included
+ * - @c assert.h is included but @c NDEBUG is defined.
  *
- * La macro assert(), bien que mimant le comportement de celle de la
- * bibliothèque standard, affiche un message différent de cette
- * dernière.
+ * This ensures that all the units tests assertions are executed in
+ * all cases; this also renders the units tests insensible to the
+ * definition of @c NDEBUG.
  *
- * La librairie s'assure aussi que les données de couverture pour gcov
- * sont bien récupérées avant l'appel à @c abort; la fonction
- * sccroll_abort() est spécifiquement conçue dans cette optique.
- * Dans le cas où la macro @c assert de la librairie standard est
- * utilisée, un mock de @c abort est doit être généré par la librairie
- * dans ce but.
+ * assert(), while mimicking its C library sibling, prints a different
+ * error message.
+ *
+ * The assertions of this module also ensure that all the coverage
+ * data produced by for gcov are dumped before the abort() call. The
+ * sccroll_abort() function is specifically designed for this. In the
+ * case that the assert() macro used is the one of the C library, a
+ * mock of abort() must be defined (see the mocks module for one).
  * @{
  */
 
@@ -46,14 +44,14 @@
 // clang-format off
 
 /******************************************************************************
- * @name Sauvegarde des données de couverture.
+ * @name Coverage data dump
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Fonction sauvegardant les données utilisées par gcov.
+ * @brief Gcov dumping function.
  */
 extern void __gcov_dump(void);
 
@@ -61,7 +59,7 @@ extern void __gcov_dump(void);
 
 /******************************************************************************
  * @}
- * @name Format des messages d'assertion.
+ * @name Assertion messages formatting
  * @{
  ******************************************************************************/
 // clang-format on
@@ -69,12 +67,12 @@ extern void __gcov_dump(void);
 /**
  * @def SCCASSERTFMT
  * @since 0.1.0
- * @brief Format des messages d'erreurs d'assertion.
+ * @brief Assertions message format.
  * @see sccroll_assert()
- * @param s Le nom du fichier.
- * @param i Le numéro de ligne.
- * @param s Le nom de la fonction.
- * @param s L'expression testée.
+ * @param s The file name.
+ * @param i The line number.
+ * @param s The function name.
+ * @param s The tested expression.
  */
 #define SCCASSERTFMT "%s (l. %i): Assertion `%s' failed."
 
@@ -82,80 +80,80 @@ extern void __gcov_dump(void);
 
 /******************************************************************************
  * @}
- * @name Gestions d'erreurs
+ * @name Errors handling
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Affiche un message sur stderr et lève un signal d'erreur.
- * @param sigint Le signal à lever (@c SIGABRT si le signal est
- * ignoré).
- * @param fmt La chaîne de formatage du message.
- * @param args Les arguments de la chaîne de formatage.
+ * @brief Print a message on stderr and raise an error signal.
+ * @param sigint The signal to raise (@c SIGABRT if the given signal
+ * is ignored).
+ * @param fmt The format string of the message.
+ * @param args The format string arguments.
+ * @throw @p sigint, or #SIGABRT if the @p sigint signal is ignored
  */
 void sccroll_vfatal(int sigint, const char* restrict fmt, va_list args)
     __attribute__((noreturn,format(printf,2,0)));
 
 /**
  * @since 0.1.0
- * @brief Affiche un message sur @c stderr, sauvegarde les données
- * pour gcov et lève le signal donné (puis lève @c SIGABRT).
- * @param sigint Le code du signal.
- * @param fmt La chaîne de formatage du message.
- * @param ... Les arguments de la chaîne de formatage.
+ * @brief Print a message on stderr and raise an error signal.
+ * @param sigint The signal to raise (@c SIGABRT if the given signal
+ * is ignored).
+ * @param fmt The format string of the message.
+ * @param ... The format string arguments.
+ * @throw @p sigint, or #SIGABRT if the @p sigint signal is ignored
  */
 void sccroll_fatal(int sigint, const char* restrict fmt, ...)
     __attribute__((noreturn, format(printf,2,3)));
 
-
 /**
  * @name Try-Catch-Finally
  *
- * Groupe de macros fonctionnant ensemble pour attraper des erreurs.
+ * These macro allow to catch errors. They may be nested, and multiple
+ * catch used at the same level if the identifier is unique enough
+ * (they are labels). Brackets around the try-catch codes are
+ * optional for one-liners.
  *
- * Ce groupe n'utilise **pas** setjmp() ou longjmp(). Il peut être
- * imbriqué, et plusieurs try-catch peuvent être mélangés au même
- * niveau, tant que l'identifiant donné reste unique (ils agissent
- * comme des labels). Les accolades ne sont pas nécessaires pour
- * séparer le code.
+ * For every catch(), a throw() is necessary. try() can be used alone,
+ * even if useless in that case.
  *
- * Pour chaque #catch, un #throw est nécessaire. #try seul est
- * utilisable sans problèmes, cependant sans grand intérêt.
+ * @alert These macro **do not use setjmp() or longmp()**.
+ * @todo add examples.
  * @{
- * @param id L'identifiant correspondant au try-catch voulu, donné à
- * #try.
- * @param error Un identifiant d'erreur à lever/attraper. La valeur
- * n'a pas d'importance, seul le mot l'est.
+ *
+ * @param id The try() unique level identifier passed to throw(),
+ * catch() and finally().
+ * @param error A throw() and catch() unique error identifier.
  */
 
 /**
  * @def try
  * @since 0.1.0
- * @brief Démarre le block de code à tester.
- * @param id Un identifiant **unique** (local à la fonction).
- * @note Cette macro ne fait rien, mais permet de bien identifier le
- * début du try-catch donné.
+ * @brief Start a try-catch block.
+ * @param id A unique identifier and local to the function.
+ * @note This macro does nothing by itself.
  */
 #define try(id)
 
 /**
  * @def throw
  * @since 0.1.0
- * @brief Lève une erreur à attraper.
+ * @brief Raise an error.
  */
 #define throw(id,error) goto id ## error;
 
 /**
  * @since 0.1.0
- * @brief Attrape une erreur levée et exécute un block de code.
+ * @brief Catch an error and execute a block of code.
  */
 #define catch(id,error) goto id ## finally; id ## error:
 
 /**
  * @since 0.1.0
- * @brief Exécute un bloc de code après tous les autres.
+ * @brief Execute a block of code after any try() or catch().
  */
 #define finally(id)     id ## finally:
 /** @} */
@@ -163,19 +161,16 @@ void sccroll_fatal(int sigint, const char* restrict fmt, ...)
 // clang-format off
 
 /******************************************************************************
- * @name Assertions avec messages personnalisés
+ * @name Assertions with custom error messages
  *
- * Les macros et fonctions suivantes ne génèrent pas de message
- * d'erreur automatiquement, laissant sa définition à l'utilisateur.
+ * These macros and funtions raise an assertion error but do generate
+ * any message by themselves.
  *
- * @note Ces macros et fonctions appellent __gcov_dump() *avant*
- * d'appeler abort().
  * @{
- * @param expr Expression booléenne indiquant de lever une erreur
- * d'assertion si elle est fausse.
- * @param fmt Chaîne de formatage du message d'erreur.
- * @param ... Paramètres de la chaîne de formatage.
- * @throw SIGABRT si @p expr est fausse.
+ * @param expr Boolean expression that raise an assertion error if @c false.
+ * @param fmt The message format string.
+ * @param ... The format string parameters.
+ * @throw #SIGABRT if @p expr is @c false.
  ******************************************************************************/
 // clang-format on
 
@@ -188,7 +183,7 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def assertMsg
  * @since 0.1.0
- * @brief Alias de sccroll_assert().
+ * @brief Macro alias of sccroll_assert().
  */
 #define assertMsg sccroll_assert
 
@@ -197,11 +192,13 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /******************************************************************************
  * @}
  *
- * @name Assertion
+ * @name Assertions
+ *
+ * These assertions raise an assertion error if the given expression
+ * is @c false and print an error message.
+ *
  * @{
- * @param expr Expression booléenne indiquant de lever une erreur
- * d'assertion si elle est fausse.
- * @throw SIGABRT si @p expr est fausse.
+ * @throw #SIGABRT if @p expr is @c false.
  ******************************************************************************/
 // clang-format on
 
@@ -211,12 +208,11 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
     /**
      * @def assert
      * @since 0.1.0
-     * @brief Alternative à la macro @c assert de la librairie
-     * standard.
-     * @attention Cette macro n'est pas chargée si le fichier header
-     * @c assert.h est inclus dans un fichier de tests. De plus, au
-     * contraire de celle de la librairie standard, cette macro-ci n'est
-     * pas sensible à la définition de la macro @c NDEBUG .
+     * @brief Assertion macro insensible to #NDEBUG
+     *
+     * This macro is not loaded if the @c assert.h header is included
+     * and #NDEBUG is not defined.
+     * @param expr Boolean expression that raise an assertion error if @c false.
      */
     #define assert(expr)             \
         sccroll_assert((bool)(expr), \
@@ -226,71 +222,48 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def assertTrue
  * @since 0.1.0
- * @brief Alias de assert().
+ * @brief Alias of assert().
+ * @param expr Boolean expression that raise an assertion error if @c false.
  */
 #define assertTrue assert
-
-// clang-format off
-
-/******************************************************************************
- * @}
- *
- * @name Assertions inversées
- * @{
- * @param expr Expression booléenne indiquant de lever une erreur
- * d'assertion si elle est vraie.
- * @throw SIGABRT si @p expr est vraie.
- ******************************************************************************/
-// clang-format on
 
 /**
  * @def assertFalse
  * @since 0.1.0
+ * @brief Assert that the expression is @c false.
+ * @param expr Boolean expression that raise an assertion error if @c true.
  */
 #define assertFalse(expr) assertTrue(!(expr))
 
 /**
  * @def assertNot
  * @since 0.1.0
- * @brief Alias de assertFalse().
+ * @brief Alias of assertFalse().
+ * @param expr Boolean expression that raise an assertion error if @c true.
  */
 #define assertNot assertFalse
 
 /**
  * @def assertNull
  * @since 0.1.0
- * @brief Alias de assertFalse().
+ * @brief Alias of assertFalse().
+ * @param expr Boolean expression that raise an assertion error if @c true.
  */
 #define assertNull assertFalse
-
-// clang-format off
-
-/******************************************************************************
- * @}
- *
- * @name Assertions sur l'identité de pointeurs
- * @brief Macros et fonctions levant une erreur d'assertion si la
- * comparaison des **pointeurs** est fausse.
- * @attention Les pointeurs ne sont pas déréférencés, et leur
- * comparaison implique donc de comparer les adresses qu'ils
- * contiennent et non les données correspondantes.
- * @{
- * @param a,b Pointeurs à comparer.
- * @throw SIGABRT si la comparaison attendue est fausse.
- ******************************************************************************/
-// clang-format on
 
 /**
  * @def assertEql
  * @since 0.1.0
- * @brief Vérifie que `a == b`
+ * @brief Assert that @code a == b @endcode
+ * @param a,b The variables or values to compare.
  */
 #define assertEql(a, b) assert(a == b)
 
 /**
  * @def assertNotEql
  * @since 0.1.0
- * @brief Vérifie que `a != b`
+ * @brief Assert that @code a != b @endcode
+ * @param a,b The variables or values to compare.
  */
 #define assertNotEql(a, b) assert(a != b)
 /** @} */
@@ -299,28 +272,20 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 
 /******************************************************************************
  * @}
+ * @name Assertions on data comparison
  *
- * @name Assertions sur les données
- * @brief Macros et fonctions levant une erreur d'assertion si la
- * comparaison des **données pointées** est fausse.
+ * @brief These macros and fonctions raise an assertion error if the
+ * comparison of the data pointed by the given pointers is false.
+ *
+ * @alert The compared values are expected to be the data pointed by
+ * the given pointer, not the pointers themselves.
+ *
  * @{
- * @param a,b Pointeurs de données à comparer.
- * @param sign Signe de comparaison d'entiers symbolisant la
- * comparaison attendue entre @p a et @p b. La comparaison est
- * toujours effectuée dans le sens `a sign b`
- * @param cmp Fonction de comparaison prenant au moins les deux
- * pointeurs @p a et @p b en arguments et renvoyant un nombre négatif,
- * nul ou positif selon que, respectivement: `a < b`, `a == b` ou
- * `a > b`. Le prototype attendu est analogue à celui des fonctions
- * utilisées par
- * [qsort](https://www.gnu.org/software/libc/manual/html_node/Comparison-Functions.html),
- * bien que le type de @p a et @p b ne soit pas restreint
- * à @c void* .
- * @param ... Arguments supplémentaires **optionnels** pour @p cmp qui
- * lui sont passés tels quels. Le prototype de @p cmp doit alors être
- * celui d'une fonction de comparaison, mais dont les arguments
- * supplémentaires sont situés *après* les pointeurs à comparer:
- * `int cmp(type a, type b, type arg1, type arg2, etc);`
+ * @param a,b Pointers to data to compare.
+ * @param sign Either @c <, @c > or @c ==.
+ * @param cmp Comparison function taking @p a and @p b as parameters
+ * and returning an integer, similar to the qsort() compare functions.
+ * @param ... Additional optional arguments for the @p cmp function.
  * @throw SIGABRT si la comparaison attendue est fausse
  ******************************************************************************/
 // clang-format on
@@ -328,53 +293,49 @@ void sccroll_assert(int expr, const char* restrict fmt, ...)
 /**
  * @def assertCmp
  * @since 0.1.0
- * @brief Effectue la comparaison `a sign b`.
+ * @brief Assert the @code a sign b @endcode comparison.
  */
 #define assertCmp(a, sign, b, cmp, ...) assert(cmp(a, b, ##__VA_ARGS__) sign 0)
 
 /**
  * @def assertEqual
  * @since 0.1.0
- * @brief Vérifie que les données de @p a et @p b sont identiques.
+ * @brief Assert the @code a == b @endcode comparison.
  */
 #define assertEqual(a, b, cmp, ...) assertCmp(a, ==, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertNotEqual
  * @since 0.1.0
- * @brief Vérifie que les données de @p a et @p b sont différentes.
+ * @brief Assert the @code a != b @endcode comparison.
  */
 #define assertNotEqual(a, b, cmp, ...) assertCmp(a, !=, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertSmaller
  * @since 0.1.0
- * @brief Vérifie que les données de @p a sont plus petites que celles de
- * @p b selon @p cmp.
+ * @brief Assert the @code a < b @endcode comparison.
  */
 #define assertSmaller(a, b, cmp, ...) assertCmp(a, <, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertGreater
  * @since 0.1.0
- * @brief Vérifie que les données de @p a sont plus grandes que celles de
- * @p b selon @p cmp.
+ * @brief Assert the @code a > b @endcode comparison.
  */
 #define assertGreater(a, b, cmp, ...) assertCmp(a, >, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertSmallerOrEqual
  * @since 0.1.0
- * @brief Vérifie que les données de @p a sont plus petites ou égales que
- * celles de @p b selon @p cmp.
+ * @brief Assert the @code a <= b @endcode comparison.
  */
 #define assertSmallerOrEqual(a, b, cmp, ...) assertCmp(a, <=, b, cmp, ##__VA_ARGS__)
 
 /**
  * @def assertGreaterOrEqual
  * @since 0.1.0
- * @brief Vérifie que les données de @p a sont plus grandes ou égales que
- * celles de @p b selon @p cmp.
+ * @brief Assert the @code a >= b @endcode comparison.
  */
 #define assertGreaterOrEqual(a, b, cmp, ...) assertCmp(a, >=, b, cmp, ##__VA_ARGS__)
 

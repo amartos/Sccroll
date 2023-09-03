@@ -1,20 +1,10 @@
 /**
  * @file        assert.c
  * @version     0.1.0
- * @brief       Tests unitaires des assertions.
+ * @brief       Assertions unit tests.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/assert.c -o build/objs/tests/units/assert.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/assert.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c) \
- *     -o build/bin/tests/assert
- * @endcode
  */
 
 #include "sccroll.h"
@@ -22,7 +12,7 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
@@ -40,24 +30,20 @@ static const int testib[10] = {
 
 static const int testic[10] = { 0 };
 
-// Compare deux entiers et renvoie:
-// 0  si a == b
-// 1  si a > b
-// -1 si a < b
+// Compare two integers
 int intcmp(int a, int b) { return a == b ? 0 : a < b ? -1 : 1; };
 
-// La macro assert de la librairie ne devrait pas être sensible à la
-// définition de cette macro, au contraire de celle de la librairie C.
+// Defined here to test the insesibility of the library macro.
 #define NDEBUG
 
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Unit tests
  ******************************************************************************/
 // clang-format on
 
-// 1 test /2 en échec.
+// 1/2 tests should fail.
 enum {
     FAILED = 12,
 };
@@ -94,7 +80,7 @@ SCCROLL_TEST(test_assertSmallerOrEqual_success) {
     assertSmallerOrEqual(testia[0], testic[0], intcmp);
 }
 
-// 100% de tests réussis.
+// After this point, no test should fail
 
 SCCROLL_TEST(test_assert_array)
 {
@@ -103,10 +89,8 @@ SCCROLL_TEST(test_assert_array)
     assertNotEqual(testia, testib, memcmp, sizeof(testia));
     assertGreater(testia, testic, memcmp, sizeof(testia));
 
-    // Ici memcmp compare des entiers signés, mais utilise une
-    // comparaison de char non signés. Du fait du bit de signe, les
-    // nombres négatifs sont mécaniquement plus élevés pour la
-    // fonction memcmp
+    // memcmp compares is used to compare signed integers, thus a
+    // negative number will be higher in this case.
     assertSmaller(testia, testib, memcmp, sizeof(testia));
 }
 
@@ -116,7 +100,7 @@ SCCROLL_TEST(test_assert_str)
     assertNotEqual("foo", "bar", strcmp);
 }
 
-// Teste à la fois sccroll_fatal et sccroll_vfatal
+// Test both sccroll_fatal and sccroll_vfatal
 SCCROLL_TEST(
     test_fatal,
     .code = {.type = SCCSIGNAL, .value = SIGABRT},
@@ -225,7 +209,7 @@ SCCROLL_TEST(
 
 // clang-format off
 /******************************************************************************
- * Exécution des tests.
+ * Execution
  ******************************************************************************/
 // clang-format on
 

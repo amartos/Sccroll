@@ -1,16 +1,15 @@
 /**
  * @file        assert.c
  * @version     0.1.0
- * @brief       Fichier source des assertions.
+ * @brief       Assertions module source file.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
  *
  * @addtogroup Internals
  * @{
- * @addtogroup AssertInternals Assertions
+ * @addtogroup AssertInternals Assertions implementation
  * @{
  */
 
@@ -19,7 +18,7 @@
 // clang-format off
 
 /******************************************************************************
- * Implémentation
+ * Implementation
  ******************************************************************************/
 // clang-format on
 
@@ -28,15 +27,15 @@ void sccroll_vfatal(int sigint, const char* restrict fmt, va_list args)
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
 
-    // L'exit final est là pour contenter le compilateur, mais ne sera
-    // jamais appelé.
+    // The final exit, although not used, is here to please the
+    // compilers and avoid complains about a noreturn function that
+    // would return (even if not).
     __gcov_dump(), raise(sigint), raise(SIGABRT), exit(1);
 }
 
 void sccroll_fatal(int sigint, const char* restrict fmt, ...)
 {
-    // L'exit final est là pour contenter le compilateur, mais ne sera
-    // jamais appelé.
+    // ibid for the exit.
     sccroll_variadic(fmt, list, sccroll_vfatal(sigint, fmt, list), exit(1));
 }
 

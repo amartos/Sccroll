@@ -21,25 +21,27 @@
 # Use the option -h/--help for more details.
 # @endparblock
 
+shopt -s extglob
+
 # @var ERROR
 # @since 0.1.0
 # @brief Error keywords.
-ERROR="error|fail"
+ERROR="@(error|fail)"
 
 # @var SUCCESS
 # @since 0.1.0
 # @brief Success keywords.
-SUCCESS="ok|pass"
+SUCCESS="@(ok|pass)"
 
 # @var INFO
 # @since 0.1.0
 # @brief Information keywords.
-INFO="info|debug"
+INFO="@(info|debug)"
 
 # @var KEYWORDS
 # @since 0.1.0
 # @brief Full list of keywords.
-KEYWORDS="$ERROR|$SUCCESS|$INFO"
+KEYWORDS="${ERROR:2:-1}|${SUCCESS:2:-1}|${INFO:2:-1}"
 
 # @var EXCODE
 # @since 0.1.0
@@ -102,12 +104,12 @@ function upper {
 function status {
     local STATUS="info"
     local CODE=7
-    eval "case $1 in
+    case $1 in
         $ERROR) CODE=1; EXCODE=1;; # red
         $SUCCESS) CODE=2;;         # green
         $INFO) CODE=6;;            # cyan
         *);;
-    esac"
+    esac
     STATUS="$(upper $1)"
     printf "[ \e[0;1;3%im%-*s\e[0m]" $CODE $MAX $STATUS
 }

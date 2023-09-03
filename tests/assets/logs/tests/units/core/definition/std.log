@@ -6,7 +6,7 @@ res: [0;0;31mwhat is actually printed[0m
 exp: [0;0;32mwhat is wrongly expected[0m
 res: [0;0;31mwhat is actually printed[0m
 exp: [0;0;32m[0m
-res: [0;0;31mstd: tests/units/core/definition/std.c:61: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
+res: [0;0;31mstd: tests/units/core/definition/std.c:54: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
 [ [0;1;31mFAIL[0m ] test all fail
 
 [ [0;1;36mDIFF[0m ] test all fail (stdout + stderr): stdout
@@ -22,7 +22,7 @@ res: [0;0;31mwhat is actually printed[0m
 exp: [0;0;32mwhat is wrongly expected[0m
 res: [0;0;31mwhat is actually printed[0m
 exp: [0;0;32m[0m
-res: [0;0;31mstd: tests/units/core/definition/std.c:61: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
+res: [0;0;31mstd: tests/units/core/definition/std.c:54: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
 [ [0;1;31mFAIL[0m ] test all fail (stdin + stderr)
 
 [ [0;1;36mDIFF[0m ] test all fail (stdin + stdout): signal: expected 0 (no signal), got 6 (SIGABRT)
@@ -31,7 +31,7 @@ exp: [0;0;32mwhat is wrongly expected[0m
 res: [0;0;31mwhat is actually printed[0m
 [ [0;1;36mDIFF[0m ] test all fail (stdin + stdout): stderr
 exp: [0;0;32m[0m
-res: [0;0;31mstd: tests/units/core/definition/std.c:61: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
+res: [0;0;31mstd: tests/units/core/definition/std.c:54: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
 [ [0;1;31mFAIL[0m ] test all fail (stdin + stdout)
 
 [ [0;1;36mDIFF[0m ] test all fail (stderr): stderr
@@ -47,7 +47,7 @@ res: [0;0;31mwhat is actually printed[0m
 [ [0;1;36mDIFF[0m ] test all fail (stdin): signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test all fail (stdin): stderr
 exp: [0;0;32m[0m
-res: [0;0;31mstd: tests/units/core/definition/std.c:61: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
+res: [0;0;31mstd: tests/units/core/definition/std.c:54: test_integration: Assertion `!strcmp(teststr, buffer)' failed.[0m
 [ [0;1;31mFAIL[0m ] test all fail (stdin)
 
 [ [0;1;36mDIFF[0m ] test stderr fail: stderr
@@ -63,7 +63,7 @@ res: [0;0;31mwhat is actually printed[0m
 [ [0;1;36mDIFF[0m ] test stdin fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test stdin fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mstd: tests/units/core/definition/std.c:47: test_std: Assertion `!strcmp(string, buffer)' failed.[0m
+res: [0;0;31mstd: tests/units/core/definition/std.c:34: test_std: Assertion `!strcmp(string, buffer)' failed.[0m
 [ [0;1;31mFAIL[0m ] test stdin fail
 
 

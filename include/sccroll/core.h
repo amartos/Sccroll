@@ -1,16 +1,29 @@
 /**
- * @file        core.h
+ * @file        scroll/core.h
  * @version     0.1.0
- * @brief       Ficher en-tête de la gestion de tests unitaires.
+ * @brief       Core header file of the Sccroll library.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
  *
- * @addtogroup API API de Sccroll
+ * Units Tests using this library are mainly built using the
+ * SCCROLL_TEST() macro. The units testing source files can be used in
+ * two ways:
+ *
+ * - no main() function is defined, and tests are defined using only
+ *   the SCCROLL_TEST() macro
+ * - a main() function is defined, and tests are registered through
+ *   the use of the SCCROLL_TEST() macro and/or sccroll_register();
+ *   in this case the sccroll_run() function **must** be called to run
+ *   the tests
+ *
+ * A units testing source file containing only definitions using
+ * SCCROLL_TEST() is thus perfectly valid.
+ *
+ * @addtogroup API Sccroll API
  * @{
- * @addtogroup CoreAPI Création, exécution et analyse de tests unitaires
+ * @addtogroup CoreAPI Tests creation, execution and reports
  * @{
  */
 
@@ -26,7 +39,8 @@
 #include "sccroll/lists.h"
 
 #ifdef _SCCUNITTESTS
-// Permet de tester aisément les gestions d'erreurs.
+// Allows easier errors handling tests of the library.
+// TODO: remove this dependency, implying an architecture redesign.
 #include "sccroll/mocks.h"
 #endif
 
@@ -46,46 +60,48 @@
 // clang-format off
 
 /******************************************************************************
- * @name Fonctions exécutée à des moments précis lors des tests
+ * @name Hooks
  *
- * Ces fonctions de préparation sont exécutées à des moments
- * prédéterminés autour de l'exécution d'un test.
+ * These hooks are executed at precise moment predetermined around
+ * each test.
  *
- * Cette section ne représente qu'une interface disponible, la
- * définition de ses fonctions sont laissées à l'utilisateur. Si l'une
- * d'elles n'est pas définie, elle n'a aucun effet.
+ * The prototypes of this section are only an interface, their
+ * definition is left up to the user. Without such definition, they
+ * have no effect.
  *
  * @internal
- * @note Toutes les fonctions de cette section sont des alias faibles d'une
- * fonction qui n'a aucun effet.
+ * @note All are defined as weak aliases.
  * @endinternal
+ *
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Première fonction exécutée par sccroll_run().
+ * @brief First function executed by sccroll_run(). It is executed
+ * only once.
  */
 void sccroll_init(void);
 
 /**
  * @since 0.1.0
- * @brief Dernière fonction exécutée par sccroll_run().
+ * @brief Last function executed by sccroll_run(). It is executed only
+ * once.
  */
 void sccroll_clean(void);
 
 /**
  * @since 0.1.0
- * @brief Fonction appelée juste avant l'exécution de *chaque*
- * SccrollEffects::wrapper.
+ * @brief Function executed before each test. It is executed for each
+ * registered test.
  */
 void sccroll_before(void);
 
 /**
  * @since 0.1.0
- * @brief Fonction appelée juste après l'exécution de *chaque*
- * SccrollEffects::wrapper.
+ * @brief Function executed after each test. It is executed for each
+ * registered test.
  */
 void sccroll_after(void);
 
@@ -94,12 +110,14 @@ void sccroll_after(void);
 /******************************************************************************
  * @}
  *
- * @name Création de tests unitaires
+ * @name Unit tests creation.
  *
- * Les tests unitaires et leurs effets sont décris à la librairie à
- * l'aide de la structure SccrollEffects. Leur définition est
- * facilitée par la macro SCCROLL_TEST() dont l'utilisation est
- * similaire à celle d'une définition de fonction.
+ * The structure SccrollEffects is the main struct of the library. It
+ * is used to describe the test and its expected effects.
+ *
+ * The definition of SccrollEffects is facilitated by the
+ * SCCROLL_TEST() macro.
+ *
  * @{
  *****************************************************************************/
 // clang-format on
@@ -107,52 +125,50 @@ void sccroll_after(void);
 /**
  * @enum SccrollIndexes
  * @since 0.1.0
- * @brief Index des tables de SccrollEffects.
+ * @brief SccrollEffects tables index.
  */
 typedef enum SccrollIndexes {
-    SCCMAXSTD = STDERR_FILENO + 1, /**< Index maximal de SccrollEffects::std. */
-    SCCMAX    = BUFSIZ,            /**< Index maximal de SccrollEffects::files. */
+    SCCMAXSTD = STDERR_FILENO + 1, /**< SccrollEffects::std max index. */
+    SCCMAX    = BUFSIZ,            /**< SccrollEffects::files max index. */
 } SccrollIndexes;
 
 /**
  * @enum SccrollFlags
  * @since 0.1.0
- * @brief Drapeaux d'options pour un test.
- * @attention Le comportement par défaut du programme est l'inverse de
- * toutes les options définies ici.
+ * @brief Tests run options flags.
+ * @attention The default for each test is "not any options".
  */
 typedef enum SccrollFlags {
-    NOSTRP = 1, /**< Ne pas réduire les espaces autour des sorties standard.*/
-    NOFORK = 2, /**< Ne pas @c fork avant d'exécuter le test. */
-    NODIFF = 4, /**< Ne pas afficher les différences attendu/obtenu. */
+    NOSTRP = 1, /**< Do not strip left and right standard outputs. */
+    NOFORK = 2, /**< Do not fork before executing the test. */
+    NODIFF = 4, /**< Do no print diffs of expected/obtained. */
 } SccrollFlags;
 
 /**
  * @struct SccrollFile
  * @since 0.1.0
- * @brief Structure stockant le chemin d'un fichier et son contenu.
+ * @brief Structure storing a file path and its content.
  */
 typedef struct SccrollFile {
-    const char* path; /**< Le chemin du fichier. */
-    Data content;     /**< Le contenu du fichier. */
+    const char* path; /**< The file path. */
+    Data content;     /**< The file content. */
 } SccrollFile;
 
 /**
  * @enum SccrollCodeType
  * @since 0.1.0
- * @brief Types de codes d'erreur pouvant être récoltés durant les
- * tests.
+ * @brief Error code types handled by SccrollEffects.
  */
 typedef enum SccrollCodeType {
-    SCCSIGNAL, /**< Code de signal. */
-    SCCSTATUS, /**< Code de status/exit. */
-    SCCERRNUM, /**< Code errno. */
+    SCCSIGNAL, /**< Signals. */
+    SCCSTATUS, /**< Status codes. */
+    SCCERRNUM, /**< Errno. */
 } SccrollCodeType;
 
 /**
  * @struct SccrollCode
  * @since 0.1.0
- * @brief Structure de stockage du code d'erreur.
+ * @brief Structure storing the error code type and value.
  */
 typedef struct SccrollCode {
     SccrollCodeType type; /**< Type du code d'erreur. */
@@ -162,65 +178,82 @@ typedef struct SccrollCode {
 /**
  * @struct SccrollEffects
  * @since 0.1.0
- * @brief Gère les informations sur les effets secondaires de
- * l'exécution d'une fonction.
+ * @brief Store units tests data.
  *
- * Cette structure permet de décrire les effets attendus d'un
- * test, et de passer certaines options au programme pour un test
- * spécifique.
+ * This structure is used to describe the expected side effects of a
+ * unit test, including options for the test.
  *
- * Le pointeur de la fonction de test est tocké dans
- * SccrollEffects::wrapper. Lors de son exécution, si l'un des effets
- * attendus diffère de celui observé, un message d'erreur est levé. Le
- * message utilise le nom défini dans SccrollEffects::name pour une
- * bonne identification du test en échec.
+ * This is a versatile structure, allowing to test one or many
+ * functions in a single SccrollEffects::wrapper test function.
  *
- * Si un chemin de fichier est passé à SccrollEffects::std::path, il
- * est considéré que les #SCCMAX-1 premiers caractères de son contenu
- * sont ceux à enregistrer pour SccrollEffects::std::content. Ce
- * dernier sera remplacé dans tous les cas si
- * SccrollEffects::std::path est non @c NULL. Si les deux membres de
- * SccrollEffects::std sont @c NULL, la comparaison sera effectuée
- * avec une chaîne vide. Dans tous les cas, le contenu est considéré
- * comme une chaîne de caractères.
+ * ## Test registration and reports
  *
- * Une entrée *via* stdin peut être simulée en passant une chaîne de
- * caractères à SccrollEffects::std[STDIN_FILENO], ou *via* le contenu
- * d'un fichier comme pour les sorties standards.
+ * The function pointer is stored in SccrollEffects::wrapper. When
+ * executed, if there is a discrepancy between observed effects and
+ * expected, an error is raised. The test name SccrollEffects::name
+ * and error description is printed on stderr.
  *
- * La structure ne peut stocker qu'un seul code d'erreur à la fois
- * dans SccrollEffects::code, étant donné que la valeur de errno n'est
- * pas récupérable si la fonction provoque un arrêt, et que les
- * signaux provoquent normalement un code de status de 0.
+ * ## Standard IO
  *
- * Si le contenu de fichiers doit être testé, leur chemin doit être
- * passé à SccrollEffects::files::path. L'analyse s'arrête à la
- * première occurrence de SccrollEffects::files::path de valeur
- * @c NULL. Si Une taille est confiée à SccrollEffects::files::size
- * (maximum considéré de #SCCMAX), le contenu sera considéré comme un
- * blob d'octets. Si aucune taille n'est donnée, le contenu est
- * considéré comme une chaîne de caractères et comparée jusqu'au
- * premier octet nul.
+ * Any string handled to the SccrollEffects::std structure is
+ * copied and freed automatically. The original string is not freed by
+ * the library, it is thus up to the user to handle it.
  *
- * Les options de test, décrites dans SccrollFlags, sont à passer à
- * SccrollEffects::flags en les groupant avec OR.
+ * The default library behavior is to strip whitespace left and right
+ * of the SccrollEffects::std::content strings. To inhibit this
+ * behavior, pass the #NOSTRP option to the corresponding test.
  *
- * Cette structure est très versatile, dans le sens où elle permet
- * soit d'effectuer une série de tests, soit de tester les effets
- * d'une unique fonction, la seule différence résidant dans le code de
- * la fonction SccrollEffects::wrapper et dans les effets attendus
- * indiqués.
+ * A @c NULL value for both SccrollEffects::std::path and
+ * SccrollEffects::std::content is considered a passing empty
+ * strings.
  *
- * Les options disponibles pour un test sont listées dans la structure
- * SccrollFlags, et doivent être données par combinaison OR.
+ * If a file path is given to SccrollEffects::std::path, the firsts
+ * #SCCMAX-1 characters of the file are used as
+ * SccrollEffects::std::content. If both a file path string and
+ * content string are given to the structure,
+ * SccrollEffects::std::content is overwritten for the path content.
+ *
+ * Any string stored in SccrollEffects::std::content at indexes
+ * #STDOUT_FILENO and #STDERR_FILENO is compared to the corresponding
+ * standard outputs of the test.
+ *
+ * The standard input for the test is simulated using
+ * SccrollEffects::std at index #STDIN_FILENO.
+ *
+ * ## Error codes
+ *
+ * The structure can store only one type of error code for a given
+ * test (see SccrollCodeTypes for the list). Errno won't be compared
+ * if the test function exits by itself, thus be careful when
+ * designing the test in this situation.
+ *
+ * ## Files side effects
+ *
+ * The SccrollEffects::files structure is used to indicate expected
+ * files modifications. This array is expected to have a @c NULL
+ * sentinel entry, after which any other entry is ignored.
+ *
+ * The file content is read from SccrollEffects::files::path as a
+ * string, and compared as such. It thus stops at any null characters
+ * the file contains. To indicate that the content is a bytes blob,
+ * and should be compared as such (thus, not considering null
+ * characters), indicate a content size in
+ * SccrollEffects::files::size.
+ *
+ * ## Tests options
+ *
+ * All the available options for the tests are described in the
+ * SccrollFlags enum. Multiple options can be or'ed set in
+ * SccrollEffects::flags.
+ *
  */
 typedef struct SccrollEffects {
-    SccrollFile files[SCCMAX];  /**< Vérification du  contenu de fichiers. */
-    SccrollFile std[SCCMAXSTD]; /**< I/O des sorties standard. */
-    SccrollCode code;     /**< Vérification des codes d'erreur, signal ou status. */
-    SccrollFlags flags;   /**< Drapeaux d'options SccrollFlags. */
-    SccrollFunc wrapper;  /**< La fonction de test unitaire. */
-    const char* name;     /**< Nom descriptif du test. */
+    SccrollFile files[SCCMAX];  /**< Files contents expected side effects. */
+    SccrollFile std[SCCMAXSTD]; /**< Test expected standard IO. */
+    SccrollCode code;     /**< Test expected error, signal or status codes. */
+    SccrollFlags flags;   /**< Options flags for the test. */
+    SccrollFunc wrapper;  /**< The test function wrapper pointer. */
+    const char* name;     /**< The test name. */
 } SccrollEffects;
 
 // clang-format off
@@ -228,27 +261,29 @@ typedef struct SccrollEffects {
 /******************************************************************************
  * @}
  *
- * @name Enregistrement de tests
+ * @name Tests registration
  *
- * Il existe deux manières d'inscrire un test unitaire pour exécution:
- * soit la structure SccrollEffects correspondante est confiée à
- * sccroll_register(), soit le test est défini à l'aide de la macro
- * SCCROLL_TEST(). Les deux méthodes peuvent être utilisées dans un
- * même fichier source de tests.
+ * The tests are registered two ways, which are **not** exclusive:
+ * - passing a SccrollEffects struct to the sccroll_register() function
+ * - direct definition of a test using the SCCROLL_TEST() macro
  *
- * @attention Un test défini avec SCCROLL_TEST() et enregistré avec
- * sccroll_register() sera exécuté **deux** fois.
+ * @note Any SccrollWrapper registered multiple times, whatever
+ * the registration method or parent SccrollEffects used, will be
+ * executed as many times.
+ *
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Inscrit le test décrit par @p expected pour exécution.
- * @attention Un test défini par SCCROLL_TEST() et inscrit avec
- * sccroll_register() sera exécuté **deux** fois.
- * @param expected Les informations nécessaires pour l'exécution d'un
- * test et comparaison des résultats.
+ * @brief Registers a test.
+ *
+ * This function is only needed is a test must be registered
+ * manually. In that case, the main() function would be redefined, and
+ * thus the sccroll_run() function would also be needed.
+ *
+ * @param expected The test function and expected tests effects.
  */
 void sccroll_register(const SccrollEffects* restrict expected)
     __attribute__((nonnull));
@@ -256,24 +291,34 @@ void sccroll_register(const SccrollEffects* restrict expected)
 /**
  * @def SCCROLL_TEST
  * @since 0.1.0
- * @brief Définit et enregistre un test pour exécution.
+ * @brief Define a unit test to run.
  *
- * La macro s'utilise de manière similaire à la définition d'une
- * fonction. Le code entre crochets situé directement après la macro
- * constitue le code de la fonction de test @p testname , qui est
- * automatiquement enregistrée pour exécution.
+ * This macro is the core of the library. It is used to define a unit
+ * test and its expected effects, without needing any additional
+ * function calls for registration and execution. Any test defined
+ * with this macro is automatically registered and run. A units tests
+ * source file containing only this macro (one for each test) is
+ * perfectly valid --- neither sccroll_register() nor main()
+ * calls are needed.
  *
- * Les paramètres suivants sont ceux donnés à la structure
- * SccrollEffects afin de décrire les effets attendus (même syntaxe
- * que pour l'initialisation de la structure). Si aucun paramètre
- * n'est donné, les valeurs des effets attendus seront @c 0 ou @c ""
- * pour l'ensemble des éléments testés.
+ * The macro is used the same way any function would be defined.
+ *
+ * Its first argument is the SccrollWrapper function definition, which
+ * is also used as the test name. It thus follows the syntax of
+ * functions naming.
+ *
+ * The remaining arguments, if any, are used for the SccrollEffects
+ * definition (except for the SccrollEffects::name and
+ * SccrollEffects::wrapper values, which would be ignored). The syntax
+ * is exactly the same as for any struct initialisation.
+ *
+ * Here are some basic test definition examples using this macro:
  *
  * @example SCCROLL_TEST.c
  *
- * @param testname Le nom du test unitaire.
- * @param ... Les données SccrollEffects attendues (syntaxe d'une
- * initialisation de la structure).
+ * @param testname The test wrapper name also used as the test name.
+ * @param ... The remaining SccrollEffects data. If none is given, all
+ * values are initialized at @c 0.
  */
 #define SCCROLL_TEST(testname, ...)                                            \
     static void testname(void);                                                \
@@ -293,28 +338,28 @@ void sccroll_register(const SccrollEffects* restrict expected)
 /******************************************************************************
  * @}
  *
- * @name Exécution des tests enregistrés
+ * @name Tests execution
  *
- * La librairie fournit une fonction main exécutée par
- * défaut. Un fichier source de tests unitaires n'a donc besoin que de
- * la définition des tests avec SCCROLL_TEST().
+ * Any units testing file using only SCCROLL_TEST() do not need any
+ * "run the tests" call. The executable compiled from the units
+ * testing file is self-sufficient.
  *
- * Cependant, si une fonction main est redéfinie par l'utilisateur, il
- * est possible de lancer l'exécution des tests à l'aide de
- * sccroll_run().
+ * In the case there is a need to control the registration or
+ * execution, or a main() function is defined in any file linked, the
+ * library main function would thus be ignored. The following
+ * functions are then needed to properly run the tests.
+ *
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Exécute les tests unitaires et affiche un rapport.
- * @attention La librairie fournit une fonction main par défaut qui
- * exécute sccroll_run(). Si la fonction main est redéfinie, il est
- * nécessaire d'appeler sccroll_run() pour lancer les tests. À
- * l'inverse, si aucun main n'est défini pour les tests, l'appel de
- * sccroll_run() est inutile.
- * @return le nombre de tests en échec.
+ * @brief Run the registered units tests.
+ * @attention This function is used in a redefined main() to launch
+ * the tests execution and reports. It is not needed if the library
+ * main() is used.
+ * @return The total number of failed tests.
  */
 int sccroll_run(void);
 

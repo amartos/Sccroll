@@ -1,24 +1,13 @@
 /**
  * @file        errors.c
  * @version     0.1.0
- * @brief       Test unitaire des gestions d'erreurs de la librairie.
+ * @brief       Core module errors unit tests source code.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/core/errors.c -o build/objs/tests/units/core/errors.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/core/errors.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c test/units/core/errors.c) \
- *     -o build/bin/tests/core/errors
- * @endcode
  */
 
-// On s'assure d'utiliser l'assert original et non pas celui défini
-// par la librairie.
 #include <assert.h>
 
 #include "sccroll.h"
@@ -26,22 +15,20 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Fonction de test réussit quelles que soient les conditions.
 void test_success(void) { puts("foobar"); };
 
-// Fonction exécutant sccroll_run avec un test factice, mais avec un
-// déclenchement de simulacre à un délai donné.
+// Execute sccroll_run with a fake successful test, but triggers
+// mocks.
 static void run_test(void)
 {
     SccrollEffects test = {
         .wrapper = test_success,
         .name    = "testing errors",
-        // On déclenche la lecture d'un fichier pour les fonctions de
-        // stream type f*.
+        // For the FILE related functions.
         .std = {
             [STDOUT_FILENO] = {.path = "tests/assets/blobs/textfile",},
         }
@@ -55,7 +42,7 @@ static void run_test(void)
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Tests
  ******************************************************************************/
 // clang-format on
 

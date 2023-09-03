@@ -1,24 +1,13 @@
 /**
  * @file        preparation.c
  * @version     0.1.0
- * @brief       Tests unitaires des fonctions de préparation.
+ * @brief       Core module unit tests of tests peparation.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/core/preparation.c -o build/objs/tests/units/core/preparation.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/core/preparation.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c) \
- *     -o build/bin/tests/core/preparation
- * @endcode
  */
 
-// On s'assure d'utiliser l'assert original et non pas celui défini
-// par la librairie.
 #include <assert.h>
 
 #include "sccroll.h"
@@ -26,17 +15,16 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Constantes numériques des tests unitaires.
+// Constants
 enum {
-    MAX_PREP = 100, // Nombre maximum de tests exécutés.
+    MAX_PREP = 100, // Max number of iterations
 };
 
-// Variables comptant le nombre d'appel des fonctions de préparation
-// correspondantes.
+// Count the number of calls for each function.
 static int init   = 0;
 static int clean  = 0;
 static int before = 0;
@@ -45,7 +33,7 @@ static int after  = 0;
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Tests
  ******************************************************************************/
 // clang-format on
 
@@ -54,24 +42,20 @@ void sccroll_clean(void) { ++clean; }
 void sccroll_before(void) { ++before; }
 void sccroll_after(void) { ++after; }
 
-// Test vérifiant les effets des fonctions de préparation au cours de
-// l'exécution.
 void test_prepfuncs(void)
 {
-    // sccroll_init() a été exécutée une fois avant tous les tests,
-    // mais sccroll_clean() ne le sera qu'après le dernier test.
+    // init and clean should be called only once, at the start and end
+    // of all the tests.
     assert(init == 1 && clean == init-1);
 
-    // Pour le premier test, sccroll_before() a été exécuté, mais pas
-    // encore sccroll_after(). sccroll_before() est donc exécutée une
-    // fois de plus que sccroll_after() pour un test en cours.
+    // before and after are called at each test.
     assert(before > 0 && after == before-1);
 }
 
 // clang-format off
 
 /******************************************************************************
- * Exécution des tests.
+ * Execution
  ******************************************************************************/
 // clang-format on
 
@@ -83,17 +67,8 @@ int main(void)
     };
 
     for (int i = 0; i < MAX_PREP; ++i) sccroll_register(&test);
-
-    // On vérifie que les tests faits en cours d'exécution ont réussi.
     assert(!sccroll_run());
-
-    // sccroll_init() et sccroll_clean() ne doivent être exécutées
-    // qu'une seule fois.
     assert(init == clean && init == 1);
-
-    // sccroll_before() et sccroll_after() doivent être exécutées
-    // toutes deux une fois par test.
     assert(before == after && before == MAX_PREP);
-
     return EXIT_SUCCESS;
 }

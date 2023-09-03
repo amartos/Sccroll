@@ -1,26 +1,13 @@
 /**
  * @file        codes.c
  * @version     0.1.0
- * @brief       Tests unitaires d'analyse des codes d'erreur.
+ * @brief       Core module unit tests for errno/status/signal codes.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/core/definition/codes.c \
- *     -o build/objs/tests/units/core/definition/codes.o
- * gcc -L build/libs -lsccroll \
- *     build/objs/tests/units/core/definition/codes.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c) \
- *     -o build/bin/tests/core/definition/codes
- * @endcode
  */
 
-// On s'assure d'utiliser l'assert original et non pas celui défini
-// par la librairie.
 #include <assert.h>
 
 #include "sccroll.h"
@@ -28,34 +15,29 @@
 // clang-format off
 
 /******************************************************************************
- * Préparatifs des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Variable commune des tests.
 static int code = 0;
 static int type = 0;
 
-// Signaux d'arrêt testés.
-// On ne teste pas SIGINT car Jenkins a tendance a capturer ce signal
-// et mettre le build entier en échec, même si c'est un enfant qui le
-// lève et que le parent ignore l'erreur...
+// Signals tested.
+// SIGINT is not tested because some CI/CD workers (eg. Jenkins)
+// capture it and set the build as a failure, even if it is a fork
+// child that raises it and the parent is ignoring it.
 static const int sigs[] = {
     SIGTERM, SIGKILL, SIGABRT, 0,
 };
 
-// Constantes numériques des tests.
 enum {
-    MAX = 256,
+    MAX = 256, // max value for codes
 };
 
-// Indique si type contient SIG.
 bool issig(void) { return type == SCCSIGNAL; }
-
-// Si type contient sig, renvoie sigs[i], sinon renvoie i.
 void set_code(int i) { code = issig() ? sigs[i] : i; }
 
-// Fonction simulant un test unitaire.
+// Simulate a unit test raising an error code.
 void test_signals(void)
 {
     switch(type)
@@ -79,8 +61,7 @@ void test_nofork(void)
     if (sccroll_run()) exit(1);
 }
 
-// Teste l'ensemble des valeurs définies pour le code de type t
-// correspondant à index dans SccrollEffects::codes.
+// Test all values for a given type of code.
 void test_errstat(int t, const char* name)
 {
     int i;
@@ -105,7 +86,7 @@ void test_errstat(int t, const char* name)
 // clang-format off
 
 /******************************************************************************
- * Exécution des tests
+ * Execution
  ******************************************************************************/
 // clang-format on
 

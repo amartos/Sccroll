@@ -1,24 +1,13 @@
 /**
  * @file        run.c
  * @version     0.1.0
- * @brief       Test unitaire d'exécution de sccroll_run().
+ * @brief       Core module unit tests for tests execution and reports.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/core/execution/run.c -o build/objs/tests/units/core/execution/run.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/core/execution/run.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c) \
- *     -o build/bin/tests/core/execution/run
- * @endcode
  */
 
-// On s'assure d'utiliser l'assert original et non pas celui défini
-// par la librairie.
 #include <assert.h>
 
 #include "sccroll.h"
@@ -26,46 +15,52 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Constantes numériques du test.
 enum {
-    MAXF = 10,
-    MAXS = 42,
+    MAXF = 10, // max number of failed tests
+    MAXS = 42, // max number of successful tests
 };
 
-// Variable qui ne doit pas être modifiée dans les forks.
+// should not be modified by the runs.
+// TODO: check if this is really necessary, as the tests are forked.
 int zero = 0;
 
-// Test simple, affiche un message sur stdout si le test est exécuté.
+// simple test printing on stderr. Its line number is stored to help
+// the test.
+const int test_line = __LINE__ + 1;
 void test_print(void) { (zero = 42, assert(false && "Test executed.")); }
 
 // clang-format off
 
 /******************************************************************************
- * Exécution des tests.
+ * Execution
  ******************************************************************************/
 // clang-format on
 
 int main(void)
 {
+    // Set the expected error message. The string is formatted to
+    // avoid to recalculate the line at each change in the file.
+    const char* fmt = "run: %s:%i: test_print: Assertion `false && \"Test executed.\"' failed.";
+    char errmsg[SCCMAX] = { 0 };
+
+    sprintf(errmsg, fmt, __FILE__, test_line);
     SccrollEffects testf = { .wrapper = test_print, .name = "test_print_fail" };
     SccrollEffects tests = {
         .wrapper = test_print,
         .name = "test_print_success",
-        .std[STDERR_FILENO].content.blob =
-        "run: tests/units/core/execution/run.c:43: test_print: Assertion `false && \"Test executed.\"' failed.",
+        .std[STDERR_FILENO].content.blob = errmsg,
         .code = { .type = SCCSIGNAL, .value = SIGABRT },
     };
     for (int i = 0; i < MAXF; ++i) sccroll_register(&testf);
     for (int i = 0; i < MAXS; ++i) sccroll_register(&tests);
     assert(sccroll_run() == MAXF);
-    // Pas (plus) de tests.
+    // Check that there are no more tests to run.
     assert(sccroll_run() == 0);
-    // La variable a été modifiée dans des fork, et donc ne doit pas
-    // être affectée.
+    // Check runs side-effects on this variable.
     assert(!zero);
     return EXIT_SUCCESS;
 }

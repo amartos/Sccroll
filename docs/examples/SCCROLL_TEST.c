@@ -1,7 +1,7 @@
 /**
- * @file        SCCROLL_TEST.c
+ * @file        docs/examples/SCCROLL_TEST.c
  * @version     0.1.0
- * @brief       Exemples d'utilisation de #SCCROLL_TEST.
+ * @brief       #SCCROLL_TEST usage examples.
  * @date        2022
  * @author      Alexandre Martos
  * @copyright   MIT License
@@ -10,10 +10,10 @@
 #include "sccroll.h"
 
 /******************************************************************************
- * Tests standards
+ * Generic tests
  ******************************************************************************/
 
-SCCROLL_TEST(test_simples)
+SCCROLL_TEST(test_simple)
 {
     int a = 1, b = 2, c = 3, d = 3;
     assert(a < b);
@@ -28,10 +28,11 @@ SCCROLL_TEST(test_output_exit,
 {
     fprintf(stdout, "stdout!");
     fprintf(stderr, "stderr...");
-    // errno ne pourra être capturé du fait de l'arrêt prématuré du
-    // test, d'où le code 0 attendu.
+    // The expected errno is 0 because of the premature exit of the
+    // test, which will prevent errno capture. The test will thus
+    // **not** fail, even if it had to. Ensure you have correct
+    // type and expected value for the error codes.
     errno = EFAULT;
-    // Le test n'échouera pas ici étant donné les effets attendus.
     exit(1);
 }
 
@@ -40,13 +41,13 @@ SCCROLL_TEST(test_output_nostrp,
     .std = { 0, "stdout!\n", 0 }
 )
 {
-    // Avec NOSTRP, le test échouerait si le saut de ligne n'était
-    // pas précisé dans les effets attendus.
+    // With the NOSTRP option, the test would fail without the newline
+    // character in the expected string.
     puts("stdout!");
 }
 
 
-SCCROLL_TEST(test_multiples_effets,
+SCCROLL_TEST(test_multiple_effects,
     .flags = NODIFF | NOSTRP | NOFORK,
     .codes = { EINVAL, 0, 0 },
     .std = { 0, "stdout...", "stderr!\n" },
@@ -59,8 +60,8 @@ SCCROLL_TEST(test_multiples_effets,
     errno = EINVAL;
     printf("stdout...");
     fprintf(stderr, "stderr!\n");
-    // aucune vérification n'est faite ici pour simplification de
-    // l'exemple.
+    // No checking is done about the opened file to simplify the
+    // example.
     FILE* f = fopen("my/path/file", "w");
     char* str = "foo";
     fwrite(str, sizeof(char), 3, f);
@@ -71,11 +72,11 @@ SCCROLL_TEST(test_multiples_effets,
     fclose(f);
 }
 
-/******************************************************************************
- * Tests de fonctions
- ******************************************************************************/
-
 SCCROLL_TEST(test_abort, .codes = {0, SIGABRT, 0}) { abort(); }
+
+/******************************************************************************
+ * Tests functions registration
+ ******************************************************************************/
 
 static void my_func(char* str, int n)
 {

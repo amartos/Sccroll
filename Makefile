@@ -205,7 +205,7 @@ clean:
 # @brief Print the Makefile documentation
 help:
 	@head -n 5 $(LICENSEFILE)
-	@echo "Available recipes:"
+	@echo -e "Available recipes:\n"
 	@$(PDOC) Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 
 -include $(wildcard $(DEPS)/*/*.d)

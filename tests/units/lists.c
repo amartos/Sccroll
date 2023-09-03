@@ -1,19 +1,11 @@
 /**
  * @file        lists.c
  * @version     0.1.0
- * @brief       Test unitaire de la librairie de gestions de listes.
+ * @brief       Lists unit tests source code.
  * @date        2023
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/lists.c -o build/objs/tests/units/lists.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/lists.o \
- *     -o build/bin/tests/lists
- * @endcode
  */
 
 #include "sccroll.h"
@@ -21,11 +13,10 @@
 // clang-format off
 
 /*******************************************************************************
- * Préparation des tests
+ * Preparation
  *******************************************************************************/
 // clang-format on
 
-// Variables de tests.
 static const char* foobar      = "foobar";
 static const char* bizbuz      = "bizbuz";
 static const char* aliceandbob = "aliceandbob";
@@ -57,7 +48,7 @@ bool lfoobar(const void* data)
 // clang-format off
 
 /*******************************************************************************
- * Tests unitaires
+ * Tests
  *******************************************************************************/
 // clang-format on
 
@@ -474,7 +465,7 @@ void tests_eql(void)
     assert(leql(NULL, NULL));
     assert(!leql(NULL, test));
     assert(!leql(test, NULL));
-    // (test, test) pose problème avec le qualificatif restrict
+    // (test, test) is a problem with restrict
     assert(leql(test, same));
     assert(!leql(test, copy));
     assert(!leql(copy, falsecpy));
@@ -669,7 +660,7 @@ void tests_circular(void)
 // clang-format off
 
 /*******************************************************************************
- * Exécution des tests
+ * Execution
  *******************************************************************************/
 // clang-format on
 

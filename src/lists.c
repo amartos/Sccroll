@@ -1,7 +1,7 @@
 /**
  * @file      lists.c
  * @version   0.1.0
- * @brief     Librairie pour la gestion de listes chaînées.
+ * @brief     Double linked list library.
  * @year      2023
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
@@ -16,47 +16,46 @@
 // clang-format off
 
 /*******************************************************************************
- * @name Allocation mémoire
+ * @name Memory allocation
  * @{
  *******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Génère un noeud.
- * @alert Utilise malloc.
- * @param data La donnée du noeud.
- * @param previous Le noeud précédent.
- * @param next Le noeud suivant.
- * @return Un nouveau noeud initialisé avec les paramètres donnés.
+ * @brief Generate a node.
+ * @param data The node data.
+ * @param previous The previous node.
+ * @param next The next node.
+ * @return A malloc'ed node initialised with the given parameters.
  */
 static Node* lnode(void* data, Node* previous, Node* next);
 
 /**
  * @since 0.1.0
- * @brief Génère une liste.
- * @alert Utilise malloc.
- * @param node Le premier noeud de la liste.
- * @return Une nouvelle liste initialisée avec le premier noeud.
+ * @brief Generate a list.
+ * @param node The first node of the list.
+ * @return A malloc'ed list.
  */
 static List* llist(Node* node);
 
 /**
  * @since 0.1.0
- * @brief Duplique une liste (mais pas Node::data).
- * @param dir La direction de parcours.
- * @param curr Le noeud courant.
- * @param from La liste à copier.
- * @param to La liste de destination.
- * @return @p to, ou une nouvelle liste si @p to est @c NULL.
+ * @brief Shallow copy a list (Node pointers are duplicated, but not
+ * Node::data). The copy is recursive.
+ * @param dir The direction of the run.
+ * @param curr The current node.
+ * @param from The list to copy.
+ * @param to The destination list.
+ * @return @p to, or a malloc'ed copy List if @p to is @c NULL.
  */
 static List* ldup_aux(int dir, Node* curr, List* restrict from, List* to);
 
 /**
  * @since 0.1.0
- * @brief Libère les noeuds d'une liste (mais pas Node::data).
- * @param dir La direction de parcours.
- * @param node Le noeud courant.
+ * @brief Frees the nodes of a list (but not Node::data).
+ * @param dir The run direction.
+ * @param node The current node.
  */
 static void lfree_aux(int dir, Node* node);
 
@@ -64,7 +63,7 @@ static void lfree_aux(int dir, Node* node);
 
 /*******************************************************************************
  * @}
- * @name Parcours de listes
+ * @name Lists iterations
  * @{
  *******************************************************************************/
 // clang-format on
@@ -72,30 +71,29 @@ static void lfree_aux(int dir, Node* node);
 /**
  * @def ldir
  * @since 0.1.0
- * @brief Détermine une direction de parcours de la liste par défaut.
- * @param list La liste à parcourir.
- * @return @c 0 ou @c -1.
+ * @brief Determine an initial run direction.
+ * @param list The list to iterate from.
+ * @return @c 0 for forward, @c -1 for reverse.
  */
 #define ldir(list) list->head ? 0 : -1;
 
 /**
  * @def lnextdir
  * @since 0.1.0
- * @brief Donne l'index du prochain noeud de la liste.
- * @param dir La direction de parcours.
- * @param index L'index du noeud courant.
- * @return L'index du prochain noeud.
+ * @brief Determine the index of the next node of the list.
+ * @param dir The run direction.
+ * @param index The current node index.
+ * @return The next node index.
  */
 #define lnextidx(dir, index) dir < 0 ? index+1 : index-1
 
 /**
  * @since 0.1.0
- * @brief Donne le prochain noeud de la liste.
- * @param dir La direction de parcours.
- * @param curr Le noeud courant.
- * @param list La liste parcourue (n'est utilisée que si @p curr est
- * @c NULL).
- * @return Le prochain noeud de la liste.
+ * @brief Determine the next node of the list.
+ * @param dir The run direction.
+ * @param curr The current node.
+ * @param list The list (used only if @p curr is @c NULL).
+ * @return The next node of the list.
  */
 static Node* lnext(int dir, Node* curr, List* restrict list);
 
@@ -110,62 +108,61 @@ static Node* lnext(int dir, Node* curr, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Assigne les valeurs List::head et List::tail.
- * @param head La nouvelle tête de liste.
- * @param tail La nouvelle queue de liste.
- * @param list La liste à modifier.
+ * @brief Set List::head and List::tail.
+ * @param head The new list head.
+ * @param tail The new list tail.
+ * @param list The list to modify.
  * @return @p list.
  */
 static List* llset(Node* head, Node* tail, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Retire le noeud de la tête et/ou de la queue de liste.
- * @param node Le noeud à retirer.
- * @param list La liste à modifier.
+ * @brief Removes the first node of the head or tail of the list.
+ * @param node The node to remove.
+ * @param list The list to modify.
  * @return @p list.
  */
 static List* llunset(Node* node, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Ajoute des noeuds vides à une liste.
- * @param dir La direction d'ajout.
- * @param count Le nombre de noeuds vides (Node::data @c NULL) à
- * ajouter.
- * @param list La liste à modifier.
- * @return @p list, ou une nouvelle liste si @p list est @c NULL.
+ * @brief Add empty nodes to a list.
+ * @param dir The direction to add to.
+ * @param count The number of empty nodes to add.
+ * @param list The list to modify.
+ * @return @p list, or a new malloc'ed list if @p list is @c NULL.
  */
 static List* lfill(const int dir, int count, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Insère une donnée à un index précis dans la liste.
- * @param data La donnée à insérer.
- * @param index L'index où insérer la donnée.
- * @param list La liste à modifier.
- * @return @p list, ou une nouvelle liste si @p list est @c NULL.
+ * @brief Inserts a given data at a given index in the list.
+ * @param data The data to insert.
+ * @param index The index to insert @p data at.
+ * @param list The list to modify.
+ * @return @p list, or a new malloc'ed list if @p list is @c NULL.
  */
 static List* lins_aux(void* data, int index, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Inverse le sens d'une liste.
- * @param dir La direction de parcours de la liste.
- * @param curr Le noeud courant.
- * @param list La liste à modifier.
+ * @brief Reverse a list.
+ * @param dir The run direction.
+ * @param curr The current node.
+ * @param list The list to modify.
  * @return @p list.
  */
 static List* lrev_aux(int dir, Node* curr, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Élimine des noeuds de la liste.
- * @param match Fonction renvoyant @c true si le noeud courant doit
- * être conservé.
- * @param dir La direction de parcours de la liste.
- * @param curr Le noeud courant.
- * @param list La liste à modifier.
+ * @brief Removes nodes from a list.
+ * @param match Match function returning @c true for each node to
+ * keep.
+ * @param dir The run direction.
+ * @param curr The current node.
+ * @param list The list to modify.
  * @return @p list.
  */
 static List* lfilter_aux(lmatch match, int dir, Node* curr, List* restrict list);
@@ -174,83 +171,85 @@ static List* lfilter_aux(lmatch match, int dir, Node* curr, List* restrict list)
 
 /*******************************************************************************
  * @}
- * @name Recherche de noeuds et données, et informations sur les listes
+ * @name Search and infos
  * @{
  *******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Donne le noeud à l'index donné.
- * @param index L'index du noeud recherché.
- * @param curr Le noeud courant.
- * @param list La liste.
- * @return Le noeud de @p list situé à l'@p index.
+ * @brief Give the node at the given index.
+ * @param index The index of the node to return.
+ * @param curr The current node.
+ * @param list The list.
+ * @return The node at index @p index, or @c NULL if @p index is
+ * greater or equal than the list length.
  */
 static Node* lidx_aux(int index, Node* curr, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Compte le nombre d'occurence d'une donnée.
- * @param match Fonction renvoyant @c true si l'occurrence du noeud
- * courant doit être comptabilisée. Par défaut (@p match vaut @c
- * NULL), compte tous les noeuds de la liste.
- * @param count Le compte total.
- * @param dir La direction de parcours de la liste.
- * @param curr Le noeud courant.
- * @param list La liste.
- * @return Le nombre total de noeuds pour lesquels @p match renvoie @c
- * true.
+ * @brief Count the number of nodes for which a match function returns
+ * @c true.
+ * @param match Match function returning @c true to be counted. The
+ * default is to count all nodes of the list.
+ * @param count The total count.
+ * @param dir The run direction.
+ * @param curr The current node.
+ * @param list The list.
+ * @return The total number of nodes for which @p match returns @c true.
  */
 static int lcount_aux(lmatch match, int count, int dir, Node* curr, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Renvoie le premier noeud pour lequel @p match renvoie
- * @c true.
- * @param match Fonction de filtrage.
- * @param dir La direction de parcours de la liste.
- * @param curr Le noeud courant.
- * @param list La liste où chercher.
- * @return Le premier noeud pour lequel @p match donne @c true, ou
- * @c NULL si aucun noeud ne satisfait la condition.
+ * @brief Give the first node for which @p match returns @c true.
+ * @param match Match function returning @c true when the node is
+ * found.
+ * @param dir The run direction.
+ * @param curr The current node.
+ * @param list The list.
+ * @return The first node in the given @p dir direction for which
+ * @p match returns @c true, otherwise @c NULL.
  */
 static Node* lmember_aux(lmatch match, int dir, Node* curr, List* restrict list);
 
 /**
  * @since 0.1.0
- * @brief Indique si les deux listes sont équivalentes.
- * @param compare Fonction de comparaison des noeuds. @c NULL équivaut
- * à ne comparer que les pointeurs.
- * @param dir La direction de parcours de la liste.
- * @param a,b Les noeuds courants des listes à comparer.
- * @return @c true si tous les pointeurs de @p a et @p b sont
- * identiques ou si @p compare renvoie @c 0 pour tous les
- * noeuds. Sinon @c false.
+ * @brief Indicate if two lists are equivalent (the Node::data are the
+ * same).
+ * @param compare Data comparison function. @c NULL makes the function
+ * compare the pointers.
+ * @param dir The run direction.
+ * @param a,b The nodes to compare.
+ * @return @c true if all data pointers of the @p a and @p b lists are
+ * identical and if @p compare is @c NULL, or if all the @p compare
+ * calls return @c 0. Otherwise, @c false.
  */
 static bool leql_aux(lcomp compare, int dir, Node* a, Node* b);
 
 /**
  * @since 0.1.0
- * @brief Indique si la liste est un palindrome.
+ * @brief Indicate if the list is a palindrome.
  * @param compare Fonction de comparaison des noeuds. @c NULL équivaut
  * à ne comparer que les pointeurs.
- * @param curr Le noeud courant du parcours normal de la liste.
- * @param rcurr Le noeud courant du parcours à rebours de la liste.
- * @return @c true si la liste est un palindrome (@p compare renvoie
- * @c 0 pour les noeuds concernés, ou les pointeurs des noeuds si
- * @p compare est @c NULL). Sinon @c false.
+ * @param compare Data comparison function. @c NULL makes the function
+ * compare the pointers.
+ * @param curr The current node in the head->tail direction.
+ * @param rcurr The current node in the tail->head direction.
+ * @return @c true if the list is a palindrome (@p compare returns
+ * @c 0 for all comparisons, or the pointers are the same). Otherwise,
+ * @c false.
  */
 static bool lpalin_aux(lcomp compare, Node* curr, Node* rcurr);
 
 /**
  * @since 0.1.0
- * @brief Indique si une liste est circulaire.
- * @param dir La direction de parcours.
- * @param hare Le noeud courant du parcours rapide.
- * @param turtle Le noeud courant du parcours lent.
- * @return Le noeud de tête de la portion circulaire de la liste,
- * sinon @c NULL si elle n'est pas circulaire.
+ * @brief Indicate if the list is circular.
+ * @param dir The run direction.
+ * @param hare The current node of the fast traveler.
+ * @param turtle The current node of the slow traveler.
+ * @return The node at the start of the loop, or @c NULL.
  */
 static Node* lcirc_aux(int dir, Node* hare, Node* turtle);
 
@@ -258,7 +257,7 @@ static Node* lcirc_aux(int dir, Node* hare, Node* turtle);
 
 /*******************************************************************************
  * @}
- * @name Conversion des listes pour affichage
+ * @name Pretty printing
  * @{
  *******************************************************************************/
 // clang-format on
@@ -266,27 +265,25 @@ static Node* lcirc_aux(int dir, Node* hare, Node* turtle);
 /**
  * @def LISTSFMT
  * @since 0.1.0
- * @brief Format d'indication des listes lors de leur impression.
- * @param s Le contenu de la liste.
+ * @brief Lists delimiters format string.
+ * @param s Le The list description.
  */
 #define LISTSFMT "(%s)\n"
 
 /**
  * @def LISTSSEP
  * @since 0.1.0
- * @brief Séparateur par défaut des éléments d'une liste à afficher.
+ * @brief Default separator of lists elements.
  */
 #define LISTSSEP ", "
 
 /**
  * @since 0.1.0
- * @brief Renvoie une description d'un noeud.
- * @alert Utilise malloc.
- * @note Fonction utilisée par défaut si la fonction d'impression
- * donnée à lprt() est @c NULL.
- * @param index L'index du noeud courant.
- * @param data La donnée du noeud courant.
- * @return Une description de la donnée du noeud courant.
+ * @brief Give a description of the given data as a string.
+ * @note This is the default function used by lprt().
+ * @param index The current node index.
+ * @param data The data of the current node, considered as a string.
+ * @return A malloc'ed string describing the @p data.
  */
 static char* ldefaultprt(int index, const void* data);
 
@@ -294,9 +291,9 @@ static char* ldefaultprt(int index, const void* data);
 
 /*******************************************************************************
  * @}
- * Implémentation
+ * Implementation
  *
- * Allocation mémoire.
+ * Memory allocation.
  *******************************************************************************/
 // clang-format on
 
@@ -324,7 +321,7 @@ static List* llist(Node* node)
 // clang-format off
 
 /*******************************************************************************
- * Construction de listes
+ * Lists building
  *******************************************************************************/
 // clang-format on
 
@@ -396,8 +393,8 @@ static Node* lnext(int dir, Node* curr, List* restrict list)
 static List* ldup_aux(int dir, Node* curr, List* restrict from, List* to)
 {
     if (!curr) return to;
-    // On inverse l'entrée (push quand on traverse à rebourd) pour
-    // conserver l'ordre de la liste.
+    // We reverse the input (push when going reverse) to keep the list
+    // order.
     to = dir < 0 ? lpush(curr->data, to) : lappend(curr->data, to);
     return ldup_aux(dir, lnext(dir, curr, from), from, to);
 }
@@ -420,7 +417,7 @@ static void lfree_aux(int dir, Node* node)
 // clang-format off
 
 /*******************************************************************************
- * Accès aux données
+ * Data access
  *******************************************************************************/
 // clang-format on
 
@@ -439,7 +436,7 @@ static Node* lidx_aux(int index, Node* curr, List* restrict list)
 // clang-format off
 
 /*******************************************************************************
- * Modification de listes
+ * Lists modification
  *******************************************************************************/
 // clang-format on
 
@@ -555,7 +552,7 @@ static List* lfilter_aux(lmatch match, int dir, Node* curr, List* restrict list)
 // clang-format off
 
 /*******************************************************************************
- * Informations sur les listes.
+ * Lists information
  *******************************************************************************/
 // clang-format on
 

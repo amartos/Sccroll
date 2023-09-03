@@ -1,24 +1,13 @@
 /**
  * @file        mocks.c
  * @version     0.1.0
- * @brief       Test unitaire de définitions de mocks.
+ * @brief       Mocks unit tests suorce code.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/mocks.c -o build/objs/tests/units/mocks.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/mocks.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c test/units/mocks.c) \
- *     -o build/bin/tests/mocks
- * @endcode
  */
 
-// On s'assure d'utiliser l'assert original et non pas celui défini
-// par la librairie.
 #include <assert.h>
 #include <fcntl.h>
 
@@ -27,29 +16,23 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Constantes du test
+// Constants
 enum {
-    MAX = 10,       // Nombre de tests de délai max
-    SCCESCCRUN = SCCEMAX,   // identifiant du simulacre interne de sccroll_run
-    SCCEFREE   = SCCEMAX+1, // identifiant du simulacre interne de free
+    MAX = 10,               // Max delay used
+    SCCESCCRUN = SCCEMAX,   // sccroll_run user mock ID
+    SCCEFREE   = SCCEMAX+1, // free user mock ID
 };
 
-// Variable utilisée pour les délais dans les levées d'erreurs.
 static unsigned delay = 0;
-
-// Variable utilisée pour tester les erreurs hors simulacres.
 static int none_status = 0;
-
-// Variable utilisée comme drapeau pour déclencher les erreurs des
-// simulacres interne au test.
 static unsigned dummy_flag = SCCENONE;
 
-// Teste le déclenchement de l'erreur du simulacre, puis le reset du
-// déclencheur.
+// Test the mock trigger, then reset the schedule. This allows to test
+// multiple mocks in a row.
 #define testMock(flag, delay, testOK, testFail)                         \
     assert(testOK);                                                     \
     sccroll_mockTrigger(flag, delay);                                   \
@@ -59,13 +42,13 @@ static unsigned dummy_flag = SCCENONE;
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Tests
  ******************************************************************************/
 // clang-format on
 
-// simulacre de free n'interférant pas avec la fonction.
-// free na pas été intégré avec les simulacres préfournis car la
-// fonction ne lève aucune erreur qui puisse être prévue.
+// This mock does not interfere with the function. It was not
+// implemented within the predefined mocks of the library as it does
+// not raise any errors on its own.
 SCCROLL_MOCK(
     dummy_flag == SCCEFREE,
     puts("free mocked") SCCCOMMA libfree(ptr),
@@ -73,11 +56,9 @@ SCCROLL_MOCK(
 );
 #define free sccroll_mockfree
 
-// mock de sccroll_run qui annule les effets de la fonction si
-// #dummy_flag est défini, et qui renvoie 0 dans le reste des cas.
-// La syntaxe de la valeur retour est complexe ici car c'est un hack
-// de l'expression `expr ? retval : sccroll_run();`, forçant le renvoi
-// de 0 au lieu d'appeler l'originale (ce qu'on ne veut pas ici).
+// Cancels the functions effects only if #dummy_flag is defined.
+// The return value is a hack to print a message and force the return
+// of 0 instead of calling the original function.
 SCCROLL_MOCK(
     dummy_flag == SCCESCCRUN,
     puts("sccroll_run mocked: flag seen.") SCCCOMMA 0
@@ -87,9 +68,8 @@ SCCROLL_MOCK(
 );
 #define sccroll_run sccroll_mocksccroll_run
 
-// mock de sccroll_before, mais qui provoque une erreur en cas
-// d'exécution. Puisque sccroll_run est mockée et n'exécute aucun
-// test, sccroll_before ne devrait pas être exécutée.
+// This mock will make all tests fail only if the sccroll_run mock
+// does not work.
 SCCROLL_MOCK(
     true,
     assert(false && "sccroll_before mocked, but should not be executed..."),
@@ -129,7 +109,6 @@ void test_getters(void)
     sccroll_mockFlush();
 }
 
-// Tests des mocks prédéfinis.
 void test_predefined_mocks(void)
 {
     sccroll_mockFlush();
@@ -170,8 +149,8 @@ void test_predefined_mocks(void)
 
     testMock(SCCEFERROR, 0, (ferror(textfile) == 0), (ferror(textfile) != 0));
     testMock(SCCEFORK, 0, (ferror(textfile) == 0), (ferror(textfile) == 0));
-    // On teste que ferror renvoie une erreur si une fonction de la
-    // famille f* est en erreur.
+    // this ensures that ferror is indeed returning an error even if
+    // it is not supposed to trigger.
     testMock(SCCEFOPEN, 0, true, (fopen(textfilepath, "r"), ferror(textfile) != 0));
     assert(fread(buf, sizeof(char), SCCMAX, textfile) == textlen);
     assert(!strcmp(buf, text));
@@ -269,7 +248,7 @@ void test_predefined_mocks(void)
     pid = fork();
     if (pid == 0) {
         abort();
-        raise(SIGTERM); // au cas où le simulacre échoue à quitter.
+        raise(SIGTERM); // in case the mock fails to quit.
     }
     assert(pid > 0);
     wait(&status);
@@ -304,8 +283,7 @@ void test_abort_atexit(void)
     sccroll_mockFlush();
 
     sccroll_mockTrigger(SCCEMALLOC, 0);
-    // Cet appel **doit** faire échouer le programme quel que soit le
-    // contexte.
+    // This **must** raise a failure of the test, whatever the context.
     void* blob = malloc(1);
     (void) blob;
 }
@@ -332,14 +310,13 @@ void test_fullerrors(void)
     FILE* tmp        = NULL;
     ENTRY dummy      = {0};
 
-    // On veut controller le moment de l'erreur, donc on s'assure
-    // d'être synschrone avec le déclencheur.
+    // We want to fine control the error trigger time, thus this is to
+    // sync with it.
     if (dummy_flag != sccroll_mockGetTrigger()) exit(0);
 
     try(test_fullerrors) {
         if (dummy_flag > SCCEPIPE) {
-            // Tout les simulacres au-dessus de ce code nécessitent un
-            // fichier valide ouvert.
+            // All mocks above this code need a valid opened file.
             fd     = mkstemp(template);
             errmsg = template;
             if (fd < 0) throw(test_fullerrors, INDEPERROR);
@@ -411,10 +388,9 @@ void test_fullerrors(void)
         free(blob);
         if (tmp) fclose(tmp);
         if (fatal)
-            // SIGABRT est utilisé par les simulacres or le test ici est
-            // pour les éventuelles erreurs qui ne sont pas provquées par
-            // le simulacre. On s'assure donc de lever un signal autre que
-            // SIGABRT dans ces cas-là.
+            // SIGABRT is used by the mocks, but the present test is
+            // to check for errors not raised by them. We raise
+            // another signal for this.
             sccroll_fatal(SIGTERM, "%s: %s", sccroll_mockName(dummy_flag), errmsg);
         exit(none_status);
     }
@@ -428,13 +404,12 @@ void test_mockPredefined(void)
 // clang-format off
 
 /******************************************************************************
- * Exécution des tests.
+ * Execution
  ******************************************************************************/
 // clang-format on
 
 int main(void)
 {
-    // On teste les réactions des mocks prédéfinis.
     test_predefined_mocks();
     test_notrigger();
     test_getters();
@@ -449,7 +424,10 @@ int main(void)
     for (dummy_flag = SCCENONE; dummy_flag < SCCEMAX; ++dummy_flag) {
         status = sccroll_simplefork("test predefined", test_mockPredefined);
         assert((!dummy_flag && !status) || WTERMSIG(status) == SIGABRT);
-        // On s'assure que la fonction n'affecte pas l'état actuel.
+        // Ensure the function does not affect anything else than
+        // itself.
+        // TODO: check if this is necessary, the fork should not
+        // affect anything.
         assert(!sccroll_mockGetTrigger());
     }
 
@@ -460,25 +438,23 @@ int main(void)
     assert(WIFSIGNALED(status));
     assert(WTERMSIG(status) == SIGABRT);
 
-    // On teste les constructions de mocks
+    // User-defined mocks tests
 
-    // On s'assure que les fonctions mockées de la librairie peuvent
-    // être appelées avec leur nom original.
+    // Ensures the original functions can be called with their
+    // original names.
     dummy_flag = SCCEFREE;
     free(strdup("test"));
 
-    // Si le mock de sccroll_run() ne fonctionne pas, il provoquera
-    // une erreur en appelant sccroll_before(), et l'assert assure un
-    // second niveau de vérification (puisque le seul test enregistré
-    // est en échec, et non en réussite comme testé ici).
+    // If the sccroll_run mock does not work, the sccroll_before will
+    // ensure a fail.
     dummy_flag = SCCENONE;
     assert(!sccroll_run());
 
-    // Un changement d'état du drapeau affichera un nouveau message.
+    // A state change should print a new message.
     dummy_flag = SCCESCCRUN;
     sccroll_run();
 
-    // Pour éviter des erreurs à l'exit.
+    // Avoid exit errors, just in case.
     sccroll_mockFlush();
     return EXIT_SUCCESS;
 }

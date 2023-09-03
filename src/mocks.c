@@ -1,22 +1,14 @@
 /**
  * @file        mocks.c
  * @version     0.1.0
- * @brief       Fichier source des simulacres pré-fournis.
+ * @brief       Mocks module source code.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
- * @compilation
- * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -I include \
- *     -fpic -shared $(scripts/mocks.awk src/mocks.c) \
- *     src/sccroll.c src/mocks.c \
- *     -o build/libs/libsccroll.so
- * @endcode
  *
  * @addtogroup Internals
  * @{
- * @addtogroup Mocks Simulacres pré-fournis.
+ * @addtogroup Mocks Mocks module internals.
  * @{
  */
 
@@ -32,10 +24,10 @@
 /**
  * @def SCCROLL_MOCKERROR
  * @since 0.1.0
- * @brief Message d'erreur des simulacres prédéfinis.
- * @param name Le nom du simulacre.
- * @param calls Le nombre d'appels du simulacre effectués.
- * @param msg Un message d'erreur.
+ * @brief Print an error message for the predefined mocks.
+ * @param name The original function name.
+ * @param calls The total number of the mock calls.
+ * @param msg The error message.
  */
 #define SCCROLL_MOCKERROR(name, calls, msg)                         \
     "%s (call #%u in %s::%s(), l. %i): %s",                         \
@@ -48,61 +40,55 @@
 
 /**
  * @since 0.1.0
- * @brief Détermine s'il faut déclencher une erreur du simulacre
- * ou lever une erreur générale si l'erreur précédente n'a pas été
- * gérée.
- * @param mock Le code SccrollMockFlags du simulacre.
- * @return true si le simulacre doit déclencher une erreur, sinon
- * false.
+ * @brief Check if an error must be raised, either by the mock or by
+ * the module (if the previous mock error was not handled).
+ * @param mock The mock identifier code.
+ * @return @c true if the mock must raise an error, @c false
+ * otherwise.
+ * @throw #SIGABRT if the previous mock error trigger was not
+ * handled.
  */
 static bool sccroll_mockFire(SccrollMockFlags mock);
 
 /**
  * @since 0.1.0
- * @brief Vérifie qu'une éventuelle erreur d'un simulacre déclenché a
- * été gérée, et si non termine le programme (@c SIGABRT).
+ * @brief Assert that a mock error trigger has been handled.
+ * @throw #SIGABRT if a mock trigger was not handled.
  */
 static void sccroll_mockAssert(void);
 
 /**
  * @struct SccrollMockTrace
  * @since 0.1.0
- * @brief Permet de conserver la trace d'appelants de fonctions.
+ * @brief Structure storing traces for mock calls.
  */
 typedef struct SccrollMockTrace {
-    const char* source; /**< Le chemin du fichier source. */
-    const char* caller; /**< Le nom de la fonction appelante. */
-    int line;           /**< La ligne d'appel. */
-    SccrollMockFlags mock; /**< Le code du simulacre. */
-    int calls;             /**< Le nombre d'appels effectués. */
+    const char* source; /**< The caller source file path. */
+    const char* caller; /**< The caller name. */
+    int line;           /**< The line of call. */
+    SccrollMockFlags mock; /**< The mock code. */
+    int calls;             /**< The number of calls made. */
 } SccrollMockTrace;
 
 /**
  * @var trace
  * @since 0.1.0
- * @brief Conserve la trace du dernier appelant d'un simulacre.
+ * @brief Store the mocks calls trace.
  */
 static SccrollMockTrace trace = {0};
 
 /**
  * @since 0.1.0
- * @brief Exécute une fonction en provoquant une erreur de simulacre
- * prédéfini, et vérifie que l'erreur a bien été gérée.
- *
- * La valeur renvoyée sert d'indicateur de s'il reste des appels à
- * effectuer pour un simulacre donné. Tant que des erreurs de
- * simulacres sont émises et gérées, la fonction renverra @c true,
- * indiquant par là que le simulacre testé a été appelé par
- * @p wrapper. @c false indiquera que le simulacre n'a pas été appelé,
- * et on peut donc supposer qu'aucun autre appel n'interviendra par la
- * suite.
- *
- * @param trigger La structure contenant les informations du test du
- * simulacre.
- * @param wrapper Le wrapper de la fonction à tester.
- * @return true si le simulacre testé a émit une erreur qui a été
- * gérée, ou false si aucune erreur n'a été émise (ni même par une
- * absence de gestion d'erreur).
+ * @brief Execute a wrapper function and check that the raised mock
+ * errors have been handled by it.
+ * @param wrapper The wrapper to execute.
+ * @param mock The mock to schedule a trigger from.
+ * @param delay The delay to use for the trigger.
+ * @return @c true if the mock trigger emitted an error that was
+ * handled, @c false otherwise. This value is used as an indicator of
+ * remaining calls to tests; a value of @c false for any other mock
+ * than #SCCENONE indicates that no other mock calls is to be
+ * expected.
  */
 static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, unsigned delay)
     __attribute__((nonnull (1)));
@@ -110,7 +96,7 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
 // clang-format off
 
 /******************************************************************************
- * Implémentation
+ * Implementation
  ******************************************************************************/
 // clang-format on
 
@@ -138,14 +124,15 @@ static bool sccroll_mockFire(SccrollMockFlags mock)
     if (!trace.mock) return false;
     else if (trace.mock != mock)
     {
-        // Actions coordonnées entre simulacres.
+        // Coordinated functions mocked.
         switch(mock)
         {
         default: sccroll_mockAssert(); break;
         case SCCEFERROR:
-            // On déclenche aussi le simulacre avec les autres fonctions
-            // f* de la librairie standard, car ferror doit être synchrone
-            // avec leur déclenchement.
+            // The f* file functions of the library set some internal
+            // FILE* values reported by ferror. Thus, in case of an
+            // error for these, ferror must also report an
+            // error. Hence the coordinated trigger.
             switch(trace.mock)
             {
             default: break;
@@ -207,10 +194,11 @@ void sccroll_mockPredefined(SccrollFunc wrapper)
     SccrollMockFlags mock;
     unsigned delay;
     for (mock = SCCENONE; mock < SCCEMAX; ++mock) {
-        // Si une erreur est levée (code ou signal), on peut supposer
-        // qu'il reste encore des appels à vérifier, d'où la condition
-        // de sortie. Si aucune erreur n'est levée par le simulacre,
-        // il ne le sera plus, et donc on passe au suivant.
+        // In case an error is raised (code or signal), we can assume
+        // that other calls remain to be checked. If no errors are
+        // raised, the wrapper call is complete and the mock code is
+        // not SCCENONE, then there will be no more calls of the given
+        // mock. Hence the exit condition of the loop.
         for (delay = 0; sccroll_mockCrashTest(wrapper, mock, delay); ++delay);
     }
 }
@@ -222,8 +210,7 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
     const char* name = sccroll_mockName(mock);
     const char* sigstr = NULL;
 
-    // On effectue le test dans un fork pour éviter de crasher le
-    // programme prématurément.
+    // Fork to avoid a premature crash.
     sccroll_mockTrigger(mock, delay);
     status = sccroll_simplefork(name, wrapper);
     sccroll_mockFlush();
@@ -232,9 +219,9 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
     sigstr = sigabbrev_np(signal);
     error  = code || signal;
 
-    // On vérifie qu'il n'y a pas d'erreur si aucun simulacre n'est
-    // déclenché, ou que le simulacre n'a pas envoyé de signaux
-    // d'erreurs (SIGABRT, SIGSEGV, ...).
+    // Check that no errors have been raised while no mock is
+    // triggered, or that no signals have been sent (SIGABRT, SIGSEGV,
+    // ...).
     assertMsg(
         !signal && (mock || !error),
         "Predefined %s mock error (status %i, signal %s)",
@@ -248,7 +235,7 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
 // clang-format off
 
 /******************************************************************************
- * Simulacres prédéfinis
+ * Predefined mocks
  ******************************************************************************/
 // clang-format on
 
@@ -333,9 +320,9 @@ SCCROLL_MOCK(
     ptr, size, nmemb, stream
 );
 
-// On utilise pas fscanf du fait de sa nature variadique, mais le
-// code source utilise de toute manière vscanf lui aussi.
-// cf. (lien coupé pour plus de lisibilité)
+// The variadic nature of fscanf prevents its definition as a mock,
+// but its source code uses vfscanf anyway.
+// SEE (link truncated for readability)
 // https://sourceware.org/git/?p=glibc.git;a=blob;f=stdio-common/fscanf.c
 // ;h=caca780f0982cbb6d46aa41a79460a01b906eec8;hb=dee2bea048b688b643a9a3b44b26ca9f7a706fe8#l36
 int sccroll_mockfscanf(FILE* restrict stream, const char* restrict format, ...)
@@ -362,14 +349,13 @@ SCCROLL_MOCK(
 // clang-format off
 
 /******************************************************************************
- * Redéfinitions des fonctions de la librairie.
+ * Redefinitions.
  ******************************************************************************/
 // clang-format on
 
-// abort() ne gère pas les données de gcov(), ce qui pose problème
-// pour la couverture. Cette redéfinition est donc là pour régler le
-// problème. L'exit final est là pour contenter le compilateur, mais
-// ne sera jamais appelé.
+// abort does not dump gcov() data, which is a problem for assertions
+// that are expected to raise assertion errors.
+// The final exit is there to please the compilers.
 void abort(void) { sccroll_mockFlush(), __gcov_dump(), raise(SIGABRT), exit(SIGABRT); }
 
 void exit(int status)

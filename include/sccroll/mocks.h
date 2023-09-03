@@ -1,36 +1,28 @@
 /**
  * @file        mocks.h
  * @version     0.1.0
- * @brief       Simulacres pré-fournis.
+ * @brief       Mocks definition.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @code{.sh}
- * gcc -xc -Wall -std=gnu99 -I include \
- *     -fpic -shared $(scripts/mocks.awk src/mocks.c) \
- *     src/sccroll.c src/mocks.c \
- *     -o build/libs/libsccroll.so
- * @endcode
- * @todo Renommer structures et fonctions; les noms sont parfois
- * redondants et ne sont pas nécessairement bien choisi.
+ *
+ * @todo Rename the structures and functions.
  *
  * @addtogroup API
  * @{
- * @addtogroup MocksAPI Simulacres
+ * @addtogroup MocksAPI Mocks definitions and usage.
  *
- * En C, la définition de simulacres (*mocks* en anglais) n'a pas la
- * même signification que dans les langages orientés objets. Ici, un
- * simulacre sera principalement une fonction (et non plus un objet)
- * altérée de manière à pouvoir contrôler finement son comportement
- * lors de l'exécution du programme.
+ * Mocks do not have the same definition in C than in OO languages.
  *
- * Ce module redéfinit également quelques fonctions de la librairie C
- * car elles interfèrent avec le fonctionnement de Sccroll ; c'est
- * notamment le cas de abort() qui normalement bloque la récupération
- * de données de `gcov`, mais qui, ici, effectue un *dump* des données
- * avant de lever le signal.
+ * Here, a mock is a function (not an object) that replaces an already
+ * defined function. This is done to allow fine control of the mocked
+ * function behavior in tests that depend on it.
+ *
+ * This module defines some mocks for common functions in the C
+ * library, either for usage, or because their behavior interferes
+ * with the Sccroll library execution (notably abort(), which prevents
+ * coverage dumps if not mocked).
  * @{
  */
 
@@ -56,7 +48,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name Création de simulacres.
+ * @name Mocks definition
  * @{
  ******************************************************************************/
 // clang-format on
@@ -64,47 +56,57 @@
 /**
  * @def sccroll_unused
  * @since 0.1.0
- * @brief Indique à la fonction que le paramètre n'est pas utilisé.
- *
- * Cette macro est utile pour les mocks pour éviter les erreurs de
- * compilation si un des paramètres n'est pas utilisé.
- * @param var Une variable non utilisée dans la fonction.
+ * @brief Indicate an unused function argument.
+ * @attention This macro should be called as early as possible in the
+ * mock function.
+ * @param var An unused function argument.
  */
 #define sccroll_unused(var) (void) var
 
 /**
  * @def SCCROLL_MOCK
  * @since 0.1.0
- * @brief Génère un simulacre d'une fonction.
+ * @brief Define a mock function.
  *
- * Générer un simulacre se fait avec deux définitions.
+ * Two definitions must be done to generate a mock.
  *
- * La première est celle de cette macro, qui donne les informations
- * nécessaires au fonctionnement du simulacre et à son déclenchement
- * d'erreurs.
+ * The first one is using this macro. It defines the mock function and
+ * its behavior. The arguments passed to the macro are necessary for
+ * the proper new mock execution and triggers.
  *
- * La seconde est celle d'une macro de remplacement dans une en-tête
- * importée par le code à tester. Cette macro redéfinit la fonction
- * remplacée par l'équivalente générée par la macro #SCCROLL_MOCK ; la
- * syntaxe est la suivante: `#define fonction sccroll_mockfonction`.
+ * The second one is a function-to-mock replacement macro to be
+ * defined in a header included in any source code to be tested. This
+ * macro be named as the original function and call instead the
+ * corresponding mock defined with SCCROLL_MOCK().
  *
- * Le simulacre est ensuite déclenché quand @p expr vaut @c true, et
- * renvoie @p errval. Il est déconseillé d'utiliser la fonction
- * `libfonction` (qui correspond à la fonction originale), car elle
- * n'est initialisée qu'après le premier appel du simulacre.
+ * The syntax would thus be:
+ * @code #define fonction sccroll_mockfonction @endcode
  *
- * @param expr Une expression booléenne déclenchant une erreur du
- * simulacre quand @c true.
- * @param errval La valeur renvoyée en cas d'erreur.
- * @param retval Le type des données renvoyées par la fonction
- * originelle.
- * @param name Le nom de la fonction originelle.
- * @param protoargs Les paramètres du prototype ; la macro #SCCCOMMA
- * facilite la construction de cet argument.
- * @param ... Les paramètres de la fonction originelle sans les type
- * de données (rien pour @c void).
- * @return @p errval si @p expr vaut @c true, sinon la valeur renvoyée
- * par la fonction originelle.
+ * Defining mocks this way thus ensures that the mocks do not leak to
+ * other parts of the code they are meant to be used in (as, for
+ * examples, in linked libraries). Moreover, surrounding the
+ * redefinition with @c #ifdef would allow to fine-control the mock
+ * definition in each module, or even in only parts of a source file.
+ *
+ * @todo Improve mocks definitions, in particular the original
+ * arguments handling.
+ * @todo Add examples in documentation.
+ *
+ * @param expr A boolean expression which, when @c true, makes the
+ * mock return @p errval instead of the original function return
+ * value.
+ * @param errval A value to return if @p expr is @c true.
+ * @param retval The original function return type.
+ * @param name The original function name.
+ * @param protoargs All the original function prototype arguments
+ * separated by #SCCCOMMA. The syntax would thus be
+ * @code
+ * protoargType protoargName SCCCOMMA protoargType protoargName SCCCOMMA ...
+ * @endcode
+ * @param ... The original function parameters names without the types
+ * (@c protoargName). The @c void corresponding value is empty.
+ * @return @p errval if @p expr is @c true, otherwise the value
+ * returned by the original function.
  */
 #define SCCROLL_MOCK(expr, errval, retval, name, protoargs, ...)        \
     __typeof__(name) (*lib##name) = NULL;                               \
@@ -121,16 +123,17 @@
 
 /******************************************************************************
  * @}
- * @name Simulacres prédéfinis.
+ * @name Predefined mocks
  *
- * Divers simulacres sont prédéfinis par le module. Il est possible de
- * les déclencher (un par un) avec un appel à sccroll_mockTrigger(),
- * qui peut également délayer l'erreur d'un certain nombre d'appels.
+ * This module predefines some mocks of common C library
+ * functions. The trigger can be done by calling sccroll_mockTrigger(),
+ * which can also delay the trigger by a given number of mock calls.
  *
- * Les simulacres dont l'erreur n'est pas prise en charge lèvent une
- * erreur d'assertion à leur prochain appel. Le simulacre est
- * désactivé avant de lever cette erreur ; de même, __gcov_dump() est
- * appelé avant de quitter.
+ * If a predefined mock raises an error, but this error is not handled
+ * by exiting the program, a fatal error is automatically raised.
+ *
+ * @todo split module in two: allow mocks definition without
+ * predefined mocks.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -138,88 +141,91 @@
 /**
  * @enum SccrollMockFlags
  * @since 0.1.0
- * @brief Drapeaux pour sccroll_mockTrigger() afin d'indiquer quel
- * simulacre pré-fourni doit être en erreur.
- * @attention Les drapeaux **ne peuvent pas** être combinés pour
- * déclencher plusieurs erreurs simultanément.
- * @attention Certains drapeaux déclenchent l'erreur d'un autre.
+ * @brief Codes used by sccroll_mockTrigger() to indicate the
+ * predefined mock to trigger.
+ * @alert Some triggers may trigger other mocks too, where indicated.
+ * @todo rename this enum, "flags" is misleading.
  */
 typedef enum SccrollMockFlags {
-    SCCENONE = 0, /**< Drapeau ne provoquant pas d'erreurs. */
-    SCCEMALLOC,   /**< Drapeau de malloc(). */
-    SCCECALLOC,   /**< Drapeau de calloc(). */
-    SCCEPIPE,     /**< Drapeau de pipe(). */
-    SCCEFORK,     /**< Drapeau de fork(). */
-    SCCEDUP2,     /**< Drapeau de dup2(). */
-    SCCECLOSE,    /**< Drapeau de close(). */
-    SCCEREAD,     /**< Drapeau de read(). */
-    SCCEWRITE,    /**< Drapeau de write(). */
-    SCCEFERROR,   /**< Drapeau de ferror(). */
-    SCCEFOPEN,    /**< Drapeau de fopen() et ferror(). */
-    SCCEFSEEK,    /**< Drapeau de fseek() et ferror(). */
-    SCCEFTELL,    /**< Drapeau de ftell() et ferror(). */
-    SCCEFREAD,    /**< Drapeau de fread() et ferror(). */
-    SCCEFWRITE,   /**< Drapeau de fwrite() et ferror(). */
-    SCCEFSCANF,   /**< Drapeau de fscanf() et ferror(). */
-    SCCEFILENO,   /**< Drapeau de fileno(). */
-    SCCEHCREATE,  /**< Drapeau de hcreate(). */
-    SCCEHSEARCH,  /**< Drapeau de hsearch(). */
-    SCCEMAX,      /**< Valeur maximale des mocks individuels. */
+    SCCENONE = 0, /**< No triggger. */
+    SCCEMALLOC,   /**< Triggers malloc(). */
+    SCCECALLOC,   /**< Triggers calloc(). */
+    SCCEPIPE,     /**< Triggers pipe(). */
+    SCCEFORK,     /**< Triggers fork(). */
+    SCCEDUP2,     /**< Triggers dup2(). */
+    SCCECLOSE,    /**< Triggers close(). */
+    SCCEREAD,     /**< Triggers read(). */
+    SCCEWRITE,    /**< Triggers write(). */
+    SCCEFERROR,   /**< Triggers ferror(). */
+    SCCEFOPEN,    /**< Triggers fopen() and ferror(). */
+    SCCEFSEEK,    /**< Triggers fseek() and ferror(). */
+    SCCEFTELL,    /**< Triggers ftell() and ferror(). */
+    SCCEFREAD,    /**< Triggers fread() and ferror(). */
+    SCCEFWRITE,   /**< Triggers fwrite() and ferror(). */
+    SCCEFSCANF,   /**< Triggers fscanf() and ferror(). */
+    SCCEFILENO,   /**< Triggers fileno(). */
+    SCCEHCREATE,  /**< Triggers hcreate(). */
+    SCCEHSEARCH,  /**< Triggers hsearch(). */
+    SCCEMAX,      /**< Max SccrollMockFlags value. */
 } SccrollMockFlags;
 
 /**
  * @since 0.1.0
- * @brief Fonction utilisée pour provoquer une erreur dans le
- * simulacre fourni par la bibliothèque et correspondant à la valeur
- * de @p mock.
- * @param mock Le simulacre à déclencher.
- * @param delay Le délai avant déclenchement du simulacre, en nombre
- * d'appels ; 0 indique un déclenchement immédiat.
+ * @brief Trigger a predefined mock.
+ * @attention In the case that the tests use the #NOFORK option, or
+ * that the trigger is set outside of a fork, the sccroll_mockFlush()
+ * function should be used after the trigger tests to ensure no
+ * additional side effects. This is done automatically if the
+ * predefined mocks raise an error by themselves.
+ * @param mock The code of the predefined mock to trigger.
+ * @param delay The number of calls to skip before the trigger (@c 0
+ * meaning "trigger at the first mock call").
  */
 void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay);
 
 /**
  * @since 0.1.0
- * @brief Donne le code SccrollMockFlags du simulacre prévu au
- * déclenchement.
- * @return Le code SccrollMockFlags du simulacre prévu au
- * déclenchement.
+ * @brief Give the predefined mock code scheduled to trigger.
+ * @return The scheduled predefined mock SccrollMockFlags code.
  */
 SccrollMockFlags sccroll_mockGetTrigger(void);
 
 /**
  * @since 0.1.0
- * @brief Donne le nombre d'appels restant avant déclenchement du
- * simulacre.
- * @return Le nombre d'appels restants du simulacre avant le
- * déclemenchement d'une erreur. Un nombre négatif indique le nombre
- * d'appels effectués au-delà.
+ * @brief Give the remaining number of calls that will be skipped
+ * before a trigger.
+ * @return The number of calls that will be skipped before the mock
+ * trigger. A negative number indicates the number of calls done
+ * *after* the trigger.
  */
 int sccroll_mockGetCalls(void);
 
 /**
  * @since 0.1.0
- * @brief Désactive le simulacre courant.
+ * @brief Disable the predefined mock trigger.
+ * @attention The predefined mock has to be registered again to
+ * restore the trigger.
  */
 void sccroll_mockFlush(void);
 
 /**
  * @since 0.1.0
- * @brief Effectue un test d'erreur des simulacres prédéfinis sur une
- * fonction donnée.
+ * @brief Test errors handling of all predefined mocks.
  *
- * La fonction inscrit le déclenchement d'un simulacre, et exécute
- * @p wrapper dans un fork() (insensible au simulacre correspondant).
+ * This function schedules a predefine mock and then calls the @p
+ * wrapper function. If the wrapper does not handle the error value
+ * returned, a fatal error is raised. Each predefined mock is tested,
+ * one by one.
  *
- * La fonction propage ensuite tout signal levé par @p wrapper, mais
- * pas les code de status d'erreur pour tout simulacre à déclencher ;
- * si aucun simulacre n'est à déclencher (#SCCENONE) mais qu'un status
- * autre que nul est renvoyé par @p wrapper, elle le propagera
- * également. Les signaux ont la priorité sur les codes de status.
+ * The @p wrapper calls are all done in a fork. The
+ * sccroll_mockPredefined() propagates any signal raised in the
+ * wrapper, which end the test run. Non-null exit status codes are
+ * also propagated but only in the case of no mock trigger
+ * (#SCCENONE). Signals have priority over exit status codes.
  *
- * Tous les délais possibles sont testés par la fonction. Le premier
- * délai ne renvoyant aucune erreur est considéré comme indiquant que
- * plus aucun simulacre ne sera déclenché par la suite.
+ * Mocks trigger delays are tested by this function. The first call
+ * that makes the wrapper exit without errors is considered as the
+ * latest call of the mock in the wrapper.
  *
  * @param wrapper Le wrapper de la fonction à tester.
  */
@@ -227,11 +233,11 @@ void sccroll_mockPredefined(SccrollFunc wrapper) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
- * @brief Donne le nom de la fonction originale correspondant au
- * simulacre identifié par @p mock.
- * @return Le nom de la fonction originale correspondant à @p mock. La
- * chaîne renvoyée n'est pas allouée avec malloc, elle ne doit pas
- * être libérée.
+ * @brief Give the original function name of a given mock code.
+ * @param mock The mock code.
+ * @return The name of the original function corresponding to @p mock,
+ * or "none" if no one corresponds. The returned string is **not**
+ * malloc'ed, and thus must not be freed.
  */
 const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnull));
 
@@ -239,16 +245,11 @@ const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnu
 
 /******************************************************************************
  * @}
- * @name Prototypes et macros des simulacres prédéfinis.
+ * @name Predefined mocks prototypes and macros definition.
  *
- * Cette méthode est utilisée à la place de #SCCROLL_MOCK car des
- * simulacres de ces fonctions de la librairie standard provoquent des
- * erreurs lors des appels dans les librairies partagées, notamment la
- * standard.
- *
- * Cette section n'est pas destinée à être utilisée directement, mais
- * sert à rediriger les simulacres prédéfinis vers les fonctions de la
- * librairie.
+ * The macros and functions of this section are not supposed to be
+ * used directly, and serves only as definitions to include in the
+ * tested source code.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -256,7 +257,8 @@ const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnu
 /**
  * @def sccroll_mockPrototype
  * @since 0.1.0
- * @brief Définit les prototypes des simulacres.
+ * @brief Define the mocks prototypes.
+ * @param name The original function name.
  */
 #define sccroll_mockPrototype(name)           \
     extern __typeof__(name) (*lib##name);     \
@@ -264,24 +266,21 @@ const char* sccroll_mockName(SccrollMockFlags mock) __attribute__((returns_nonnu
 
 /**
  * @since 0.1.0
- * @brief Sauvegarde les informations sur le dernier appel d'un
- * simulacre.
+ * @brief Stores information on the last mock call.
  * @param source  @c __FILE__.
  * @param funcname @c __FUNCTION__.
  * @param line @c __LINE__.
- * @param mock Le drapeau SccrollMockFlags du simulacre.
+ * @param mock The last predefined mock code called.
  */
 void sccroll_mockTrace(const char* source, const char* funcname, int line, SccrollMockFlags mock);
 
 /**
  * @def sccroll_mockCall
  * @since 0.1.0
- * @brief Macro facilitant la construction des simulacres avec
- * traçage.
- * @param name Le nom de la fonction remplacée.
- * @param flag Le drapeau SccrollMockFlags qui correspond au
- * simulacre.
- * @return Le résultat de `sccroll_mockname`.
+ * @brief Macro facilitating mocks definitions with tracing.
+ * @param name The original function name.
+ * @param flag The predefined mock flag corresponding to @p name.
+ * @return sccroll_mockname() return value.
  */
 #define sccroll_mockCall(name, flag, ...)                               \
     (                                                                   \
@@ -290,7 +289,7 @@ void sccroll_mockTrace(const char* source, const char* funcname, int line, Sccro
     )
 
 /**
- * @name Prototypes des simulacres prédéfinis.
+ * @name Predefined mocks prototypes definition.
  * @{
  */
 sccroll_mockPrototype(malloc);
@@ -314,7 +313,7 @@ sccroll_mockPrototype(hsearch);
 /** @} */
 
 /**
- * @name Définition des simulacres *via* macros.
+ * @name Predefined mocks functions overrides.
  * @{
  */
 #define malloc(...) sccroll_mockCall(malloc, SCCEMALLOC, __VA_ARGS__)

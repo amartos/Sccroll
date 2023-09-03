@@ -1,16 +1,15 @@
 /**
  * @file        data.h
  * @version     0.1.0
- * @brief       Ficher en-tête pour la génération de données pour
- *              tests unitaires.
+ * @brief       Generate and handle typeless data.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
+ *
  * @addtogroup API
  * @{
- * @addtogroup DataAPI Générateurs de données pour les tests unitaires
+ * @addtogroup DataAPI Typeless data generation and handling
  * @{
  */
 
@@ -20,7 +19,8 @@
 #include "sccroll/helpers.h"
 
 #ifdef _SCCUNITTESTS
-// Permet de tester aisément les gestions d'erreurs.
+// Allows easier errors handling tests of the library.
+// TODO: remove this dependency, implying an architecture redesign.
 #include "sccroll/mocks.h"
 #endif
 
@@ -32,7 +32,7 @@
 // clang-format off
 
 /*******************************************************************************
- * @name Gestion de données
+ * @name Data handling
  * @{
  *******************************************************************************/
 // clang-format on
@@ -40,35 +40,34 @@
 /**
  * @struct Data
  * @since 0.1.0
- * @brief Structure des éléments de la liste.
- * @note Data::type est à définir par l'utilisateur.
+ * @brief Typelessly handle any data.
+ * @note Data::type must be user-defined.
  */
 typedef struct Data {
-    void* blob;  /**< Le pointeur de la donnée. */
-    size_t size; /**< La taille de la donnée en octets. */
-    int type;    /**< Le type de la donnée. */
+    void* blob;  /**< The data pointer. */
+    size_t size; /**< The blob byte size. */
+    int type;    /**< The user-defined data type. */
 } Data;
 
 /**
  * @since 0.1.0
- * @brief Construit une structure Data.
- * @alert Utilise malloc.
- * @param blob Le pointeur de la donnée.
- * @param size La taille de la donnée en octets.
- * @param type Le type de la donnée définit par l'utilisateur.
- * @return Un pointeur vers la structure Data construite, ou @c NULL
- * en cas d'erreur.
+ * @brief Allocate memory for a Data structure.
+ * @attention Uses malloc, thus the returned struct needs freeing.
+ * @param blob The data blob pointer.
+ * @param size @p blob size in bytes.
+ * @param type The user-defined type.
+ * @return A Data struct pointer malloc'ed and storing the given
+ * values. @c NULL is returned in case of errors.
  */
 Data* mkdata(void* blob, size_t size, int type);
 
 /**
  * @since 0.1.0
- * @brief Duplique une structure Data (mais pas la donnée qu'il
- * contient).
- * @alert Utilise malloc pour construire Data*.
- * @param data La donnée à dupliquer.
- * @return Un pointeur vers la copie de la structure Data construite,
- * ou @c NULL en cas d'erreur.
+ * @brief Shallow copy a data struct.
+ * @attention Uses malloc, thus the returned struct needs freeing.
+ * @param data The Data struct to copy.
+ * @return A new Data pointer malloc'ed and that is a shallow copy of
+ * @p data. @c NULL is returned in case of errors.
  */
 Data* datadup(const Data* restrict data);
 
@@ -76,32 +75,32 @@ Data* datadup(const Data* restrict data);
 
 /******************************************************************************
  * @}
- * @name Générateurs de données aléatoires
+ * @name Random data generation
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Rempli un espace mémoire de données aléatoires.
- * @param blob Un espace mémoire à remplir.
- * @param size Le nombre d'octets à remplir.
+ * @brief Fills a blob with random data.
+ * @alert This operation is destructive for @p blob content.
+ * @param blob A memory space to overwrite with random bytes.
+ * @param size The number of bytes to overwrite in @p blob.
  */
 void sccroll_monkey(void* blob, size_t size) __attribute__((leaf, nothrow, nonnull (1)));
 
 /**
  * @since 0.1.0
- * @brief Alloue une zone mémoire remplie de données aléatoires.
- * @attention Utilise malloc.
- * @attention Cette fonction **ne vérifie pas** que le dernier octet
- * d'une chaîne de caractères est bien nul.
- * @attention Si @p size vaut 0, la fonction renvoie un pointeur
- * unique qui peut être passé à @c free (comportement identique à
- * @c malloc).
- * @param nmemb Le nombre d'éléments de la zone de mémoire.
- * @param size Le nombre d'octets d'un élément.
- * @return Une zone mémoire de @p nmemb éléments de @p size octets
- * remplis de données aléatoires, ou NULL en cas d'erreur.
+ * @brief Allocate a blob of memory initialized with random bytes.
+ *
+ * The function behavior is identical to malloc(), but fills the
+ * allocated pointers with random bytes.
+ *
+ * @attention Uses malloc, thus the returned struct needs freeing.
+ * @param nmemb The number of members.
+ * @param size The byte size of each member.
+ * @return A memory location of @p nmemb * @p size bytes initialized
+ * with random bytes. @p NULL is returned in case of errors.
  */
 void* sccroll_rndalloc(size_t nmemb, size_t size);
 
@@ -109,20 +108,26 @@ void* sccroll_rndalloc(size_t nmemb, size_t size);
 
 /******************************************************************************
  * @}
- * @name Copies de données.
+ * @name Data copy.
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Copie un block de donnée.
- * @param blob Le block à copier.
- * @param size Le nombre d'octets de blob à copier.
- * @return Un pointeur vers une copie des @p size premiers octets de
- * @p blob, ou un pointeur vers un emplacement mémoire de @p size
- * octets initialisés à 0 si @p blob est NULL, ou NULL si @p size vaut
- * 0.
+ * @brief Shallow copy a data blob.
+ *
+ * If @p blob is @c NULL, the function acts the same as calloc().
+ *
+ * @attention Uses malloc, thus the returned struct needs freeing.
+ * @param blob The blob to copy, or @c NULL.
+ * @param size The number of bytes to allocate and copy from a
+ * non-@c NULL @p blob.
+ * @return @c NULL if @p size is @c 0. Otherwise, a pointer to a
+ * malloc'ed memory location of @p size bytes, initialized at @c 0 if
+ * @p blob is @c NULL, or containing a copy of the first @p size of
+ * @p blob if the latter is non-@c NULL (additional bytes are
+ * initialized at @c 0).
  */
 void* blobdup(const void* restrict blob, size_t size);
 

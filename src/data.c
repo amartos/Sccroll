@@ -1,16 +1,15 @@
 /**
  * @file        data.c
  * @version     0.1.0
- * @brief       Ficher source de la génération de données pour
- *              tests unitaires.
+ * @brief       Source file of the Data module.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation @ref sccroll.h
+ *
  * @addtogroup Internals
  * @{
- * @addtogroup DataInternals Générateurs de données pour les tests unitaires
+ * @addtogroup DataInternals Internals for data generation and handling
  * @{
  */
 
@@ -18,26 +17,28 @@
 
 /**
  * @since 0.1.0
- * @brief Initialise une nouvelle séquence de nombres
- * pseudo-aléatoires pour sccroll_arc4random_buf.
+ * @brief Initialise a new pseudo-random seed.
+ * @see sccroll_monkeys()
  */
 static void sccroll_peanuts(void) __attribute__((constructor));
 
 /**
  * @since 0.1.0
- * @brief Remplit l'espace mémoire donné de size octets aléatoires.
- * @param blob Un espace mémoire à remplir.
- * @param size Le nombre d'octets à remplir.
+ * @brief Fill the given @p blob with @p size bytes of random data.
  *
- * @c arc4random_buf n'est définit dans la librairie C de GNU que dans
- * la version 2.36, très récente à l'écriture de ce code. il existe
- * une fonction a@c rc4random_buf dans la librairie BSD, mais rien ne
- * garantit sa présence non plus. Donc, la fonction de ce moduleest
- * redéfinie comme version faible. Si la version de la librairie C est
- * 2.36+, alors l'alias ne sera plus utilisé.
+ * arc4random_buf() is defined in GNU C library at version 2.36,
+ * which is very recent at the time this code is written. The BSD
+ * library defines it already, but without garantees of support.
+ * This function is thus defined as a weak alias until the function is
+ * widely supported.
  *
- * @todo: supprimer le code correspondant une fois que la librairie C
- * version 2.36+ sera suffisamment répandue.
+ * @todo: delete the function code once it is widely supported in the
+ * C standard library.
+ *
+ * @alert This function is destructive as it overwrite the data in
+ * @p blob.
+ * @param blob The blob to fill.
+ * @param size The number of bytes to write.
  */
 void arc4random_buf(void* blob, size_t size) __attribute__((weak, nonnull(1)));
 
@@ -46,13 +47,13 @@ void arc4random_buf(void* blob, size_t size) __attribute__((weak, nonnull(1)));
 /******************************************************************************
  * @} @}
  *
- * Implémentation
+ * Implementation
  ******************************************************************************/
 // clang-format on
 
 static void sccroll_peanuts(void) { srandom(time(NULL)); }
 
-// arc4random_buf remplit déjà le rôle de sccroll_monkey.
+// arc4random_buf already fills the slot of sccroll_monkey.
 weak_alias(,arc4random_buf, sccroll_monkey);
 
 Data* mkdata(void* blob, size_t size, int type)

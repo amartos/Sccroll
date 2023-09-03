@@ -1,23 +1,14 @@
 /**
  * @file        data.c
  * @version     0.1.0
- * @brief       Test unitaire de génération de données.
+ * @brief       Data module unit tests.
  * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   MIT License
- * @compilation
- * @see sccroll.h pour la compilation de libsccroll.so
- * @code{.c}
- * gcc -xc -Wall -Wextra -std=gnu99 -Iincludes -fpic -c \
- *     tests/units/data.c -o build/objs/tests/units/data.o
- * gcc -L build/libs -lsccroll build/objs/tests/units/data.o \
- *     $(scripts/mocks.awk src/sccroll/mocks.c)              \
- *     -o build/bin/tests/data
- * @endcode
  */
 
-// On s'assure d'utiliser celui de la librairie.
+// Ensures to use the standard C lib assert function.
 #include <assert.h>
 
 #include "sccroll.h"
@@ -27,30 +18,28 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation des tests.
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Constantes des tests.
+// Constants
 enum {
-    // Nombre de tests de sccroll_monkey
+    // sccroll_monkey number of iterations
     MAX = 10,
-    // Taille max-1 de l'espace mémoire utilisé pour un test de
-    // sccroll_monkey (en octets).
+    // max-1 size of sccroll_monkey blobs.
     MAXSIZE = 255,
 };
 
-// Marge d'erreur acceptée pour les fonctions aléatoires.
+// Accepted margin of difference for random functions.
 const float sigma = 0.05f;
 
-// ratio de bits 0/1 attendu pour un nombre aléatoire.
+// Expected bits ratio for random numbers.
 const float expected = 0.50f;
 
-// Donnée test pour Data
+// Data test blob.
 static const char* foobar = "foobar";
 
-// Cette fonction calcule le ratio de bits 1 et 0 de l'espace mémoire
-// blob de size octets.
+// Calculate the bits ratio of a blob.
 __attribute__((nonnull(1)))
 static float bitratio(const void* blob, size_t size)
 {
@@ -103,23 +92,19 @@ void tests_datas(void)
 // clang-format off
 
 /******************************************************************************
- * Exécution des tests.
+ * Execution des tests.
  ******************************************************************************/
 // clang-format on
 
 int main(void)
 {
-    // Tester la fonction sccroll_rndalloc revient à tester également
+    // Testing sccroll_rndalloc is equivalent to testing
     // sccroll_monkey.
 
-    // On teste le ratio de bits 0/1 obtenu avec la fonction
-    // sccroll_monkey, du fait qu'elle génère des bits
-    // aléatoires. Puisque chacun a 50% de chances d'apparaître pour
-    // des espace mémoire assez grands, le ratio devrait être proche
-    // de 0.5. Les rares cas où le ratio serait +/- élevé sont trop
-    // rares pour êtres pris en compte (surtout que deux cas rares sur
-    // deux tests d'affilées est exceptionnel, et donc indiquerait
-    // plus un bug qu'une malchance).
+    // Test the bit ratio obtained with ccroll_monkey. There are cases
+    // where it *could* be higher than 50% +/- accepted margin, but
+    // these are too rare to take account. In case of a fail, repeat
+    // the test twice.
     void* data = NULL;
     void* copy = NULL;
     int i;
@@ -134,7 +119,7 @@ int main(void)
     ratio /= MAX;
     assert(fabs(ratio - expected) < sigma);
 
-    // test de blobdup
+    // blobdup test
     data = sccroll_rndalloc(MAXSIZE, sizeof(int));
     copy = blobdup(data, MAXSIZE * sizeof(int));
     char* a = (char*) data;
@@ -149,7 +134,7 @@ int main(void)
     assert((data = blobdup(NULL, 10)));
     free(data);
 
-    // tests des gestions d'erreurs
+    // Errors handling
     sccroll_mockPredefined(crash_test);
 
     tests_datas();

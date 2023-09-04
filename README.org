@@ -1,0 +1,171 @@
+#+title: Sccroll - A Units Tests library for C
+#+author: Alexandre Martos
+
+Sccroll is a library for units tests for softwares written in C.
+
+#+begin_center
+*This software is in alpha state, not yet releasable for
+production. Use at your own risks.*
+#+end_center
+
+* Features
+
+Sccroll is designed to be a shared library. The common usage is to
+design the unit tests in their own file that include both the source
+to test and the library header. You can then compile your units tests
+source and link it to the Sccroll library, and execute the binary.
+
+** Basic features
+
+- Only include the library header (for basic usage) :: for more
+  advanced usage, some inclusions would be necessary in the tested
+  source files.
+- Easy test writing :: a test is written the same way you write a
+  function.
+- Emulate standard input :: you can give pass data to your test
+  through an emulated =stdin=, if needed.
+- Side effects checking :: the expected standard outputs and
+  exit/status/errno values can be specified to setup the validity of a
+  given test. Even arbitrary files modifications can be checked.
+- Fork for a test, or not :: the library forks to execute the tests by
+  default, but this behavior can be inhibited using options for each
+  test.
+- Automatic tests registration and execution, if you wish so :: focus
+  on designing your tests, nothing more. You can also register tests
+  yourself and all of them run manually.
+- An overrideable =main= function :: this is tied to the previous
+  point. You do /not/ need to handcraft a main function to register and
+  run the tests, the library provides one for you. But in the case you
+  would need it, you can define one, and it will be used instead.
+- Global/Per test environment management interface :: the library
+  provides an interface for tests environment setup and clean, for
+  each individual test or globally.
+- Do not block at failed tests :: if some tests fail, they do not
+  prevent other tests to run.
+- Reports prints for each failed test, with diffs :: each failed test
+  is reported at run, and the reports include diffs of
+  expected/obtained values if needed. An option is available to
+  disable the diffs.
+- Global final report :: an overall success percentage and count is
+  produced at the end of each tests run.
+
+** Assertions
+
+The library optionally provides a set of assertion macros covering a
+wide range of use cases.
+
+These macro are overridden by any =assert.h= header included from a
+standard C library. However, they are insensible to =NDEBUG=, and are
+activated if this macro is defined even if the standard =assert.h= is
+included.
+
+See the [[file:MANUAL.org][manual]] for details.
+
+** "Mocks"
+
+: Yes, the signification of "mocks" is a stretch here, hence the
+: quotes. That said, this describes an optional interesting feature
+: provided by Sccroll.
+
+The mocks module allows to override any function used in a source
+file, even not defined in your project (yes, even functions from the
+standard library), in order to precisely control its behavior. This
+allows, for example, to arbitrary raise artificial errors in a test,
+for any function call.
+
+Moreover, this behavior does not leak outside of the tested source
+file, meaning that the mocks are limited to where you want, not where
+the original function is called.
+
+The only drawbacks is the need to include the mock library and its
+dependencies in the tested source file. There is a plan to redesign
+this in the future to avoid such inclusion, and let your precious
+source files free of vile unneeded includes.
+
+The library also predefines mocks for some common functions of the
+standard library. These mocks are designed to return their
+corresponding error values at a precise timing decided by the user ---
+the trigger for each of these mocks can be delayed by a given number
+of calls. The module even provides an automated error testing function
+which will run a test multiple times, triggering each of these
+predefined mocks for every of its call made in the test, and check
+that the returned error value has been handled properly.
+
+The list of predefined mocks will get bigger in the future.
+
+For now, these predefined mocks are tied to the mocks basic
+features. However, it is scheduled in the near future to split the two
+apart.
+
+* Installation
+
+** Dependencies
+
+The library design heavily depends on the *GNU C library* and
+*GCC*. It was not tested on other libraries, so feel free to report any
+issues if you test it. *This is planned to change before the first
+official release*, in order to /not/ depend on any specific standard
+library or compiler.
+
+Note that the Makefile has additional dependencies on =rsync= and =gcovr=
+(only if you try the library tests for the latter).
+
+The dependencies versions the library was tested on:
+
+#+begin_src bash :eval yes :exports results :results output replace
+  ldd --version | head -n 1
+  gcc --version | head -n 1
+#+end_src
+
+#+RESULTS:
+: ldd (Debian GLIBC 2.37-7) 2.37
+: gcc (Debian 13.2.0-2) 13.2.0
+
+For a full list of headers the library depends on, see the [[file:MANUAL.org][manual]].
+
+** Install
+
+First, install the dependencies on your system. For Debian-based
+GNU/Linux distributions, the command would be (uncomment the end of
+line to add optional dependencies):
+
+#+begin_src bash
+  sudo apt install make gcc libc6-dev rsync # git gcovr
+#+end_src
+
+Then download this repo, either with Github's =code > download zip=
+button, or by cloning it using =git=:
+
+#+begin_src bash
+  git clone https://github.com/amartos/Sccroll
+#+end_src
+
+Finally, simply call =make install=. The default prefix is set to
+=/usr/local=, but you can edit the Makefile to your preferred value.  The
+library header will be located at =/usr/local/include/sccroll.h=, and
+the share files at =/usr/local/lib= (your compiler should find them, if
+not add this path to =LD_LIBRARY_PATH=).
+
+If you only wish to compile the library without installing it, simply
+call =make=. The compiled shared files to link your objects with will be
+located at =./build/lib/=, and the header file is at
+=./include/sccroll.h=.
+
+In case you want to run the library tests, call =make tests=. In case of
+errors, some difflogs should be created in =./build/logs=. Coverage
+reports will be located in =./build/reports=.
+
+* Usage
+
+See the [[file:MANUAL.org][manual]].
+
+* Road map [2/4]
+
+- [X] basic tests definition, execution and reports
+- [X] assertions
+- [-] mocks [3/4]
+  - [X] mocks definition and usage
+  - [X] predefined mocks of standard lib functions
+  - [X] automatic tests for errors
+  - [ ] do not depend on including the mocks module in sources
+- [ ] do not depend on a specific standard library

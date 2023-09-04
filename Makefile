@@ -27,6 +27,7 @@ TLOGS		:= $(ASSETS)/logs
 SCRIPTS		= scripts
 INFO	 	:= $(SCRIPTS)/pinfo
 PDOC		:= $(SCRIPTS)/pdoc.awk
+PCOV		:= $(SCRIPTS)/pcov.sh
 
 BUILD		= build
 LIBS		= $(BUILD)/libs
@@ -185,6 +186,7 @@ tests: clean init $(LIBS)/lib$(PROJECT).so $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
 	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
 	@$(INFO) ok $(PROJECT) coverage
+	@$(PCOV) $(COVXML)
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRCS INCLUDES TESTS
 

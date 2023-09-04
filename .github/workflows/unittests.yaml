@@ -11,7 +11,7 @@ jobs:
       - name: Installing dependencies packages
         run: sudo apt update && sudo apt install -y sudo rsync gcovr
       - name: Pulling repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "master"
           path: "repo"

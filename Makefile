@@ -82,7 +82,7 @@ COVFILE		:= $(REPORTS)/coverage
 COVXML		:= $(COVFILE).xml
 COVHTML		:= $(COVFILE).html
 
-# Limites de couverture de code acceptées en %
+# Accepted limits for coverage in %
 COVHIGH		= 98
 COVLOW		= 75
 

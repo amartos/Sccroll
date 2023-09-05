@@ -1,67 +1,67 @@
 [ [0;1;36mDIFF[0m ] test_assertSmallerOrEqual_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertSmallerOrEqual_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 72): Assertion `intcmp(testia[0], testib[8]) <= 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 73): Assertion `intcmp(testia[0], testib[8]) <= 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertSmallerOrEqual_fail
 
 [ [0;1;36mDIFF[0m ] test_assertGreaterOrEqual_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertGreaterOrEqual_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 71): Assertion `intcmp(testia[0], testia[1]) >= 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 72): Assertion `intcmp(testia[0], testia[1]) >= 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertGreaterOrEqual_fail
 
 [ [0;1;36mDIFF[0m ] test_assertSmaller_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertSmaller_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 70): Assertion `intcmp(testia[0], testib[9]) < 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 71): Assertion `intcmp(testia[0], testib[9]) < 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertSmaller_fail
 
 [ [0;1;36mDIFF[0m ] test_assertGreater_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertGreater_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 68): Assertion `intcmp(testia[0], testia[1]) > 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 69): Assertion `intcmp(testia[0], testia[1]) > 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertGreater_fail
 
 [ [0;1;36mDIFF[0m ] test_assertNotEqual_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertNotEqual_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 66): Assertion `intcmp(testia[0], testib[9]) != 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 67): Assertion `intcmp(testia[0], testib[9]) != 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertNotEqual_fail
 
 [ [0;1;36mDIFF[0m ] test_assertEqual_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertEqual_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 64): Assertion `intcmp(testia[0], testib[0]) == 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 65): Assertion `intcmp(testia[0], testib[0]) == 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertEqual_fail
 
 [ [0;1;36mDIFF[0m ] test_assertCmp_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertCmp_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 62): Assertion `intcmp(testia[0], testib[0]) == 0' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 63): Assertion `intcmp(testia[0], testib[0]) == 0' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertCmp_fail
 
 [ [0;1;36mDIFF[0m ] test_assertNotEql_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertNotEql_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 60): Assertion `a != b' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 61): Assertion `a != b' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertNotEql_fail
 
 [ [0;1;36mDIFF[0m ] test_assertEql_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertEql_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 58): Assertion `a == c' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 59): Assertion `a == c' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertEql_fail
 
 [ [0;1;36mDIFF[0m ] test_assertFalse_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_assertFalse_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 56): Assertion `!(1)' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 57): Assertion `!(1)' failed.[0m
 [ [0;1;31mFAIL[0m ] test_assertFalse_fail
 
 [ [0;1;36mDIFF[0m ] test_libassert_fail: signal: expected 0 (no signal), got 6 (SIGABRT)
 [ [0;1;36mDIFF[0m ] test_libassert_fail: stderr
 exp: [0;0;32m[0m
-res: [0;0;31mtests/units/assert.c (l. 54): Assertion `false' failed.[0m
+res: [0;0;31mtests/units/assert.c (l. 55): Assertion `false' failed.[0m
 [ [0;1;31mFAIL[0m ] test_libassert_fail
 
 [ [0;1;36mDIFF[0m ] test_sccroll_assert_fail: signal: expected 0 (no signal), got 6 (SIGABRT)

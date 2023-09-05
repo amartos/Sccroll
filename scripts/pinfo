@@ -2,9 +2,9 @@
 # @file        pinfo
 # @version     0.1.0
 # @brief       Status printer script.
-# @date        2022
 # @author      Alexandre Martos
-# @copyright   MIT License
+# @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+# @license     MIT License
 #
 # @parblock
 # This script prints given status messages and returns a status code

@@ -2,10 +2,10 @@
  * @file        lists.c
  * @version     0.1.0
  * @brief       Lists unit tests source code.
- * @date        2023
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
+ * @copyright   2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  */
 
 #include "sccroll.h"

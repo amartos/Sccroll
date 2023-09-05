@@ -2,10 +2,10 @@
  * @file        preparation.c
  * @version     0.1.0
  * @brief       Core module unit tests of tests peparation.
- * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
+ * @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  */
 
 #include <assert.h>

@@ -2,9 +2,9 @@
 # @file        pcov.sh
 # @version     0.1.0
 # @brief       Coverage printer.
-# @date        2023
 # @author      Alexandre Martos
-# @copyright   MIT License
+# @copyright   2023 Alexandre Martos <contact@amartos.fr>
+# @license     MIT License
 #
 # @parblock
 # This script prints a formatted table of the overall project coverage

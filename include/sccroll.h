@@ -2,10 +2,10 @@
  * @file        sccroll.h
  * @version     0.1.0
  * @brief       Sccroll - A Units Tests library for C.
- * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
+ * @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  *
  * You can include this header to use all features of the library.
  */

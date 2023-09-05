@@ -2,10 +2,10 @@
  * @file      lists.c
  * @version   0.1.0
  * @brief     Double linked list library.
- * @year      2023
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
- * @copyright MIT License
+ * @copyright 2023 Alexandre Martos <contact@amartos.fr>
+ * @license   MIT License
  *
  * @addtogroup ListInternalAPI
  * @{

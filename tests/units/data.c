@@ -2,10 +2,10 @@
  * @file        data.c
  * @version     0.1.0
  * @brief       Data module unit tests.
- * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
+ * @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  */
 
 // Ensures to use the standard C lib assert function.

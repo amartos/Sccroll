@@ -2,9 +2,10 @@
  * @file        assert.c
  * @version     0.1.0
  * @brief       Assertions unit tests.
- * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
+ * @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  */
 
 #include "sccroll.h"

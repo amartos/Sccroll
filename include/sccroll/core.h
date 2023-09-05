@@ -2,10 +2,10 @@
  * @file        scroll/core.h
  * @version     0.1.0
  * @brief       Core header file of the Sccroll library.
- * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   MIT License
+ * @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  *
  * Units Tests using this library are mainly built using the
  * SCCROLL_TEST() macro. The units testing source files can be used in

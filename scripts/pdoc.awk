@@ -2,9 +2,9 @@
 # @file        pdoc.awk
 # @version     0.1.0
 # @brief       Makefile documentation parser.
-# @date        2022
 # @author      Alexandre Martos
-# @copyright   MIT License
+# @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+# @license     MIT License
 #
 # This script parses a Makefile and prints the recipes documentation.
 #

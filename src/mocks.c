@@ -2,9 +2,10 @@
  * @file        mocks.c
  * @version     0.1.0
  * @brief       Mocks module source code.
- * @date        2022
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
+ * @copyright   2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license     MIT License
  *
  * @addtogroup Internals
  * @{

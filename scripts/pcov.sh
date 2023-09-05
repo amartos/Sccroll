@@ -3,6 +3,7 @@
 # @version     0.1.0
 # @brief       Coverage printer.
 # @author      Alexandre Martos
+# @email       contact@amartos.fr
 # @copyright   2023 Alexandre Martos <contact@amartos.fr>
 # @license     MIT License
 #

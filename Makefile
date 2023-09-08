@@ -3,8 +3,9 @@
 ###############################################################################
 
 LICENSEFILE	= LICENSE
-LICENSE 	= $(shell head -n 2 $(LICENSEFILE) | tail -n 1)
-BRIEF		= $(shell head -n 1 $(LICENSEFILE))
+LICENSE 	= License MIT
+BRIEF		= Sccroll -- a units tests library for C
+COPYRIGHT	= Copyright 2023 Alexandre Martos <contact@amartos.fr>
 NAME		= $(firstword $(BRIEF))
 PROJECT 	= $(shell echo $(NAME) | tr "[:upper:]" "[:lower:]")
 VERSION		= $(shell find . -type f -name "$(PROJECT).[h|c]" | xargs grep version | awk '{print $$NF}')
@@ -206,7 +207,9 @@ clean:
 
 # @brief Print the Makefile documentation
 help:
-	@head -n 5 $(LICENSEFILE)
+	@echo '$(BRIEF)'
+	@echo '$(COPYRIGHT)'
+	@echo '$(LICENSE)'
 	@echo -e "Available recipes:\n"
 	@$(PDOC) Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 

@@ -171,6 +171,23 @@ typedef enum SccrollMockFlags {
 
 /**
  * @since 0.1.0
+ * @brief Indicates if a mock code is ignored for checks and trigger.
+ *
+ * The reason of an ignored trigger can take roots in multiple
+ * reasons, mainly because the original function itself does not raise
+ * an error, or it is meaningless.
+ *
+ * For example: ferror(), which may raise an error but not because of
+ * its own internals. Thus, triggering this mock *per se* does not
+ * make sense.
+ *
+ * @param mock The mock ID code.
+ * @return @c true if the mock is ignored, @c false otherwise.
+ */
+bool sccroll_mockIsIgnored(SccrollMockFlags mock);
+
+/**
+ * @since 0.1.0
  * @brief Trigger a predefined mock.
  * @attention In the case that the tests use the #NOFORK option, or
  * that the trigger is set outside of a fork, the sccroll_mockFlush()

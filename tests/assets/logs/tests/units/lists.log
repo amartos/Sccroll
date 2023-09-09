@@ -1138,7 +1138,51 @@ PRETTY >>>
 NOLIST >>>
        <<<
 DEFAULT >>>
-lists: could not read tmpfile: Success
+        <<<
+FUNC >>>
+([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
+     <<<
+BOTH >>>
+([Node 0: 'null']ZZZXXXYYY[Node 1: 'aliceandbob']ZZZXXXYYY[Node 2: 'bizbuz']ZZZXXXYYY[Node 3: 'foobar'])
+     <<<
+PRETTY >>>
+([Node 0: 'null'],
+ [Node 1: 'aliceandbob'],
+ [Node 2: 'bizbuz'],
+ [Node 3: 'foobar'])
+     <<<
+NOLIST >>>
+       <<<
+DEFAULT >>>
+        <<<
+FUNC >>>
+([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
+     <<<
+BOTH >>>
+([Node 0: 'null']ZZZXXXYYY[Node 1: 'aliceandbob']ZZZXXXYYY[Node 2: 'bizbuz']ZZZXXXYYY[Node 3: 'foobar'])
+     <<<
+PRETTY >>>
+([Node 0: 'null'],
+ [Node 1: 'aliceandbob'],
+ [Node 2: 'bizbuz'],
+ [Node 3: 'foobar'])
+     <<<
+NOLIST >>>
+       <<<
+DEFAULT >>>
+        <<<
+FUNC >>>
+([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
+     <<<
+BOTH >>>
+([Node 0: 'null']ZZZXXXYYY[Node 1: 'aliceandbob']ZZZXXXYYY[Node 2: 'bizbuz']ZZZXXXYYY[Node 3: 'foobar'])
+     <<<
+PRETTY >>>
+([Node 0: 'null'],
+ [Node 1: 'aliceandbob'],
+ [Node 2: 'bizbuz'],
+ [Node 3: 'foobar'])
+     <<<
 NOLIST >>>
        <<<
 DEFAULT >>>
@@ -1178,10 +1222,6 @@ PRETTY >>>
 NOLIST >>>
        <<<
 DEFAULT >>>
-lists: could not read tmpfile: Success
-NOLIST >>>
-       <<<
-DEFAULT >>>
         <<<
 FUNC >>>
 ([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
@@ -1195,74 +1235,6 @@ PRETTY >>>
  [Node 2: 'bizbuz'],
  [Node 3: 'foobar'])
      <<<
-NOLIST >>>
-       <<<
-DEFAULT >>>
-lists: could not read tmpfile: Success
-NOLIST >>>
-       <<<
-DEFAULT >>>
-        <<<
-FUNC >>>
-([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
-     <<<
-BOTH >>>
-([Node 0: 'null']ZZZXXXYYY[Node 1: 'aliceandbob']ZZZXXXYYY[Node 2: 'bizbuz']ZZZXXXYYY[Node 3: 'foobar'])
-     <<<
-PRETTY >>>
-([Node 0: 'null'],
- [Node 1: 'aliceandbob'],
- [Node 2: 'bizbuz'],
- [Node 3: 'foobar'])
-     <<<
-NOLIST >>>
-       <<<
-DEFAULT >>>
-lists: could not read tmpfile: Success
-NOLIST >>>
-       <<<
-DEFAULT >>>
-lists: could not read tmpfile: Success
-NOLIST >>>
-       <<<
-DEFAULT >>>
-        <<<
-FUNC >>>
-([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
-     <<<
-BOTH >>>
-([Node 0: 'null']ZZZXXXYYY[Node 1: 'aliceandbob']ZZZXXXYYY[Node 2: 'bizbuz']ZZZXXXYYY[Node 3: 'foobar'])
-     <<<
-PRETTY >>>
-([Node 0: 'null'],
- [Node 1: 'aliceandbob'],
- [Node 2: 'bizbuz'],
- [Node 3: 'foobar'])
-     <<<
-NOLIST >>>
-       <<<
-DEFAULT >>>
-lists: could not read tmpfile: Success
-NOLIST >>>
-       <<<
-DEFAULT >>>
-        <<<
-FUNC >>>
-([Node 0: 'null'], [Node 1: 'aliceandbob'], [Node 2: 'bizbuz'], [Node 3: 'foobar'])
-     <<<
-BOTH >>>
-([Node 0: 'null']ZZZXXXYYY[Node 1: 'aliceandbob']ZZZXXXYYY[Node 2: 'bizbuz']ZZZXXXYYY[Node 3: 'foobar'])
-     <<<
-PRETTY >>>
-([Node 0: 'null'],
- [Node 1: 'aliceandbob'],
- [Node 2: 'bizbuz'],
- [Node 3: 'foobar'])
-     <<<
-NOLIST >>>
-       <<<
-DEFAULT >>>
-lists: could not read tmpfile: Success
 NOLIST >>>
        <<<
 DEFAULT >>>

@@ -56,7 +56,21 @@ static bool sccroll_mockFire(SccrollMockFlags mock);
  * @brief Assert that a mock error trigger has been handled.
  * @throw #SIGABRT if a mock trigger was not handled.
  */
-static void sccroll_mockAssert(void);
+static void sccroll_mockAssert(SccrollMockFlags mock);
+
+/**
+ * @since 0.1.0
+ * @brief Convert the mock code to the truely tested mock code.
+ *
+ * This function is used in cases where the mock should return an
+ * error because of another function, and not because of itself. These
+ * functions are "synced in errors".
+ *
+ * @param mock The current mock ID code.
+ * @return #trace::mock if @p mock should be in sync, @p mock
+ * otherwise.
+ */
+static SccrollMockFlags sccroll_mockSyncedTrigger(SccrollMockFlags mock);
 
 /**
  * @struct SccrollMockTrace
@@ -101,6 +115,16 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
  ******************************************************************************/
 // clang-format on
 
+bool sccroll_mockIsIgnored(SccrollMockFlags mock)
+{
+    switch(mock)
+    {
+    case SCCENONE:   return true;
+    case SCCEFERROR: return true;
+    default: return false;
+    }
+}
+
 void sccroll_mockTrigger(SccrollMockFlags mock, unsigned delay) {
     trace.mock  = mock;
     trace.calls = delay;
@@ -122,46 +146,47 @@ void sccroll_mockTrace(const char* source, const char* funcname, int line, Sccro
 
 static bool sccroll_mockFire(SccrollMockFlags mock)
 {
-    if (!trace.mock) return false;
-    else if (trace.mock != mock)
-    {
-        // Coordinated functions mocked.
-        switch(mock)
-        {
-        default: sccroll_mockAssert(); break;
-        case SCCEFERROR:
-            // The f* file functions of the library set some internal
-            // FILE* values reported by ferror. Thus, in case of an
-            // error for these, ferror must also report an
-            // error. Hence the coordinated trigger.
-            switch(trace.mock)
-            {
-            default: break;
-            case SCCEFSCANF: __attribute__((fallthrough));
-            case SCCEFWRITE: __attribute__((fallthrough));
-            case SCCEFREAD:  __attribute__((fallthrough));
-            case SCCEFTELL: __attribute__((fallthrough));
-            case SCCEFSEEK: __attribute__((fallthrough));
-            case SCCEFOPEN:
-                return trace.calls <= 0;
-            }
-            break;
-        }
-        return false;
-    }
-    else if (trace.calls < 0) sccroll_mockAssert();
-
-    return !trace.calls--;
+    sccroll_mockAssert(mock);
+    return trace.mock == mock
+        ? !trace.calls--
+        : (trace.mock == sccroll_mockSyncedTrigger(mock) && trace.calls < 0);
 }
 
-static void sccroll_mockAssert(void)
+static void sccroll_mockAssert(SccrollMockFlags mock)
 {
-    if (trace.calls >= 0) return;
+    if (trace.calls >= 0 || sccroll_mockIsIgnored(mock) || sccroll_mockSyncedTrigger(mock) != mock)
+        return;
 
-    const char* name = sccroll_mockName(trace.mock);
+    const char* name = sccroll_mockName(mock);
     int calls        = -1*trace.calls;
     sccroll_mockFlush();
     sccroll_fatal(SIGABRT, SCCROLL_MOCKERROR(name, calls, "error not handled"));
+}
+
+static SccrollMockFlags sccroll_mockSyncedTrigger(SccrollMockFlags mock)
+{
+    switch(mock)
+    {
+    case SCCEFERROR:
+        // The f* file functions of the library set some internal
+        // FILE* values reported by ferror. Thus, in case of an
+        // error for these, ferror must also report an
+        // error. Hence the coordinated trigger.
+        switch(trace.mock)
+        {
+        case SCCEFSCANF: __attribute__((fallthrough));
+        case SCCEFWRITE: __attribute__((fallthrough));
+        case SCCEFREAD:  __attribute__((fallthrough));
+        case SCCEFTELL:  __attribute__((fallthrough));
+        case SCCEFSEEK:  __attribute__((fallthrough));
+        case SCCEFOPEN:
+            return trace.mock;
+        default: break;
+        }
+        break;
+    default: break;
+    }
+    return mock;
 }
 
 const char* sccroll_mockName(SccrollMockFlags mock)
@@ -224,7 +249,7 @@ static bool sccroll_mockCrashTest(SccrollFunc wrapper, SccrollMockFlags mock, un
     // triggered, or that no signals have been sent (SIGABRT, SIGSEGV,
     // ...).
     assertMsg(
-        !signal && (mock || !error),
+        !signal && (!sccroll_mockIsIgnored(mock) || !error),
         "Predefined %s mock error (status %i, signal %s)",
         name,
         code, sigstr ? sigstr : "0"
@@ -361,7 +386,7 @@ void abort(void) { sccroll_mockFlush(), __gcov_dump(), raise(SIGABRT), exit(SIGA
 
 void exit(int status)
 {
-    if (!status) sccroll_mockAssert();
+    if (!status) sccroll_mockAssert(trace.mock);
     __gcov_dump(), _exit(status);
 }
 /** @} @} */

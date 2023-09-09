@@ -348,7 +348,6 @@ void test_fullerrors(void)
         case SCCECLOSE:  close(fd); break;
         case SCCEREAD:   read(fd, blob, 1); break;
         case SCCEWRITE:  write(fd, blob, 1); break;
-        case SCCEFERROR: (void)ferror(tmp); break;
         case SCCEFOPEN:  fclose(tmp), tmp = fopen(template, "r+"); break;
         case SCCEFSEEK:  fseek(tmp, 0L, SEEK_SET); break;
         case SCCEFTELL:  ftell(tmp); break;
@@ -365,6 +364,7 @@ void test_fullerrors(void)
             hsearch(dummy, ENTER);
             hdestroy();
             break;
+        case SCCEFERROR: (void)ferror(tmp);
         case SCCENONE:   throw(test_fullerrors, IGNORE); break;
         default:
             // ensure no test is left behind
@@ -423,7 +423,7 @@ int main(void)
     sccroll_mockFlush();
     for (dummy_flag = SCCENONE; dummy_flag < SCCEMAX; ++dummy_flag) {
         status = sccroll_simplefork("test predefined", test_mockPredefined);
-        assert((!dummy_flag && !status) || WTERMSIG(status) == SIGABRT);
+        assert((sccroll_mockIsIgnored(dummy_flag) && !status) || WTERMSIG(status) == SIGABRT);
         // Ensure the function does not affect anything else than
         // itself.
         // TODO: check if this is necessary, the fork should not

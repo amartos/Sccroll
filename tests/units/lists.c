@@ -432,7 +432,8 @@ void tests_print(void)
     strcat(expected, ")\n");
     lprint(tmp, NULL, NULL, test);
     rewind(tmp);
-    if (fread(buffer, sizeof(char), BUFSIZ, tmp) < BUFSIZ && ferror(tmp))
+    int s = fread(buffer, sizeof(char), BUFSIZ, tmp);
+    if ((s < 0 || (size_t)s < strlen(expected)) && ferror(tmp))
         err(EXIT_FAILURE, "could not read tmpfile");
     assert(!strcmp(buffer, expected));
     fprintf(stderr, "        <<<\n");

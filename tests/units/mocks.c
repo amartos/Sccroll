@@ -367,7 +367,7 @@ void test_fullerrors(void)
             break;
         case SCCENONE:   throw(test_fullerrors, IGNORE); break;
         default:
-            // default s'assure qu'on oublie pas de tests
+            // ensure no test is left behind
             throw(test_fullerrors, MISSINGTEST);
             break;
         }
